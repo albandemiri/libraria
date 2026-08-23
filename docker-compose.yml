@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  db:
+    image: postgres:15
+    container_name: libraria_db
+    restart: always
+    environment:
+      POSTGRES_USER: libraria_user
+      POSTGRES_PASSWORD: libraria_password
+      POSTGRES_DB: libraria
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  db_data:
