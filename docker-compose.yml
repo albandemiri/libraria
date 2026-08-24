@@ -1,19 +1,54 @@
-version: '3.8'
-
 services:
   db:
     image: postgres:15
     container_name: libraria_db
     restart: always
     environment:
-      POSTGRES_USER: libraria_user
-      POSTGRES_PASSWORD: libraria_password
-      POSTGRES_DB: libraria
+      POSTGRES_USER: ${POSTGRES_USER:-libraria_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libraria_password}
+      POSTGRES_DB: ${POSTGRES_DB:-libraria}
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+      # Runs only when db_data is empty. After changing init.sql, recreate the
+      # volume: docker compose down -v && docker compose up
       - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-libraria_user} -d ${POSTGRES_DB:-libraria}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: ./backend
+      target: dev
+    container_name: libraria_backend
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment:
+      NODE_ENV: development
+      PORT: 3000
+      POSTGRES_HOST: db
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: ${POSTGRES_USER:-libraria_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libraria_password}
+      POSTGRES_DB: ${POSTGRES_DB:-libraria}
+      # Dev-only fallback. The app refuses to boot with this value when
+      # NODE_ENV=production, so a real secret must be supplied there.
+      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+    ports:
+      - "${PORT:-3000}:3000"
+    volumes:
+      - ./backend:/app
+      # Keep the image's Linux-built node_modules from being shadowed by the
+      # host's, which matters on Windows/macOS workstations.
+      - backend_node_modules:/app/node_modules
 
 volumes:
   db_data:
+  backend_node_modules:

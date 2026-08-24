@@ -1,33 +1,41 @@
 import express, { Request, Response } from 'express';
-import dotenv from 'dotenv';
-import { Pool } from 'pg';
-
-dotenv.config();
+import { env } from './config/env';
+import { pool } from './db/pool';
+import { errorHandler, notFoundHandler } from './middleware/errors';
+import { authRouter } from './routes/auth';
+import { booksRouter } from './routes/books';
 
 const app = express();
-const port = process.env.PORT || 3000;
 
-// Middleware
-app.use(express.json());
+app.use(express.json({ limit: '1mb' }));
 
-// Database connection
-const pool = new Pool({
-  user: process.env.POSTGRES_USER || 'libraria_user',
-  host: process.env.POSTGRES_HOST || 'localhost',
-  database: process.env.POSTGRES_DB || 'libraria',
-  password: process.env.POSTGRES_PASSWORD || 'libraria_password',
-  port: parseInt(process.env.POSTGRES_PORT || '5432'),
-});
-
-app.get('/health', async (req: Request, res: Response) => {
+app.get('/health', async (_req: Request, res: Response) => {
   try {
     const result = await pool.query('SELECT NOW()');
-    res.json({ status: 'ok', db_time: result.rows[0].now });
+    res.json({ status: 'ok', dbTime: result.rows[0].now });
   } catch (error) {
-    res.status(500).json({ status: 'error', message: 'Database connection failed' });
+    console.error('Health check failed', error);
+    res.status(503).json({ status: 'error', message: 'Database connection failed' });
   }
 });
 
-app.listen(port, () => {
-  console.log(`Server is running on port ${port}`);
+app.use('/auth', authRouter);
+app.use('/books', booksRouter);
+
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const server = app.listen(env.PORT, () => {
+  console.log(`Server is running on port ${env.PORT} (${env.NODE_ENV})`);
 });
+
+// Compose sends SIGTERM on `down`; drain in-flight requests and close the pool
+// so Postgres is not left holding connections.
+for (const signal of ['SIGTERM', 'SIGINT'] as const) {
+  process.on(signal, () => {
+    console.log(`${signal} received, shutting down`);
+    server.close(() => {
+      void pool.end().then(() => process.exit(0));
+    });
+  });
+}
