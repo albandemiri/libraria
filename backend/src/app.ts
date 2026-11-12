@@ -1,3 +1,4 @@
+import path from 'node:path';
 import express, { Request, Response } from 'express';
 import { pool } from './db/pool';
 import { errorHandler, notFoundHandler } from './middleware/errors';
@@ -10,6 +11,9 @@ import { transactionsRouter } from './routes/transactions';
 export const app = express();
 
 app.use(express.json({ limit: '1mb' }));
+
+const assetsDir = path.resolve(process.cwd(), 'public/assets');
+app.use('/assets', express.static(assetsDir));
 
 app.get('/health', async (_req: Request, res: Response) => {
   try {
