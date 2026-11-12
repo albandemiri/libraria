@@ -4,6 +4,8 @@ import { errorHandler, notFoundHandler } from './middleware/errors';
 import { authRouter } from './routes/auth';
 import { booksRouter } from './routes/books';
 import { libraryRouter } from './routes/library';
+import { publisherRouter } from './routes/publisher';
+import { transactionsRouter } from './routes/transactions';
 
 export const app = express();
 
@@ -22,6 +24,8 @@ app.get('/health', async (_req: Request, res: Response) => {
 app.use('/auth', authRouter);
 app.use('/books', booksRouter);
 app.use('/library', libraryRouter);
+app.use('/transactions', transactionsRouter);
+app.use('/publisher', publisherRouter);
 
 app.use(notFoundHandler);
 app.use(errorHandler);

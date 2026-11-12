@@ -1,8 +1,10 @@
 import { Request, Response, Router } from 'express';
 import { z } from 'zod';
+import { env } from '../config/env';
 import { pool } from '../db/pool';
 import { authContext, requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
+import { deriveBookKey } from '../utils/crypto';
 
 export const libraryRouter = Router();
 
@@ -337,6 +339,34 @@ libraryRouter.get('/:bookId/asset', async (req: Request, res: Response) => {
     encryptedFileUrl: asset.encrypted_file_url,
     encryptionIv: asset.encryption_iv.toString('base64'),
     encryptionAuthTag: asset.encryption_auth_tag.toString('base64'),
+  });
+});
+
+/**
+ * Delivers the 256-bit AES-GCM decryption key for an owned title.
+ */
+libraryRouter.get('/:bookId/key', async (req: Request, res: Response) => {
+  const { userId } = authContext(req);
+  const { bookId } = bookIdParamSchema.parse(req.params);
+
+  const ownership = await pool.query<{ exists: boolean }>(
+    `SELECT EXISTS (
+       SELECT 1 FROM user_libraries
+        WHERE user_id = $1 AND book_id = $2
+     ) AS exists`,
+    [userId, bookId],
+  );
+
+  if (!ownership.rows[0]?.exists) {
+    throw new AppError(404, 'Book not found in user library', 'not_found');
+  }
+
+  const keyBuffer = deriveBookKey(bookId, env.JWT_SECRET);
+
+  res.json({
+    bookId,
+    key: keyBuffer.toString('base64'),
+    algorithm: 'aes-256-gcm',
   });
 });
 
