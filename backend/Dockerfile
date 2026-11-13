@@ -34,6 +34,9 @@ COPY package.json package-lock.json ./
 RUN npm ci --omit=dev
 
 COPY --from=build /app/dist ./dist
+# Migrations ship with the image; run them as a separate deploy step:
+#   docker run --rm <image> node dist/db/migrate.js
+COPY db ./db
 
 USER node
 EXPOSE 3000

@@ -1,0 +1,20 @@
+* text=auto eol=lf
+
+# Shell scripts run inside Linux containers; a CRLF shebang line breaks them.
+*.sh text eol=lf
+
+# Migration checksums are computed on LF-normalised text, but keep the files
+# LF anyway so diffs stay clean.
+*.sql text eol=lf
+
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.ttf binary
+*.otf binary
+*.woff binary
+*.woff2 binary
+*.epub binary
+*.pdf binary

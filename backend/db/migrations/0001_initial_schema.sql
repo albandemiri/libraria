@@ -1,7 +1,7 @@
--- Libraria schema.
+-- 0001: initial Libraria schema.
 --
--- Runs once, when the Postgres data volume is first created. After editing:
---   docker compose down -v && docker compose up
+-- Applied migrations are immutable: the runner records a checksum and refuses
+-- to start if this file changes. Make schema changes in a new numbered file.
 --
 -- Conventions:
 --   * Money is stored as integer minor units (cents) to avoid float rounding.

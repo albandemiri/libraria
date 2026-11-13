@@ -7,9 +7,13 @@
     "build": "tsc -p tsconfig.build.json",
     "start": "node dist/index.js",
     "dev": "tsx watch src/index.ts",
+    "migrate": "tsx src/db/migrate.ts",
+    "seed": "tsx src/db/seed.ts",
     "typecheck": "tsc --noEmit",
+    "lint": "biome check",
+    "lint:fix": "biome check --write",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "seed": "tsx src/db/seed.ts"
+    "test:integration": "tsx --test --test-concurrency=1 \"test/integration/**/*.test.ts\""
   },
   "keywords": [],
   "type": "commonjs",
@@ -22,6 +26,7 @@
     "zod": "^4.4.3"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.4",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",

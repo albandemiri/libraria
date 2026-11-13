@@ -10,10 +10,9 @@ services:
     ports:
       - "${POSTGRES_PORT:-5432}:5432"
     volumes:
+      # Schema is managed by backend/db/migrations, applied by the backend
+      # container on start (see backend/docker/dev-entrypoint.sh).
       - db_data:/var/lib/postgresql/data
-      # Runs only when db_data is empty. After changing init.sql, recreate the
-      # volume: docker compose down -v && docker compose up
-      - ./backend/db/init.sql:/docker-entrypoint-initdb.d/init.sql
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-libraria_user} -d ${POSTGRES_DB:-libraria}"]
       interval: 5s
@@ -41,6 +40,11 @@ services:
       # NODE_ENV=production, so a real secret must be supplied there.
       JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      # Simulated checkout: grants books without payment. Refused in production.
+      PAYMENTS_MODE: ${PAYMENTS_MODE:-simulated}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+    # Installs deps if the lockfile changed, migrates, then starts tsx watch.
+    command: ["sh", "docker/dev-entrypoint.sh"]
     ports:
       - "${PORT:-3000}:3000"
     volumes:
