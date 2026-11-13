@@ -107,7 +107,15 @@ export async function runSeed(): Promise<void> {
     publisherId = existing.rows[0].id;
   }
 
-  console.log(`✓ Seeded publisher: Apex Publishing House (${publisherId})`);
+  // A contract rate, so the demo books can be sold (20% of net, from 2020).
+  await pool.query(
+    `INSERT INTO publisher_commission_rates (publisher_id, rate_bps, effective_from, contract_reference)
+     VALUES ($1, 2000, '2020-01-01T00:00:00Z', 'Demo contract')
+     ON CONFLICT (publisher_id, effective_from) DO NOTHING`,
+    [publisherId],
+  );
+
+  console.log(`✓ Seeded publisher: Apex Publishing House (${publisherId}), 20% commission`);
 
   // 2. Create Users
   // Admin
@@ -164,7 +172,7 @@ export async function runSeed(): Promise<void> {
          genre, language, price_cents, currency, is_available,
          media_type, encrypted_file_url, encryption_iv,
          encryption_auth_tag, file_size_bytes, published_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'en', $8, 'USD', TRUE, 'ebook', $9, $10, $11, $12, CURRENT_DATE)
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'en', $8, 'EUR', TRUE, 'ebook', $9, $10, $11, $12, CURRENT_DATE)
        ON CONFLICT (id) DO UPDATE SET
          encrypted_file_url = EXCLUDED.encrypted_file_url,
          encryption_iv = EXCLUDED.encryption_iv,
@@ -205,6 +213,14 @@ export async function runSeed(): Promise<void> {
         ownedBookId,
         JSON.stringify({ cfi: 'epubcfi(/6/2[chap_0]!/4/2/4)', percent: 28.5 }),
       ],
+    );
+
+    // Access is the entitlement; user_libraries holds reading state.
+    await pool.query(
+      `INSERT INTO entitlements (user_id, book_id, source)
+       VALUES ($1, $2, 'grant')
+       ON CONFLICT (user_id, book_id) WHERE status = 'active' DO NOTHING`,
+      [readerId, ownedBookId],
     );
 
     // Seed sample bookmark

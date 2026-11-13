@@ -9,6 +9,7 @@ import {
   View,
 } from 'react-native';
 import { apiFetch } from '../config/api';
+import { formatPrice } from '../config/money';
 import { useAuth } from '../context/AuthContext';
 import { TransactionReceipt } from '../types';
 
@@ -33,22 +34,22 @@ export const ProfileScreen = () => {
   }, []);
 
   const renderReceipt = ({ item }: { item: TransactionReceipt }) => {
-    const amount = `$${(item.amount.amountCents / 100).toFixed(2)}`;
+    const amount = formatPrice(item.total.amountCents, item.total.currency);
     const date = new Date(item.createdAt).toLocaleDateString();
+    const [first, ...rest] = item.items;
+    const title = rest.length > 0 ? `${first?.book.title} + ${rest.length} more` : first?.book.title;
 
     return (
       <View style={styles.txnCard}>
         <View style={styles.txnLeft}>
           <Text style={styles.txnTitle} numberOfLines={1}>
-            {item.book.title}
+            {title}
           </Text>
-          <Text style={styles.txnDate}>
-            {date} • Ref: {item.paymentGatewayRef || 'N/A'}
-          </Text>
+          <Text style={styles.txnDate}>{date}</Text>
         </View>
         <View style={styles.txnRight}>
           <Text style={styles.txnAmount}>{amount}</Text>
-          <Text style={styles.txnStatus}>{item.status.toUpperCase()}</Text>
+          <Text style={styles.txnStatus}>{item.status.replace('_', ' ').toUpperCase()}</Text>
         </View>
       </View>
     );

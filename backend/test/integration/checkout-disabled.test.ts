@@ -28,7 +28,10 @@ describe('checkout with PAYMENTS_MODE=disabled (the production default)', () => 
     const bookId = await createBook(await createPublisher());
     const reader = await createUser();
 
-    const res = await api('POST', '/transactions', { token: reader.token, body: { bookId } });
+    const res = await api('POST', '/checkout-sessions', {
+      token: reader.token,
+      body: { bookIds: [bookId] },
+    });
     assert.equal(res.status, 503);
     assert.equal(res.body.error.code, 'PAYMENTS_UNAVAILABLE');
 
@@ -37,5 +40,20 @@ describe('checkout with PAYMENTS_MODE=disabled (the production default)', () => 
               (SELECT COUNT(*) FROM user_libraries)::int AS library`,
     );
     assert.deepEqual(rows[0], { transactions: 0, library: 0 });
+  });
+
+  it('does not expose the sandbox or accept simulated webhooks', async () => {
+    const reader = await createUser();
+    const sandbox = await api('POST', `/sandbox/transactions/${reader.id}/events`, {
+      token: reader.token,
+      body: { kind: 'payment_succeeded' },
+    });
+    assert.equal(sandbox.status, 404);
+
+    const webhook = await fetch(`${server.baseUrl}/webhooks/simulated`, {
+      method: 'POST',
+      body: '{}',
+    });
+    assert.equal(webhook.status, 404);
   });
 });

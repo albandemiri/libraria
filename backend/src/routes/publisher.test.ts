@@ -41,7 +41,7 @@ describe('Publisher Validation Schemas', () => {
       genre: 'Classic Fiction',
       language: 'en',
       priceCents: 999,
-      currency: 'USD',
+      currency: 'EUR',
       mediaType: 'ebook' as const,
     };
 
@@ -61,6 +61,11 @@ describe('Publisher Validation Schemas', () => {
       });
       assert.equal(parsed.mediaType, 'audiobook');
       assert.equal(parsed.durationSeconds, 36000);
+    });
+
+    it('accepts only launch currencies (EUR)', () => {
+      assert.equal(createBookSchema.parse({ ...validEbook, currency: undefined }).currency, 'EUR');
+      assert.throws(() => createBookSchema.parse({ ...validEbook, currency: 'USD' }));
     });
 
     it('rejects durationSeconds on ebook', () => {

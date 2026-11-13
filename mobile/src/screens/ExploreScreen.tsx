@@ -12,6 +12,7 @@ import {
   View,
 } from 'react-native';
 import { apiFetch } from '../config/api';
+import { formatPrice } from '../config/money';
 import { Book } from '../types';
 
 export const ExploreScreen = ({ navigation }: { navigation: any }) => {
@@ -66,7 +67,7 @@ export const ExploreScreen = ({ navigation }: { navigation: any }) => {
   }, [selectedGenre, searchQuery]);
 
   const renderBookItem = ({ item }: { item: Book }) => {
-    const priceFormatted = `$${(item.price.amountCents / 100).toFixed(2)}`;
+    const priceFormatted = formatPrice(item.price.amountCents, item.price.currency);
 
     return (
       <TouchableOpacity

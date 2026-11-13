@@ -1,5 +1,6 @@
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
+import { rateInForceSql } from '../commerce/rates';
 import { pool } from '../db/pool';
 import { AppError } from '../middleware/errors';
 
@@ -25,7 +26,8 @@ const CATALOGUE_COLUMNS = `
   b.media_type,
   b.duration_seconds,
   b.publisher_id,
-  p.name AS publisher_name
+  p.name AS publisher_name,
+  ${rateInForceSql('b.publisher_id')} IS NOT NULL AS for_sale
 `;
 
 /** Whitelisted ORDER BY clauses, so sort input never reaches SQL as text. */
@@ -65,6 +67,7 @@ interface CatalogueRow {
   duration_seconds: number | null;
   publisher_id: string;
   publisher_name: string;
+  for_sale: boolean;
   sales_count?: number;
   total_count?: string;
 }
@@ -84,6 +87,9 @@ function publicBook(row: CatalogueRow) {
     mediaType: row.media_type,
     durationSeconds: row.duration_seconds,
     publisher: { id: row.publisher_id, name: row.publisher_name },
+    // False while the publisher has no commission rate in force: checkout
+    // would refuse it with BOOK_NOT_FOR_SALE, so clients hide "Buy".
+    forSale: row.for_sale,
   };
 }
 
@@ -120,12 +126,7 @@ booksRouter.get('/', async (req: Request, res: Response) => {
             COUNT(*) OVER() AS total_count
        FROM books b
        JOIN publishers p ON p.id = b.publisher_id
-       LEFT JOIN (
-         SELECT book_id, COUNT(*)::int AS sales_count
-           FROM transactions
-          WHERE status = 'completed'
-          GROUP BY book_id
-       ) s ON s.book_id = b.id
+       LEFT JOIN (SELECT book_id, sales_count FROM book_sales) s ON s.book_id = b.id
       WHERE b.is_available
         AND ($1::text IS NULL OR b.genre = $1)
         AND ($2::text IS NULL OR b.title ILIKE $2 OR b.author ILIKE $2)

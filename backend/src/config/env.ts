@@ -6,6 +6,12 @@ dotenv.config({ quiet: true });
 /** The value docker-compose falls back to so `docker compose up` works bare. */
 const DEV_JWT_SECRET = 'dev-only-insecure-secret';
 
+/** Compose passes unset variables through as "", which means "not set". */
+const optionalSecret = z.preprocess(
+  (value) => (value === '' ? undefined : value),
+  z.string().min(1).optional(),
+);
+
 const schema = z.object({
   NODE_ENV: z.enum(['development', 'test', 'production']).default('development'),
   PORT: z.coerce.number().int().positive().default(3000),
@@ -24,11 +30,25 @@ const schema = z.object({
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),
 
   /**
-   * `simulated` completes checkouts without any payment provider and exists
-   * only for development and tests. `disabled` rejects checkout. A real
-   * provider mode arrives with the Commerce MVP (spec section 7).
+   * `paddle`: real checkout through Paddle Billing.
+   * `simulated`: no provider; payment is confirmed by signed sandbox webhooks
+   *   (development and tests only, refused in production).
+   * `disabled`: checkout is rejected.
    */
-  PAYMENTS_MODE: z.enum(['simulated', 'disabled']).optional(),
+  PAYMENTS_MODE: z.enum(['paddle', 'simulated', 'disabled']).optional(),
+
+  PADDLE_ENVIRONMENT: z.enum(['sandbox', 'production']).default('sandbox'),
+  PADDLE_API_KEY: optionalSecret,
+  PADDLE_WEBHOOK_SECRET: optionalSecret,
+
+  /** Signs simulated-provider webhooks. Only used when PAYMENTS_MODE=simulated. */
+  SIMULATED_WEBHOOK_SECRET: z.string().min(16).default('dev-only-simulated-webhook-secret'),
+
+  /**
+   * Maximum age of a webhook signature timestamp. Paddle's SDKs use 5s;
+   * keep server clocks NTP-synced rather than raising this much.
+   */
+  WEBHOOK_TOLERANCE_SECONDS: z.coerce.number().int().min(1).max(300).default(5),
 });
 
 /** Exported for tests; the app uses the `env` singleton below. */
@@ -66,6 +86,10 @@ export function parseEnv(source: NodeJS.ProcessEnv) {
     if (env.PAYMENTS_MODE === 'simulated') {
       throw new Error('PAYMENTS_MODE=simulated is not allowed in production.');
     }
+  }
+
+  if (env.PAYMENTS_MODE === 'paddle' && (!env.PADDLE_API_KEY || !env.PADDLE_WEBHOOK_SECRET)) {
+    throw new Error('PAYMENTS_MODE=paddle requires PADDLE_API_KEY and PADDLE_WEBHOOK_SECRET.');
   }
 
   return env;

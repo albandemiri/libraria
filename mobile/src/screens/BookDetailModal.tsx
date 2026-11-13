@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Linking,
   SafeAreaView,
   ScrollView,
   StyleSheet,
@@ -10,7 +11,11 @@ import {
   View,
 } from 'react-native';
 import { apiFetch } from '../config/api';
-import { Book, LibraryItem } from '../types';
+import { formatPrice } from '../config/money';
+import { Book, CheckoutSessionResponse, LibraryItem, TransactionReceipt } from '../types';
+
+const PAYMENT_POLL_INTERVAL_MS = 2000;
+const PAYMENT_POLL_TIMEOUT_MS = 3 * 60 * 1000;
 
 export const BookDetailModal = ({ route, navigation }: { route: any; navigation: any }) => {
   const { bookId } = route.params;
@@ -18,6 +23,14 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
   const [isOwned, setIsOwned] = useState(false);
   const [loading, setLoading] = useState(true);
   const [purchasing, setPurchasing] = useState(false);
+  // Stops payment polling if the user leaves the screen.
+  const mounted = useRef(true);
+  useEffect(
+    () => () => {
+      mounted.current = false;
+    },
+    [],
+  );
 
   const fetchDetails = async () => {
     try {
@@ -46,13 +59,66 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
     fetchDetails();
   }, [bookId]);
 
+  /**
+   * Polls the receipt until the payment provider's webhook has settled it.
+   * The app never decides a purchase succeeded; the backend does, from a
+   * verified provider event. `failed` keeps polling because the customer can
+   * retry inside the same checkout.
+   */
+  const waitForSettlement = async (
+    transactionId: string,
+  ): Promise<TransactionReceipt | null> => {
+    const deadline = Date.now() + PAYMENT_POLL_TIMEOUT_MS;
+    while (Date.now() < deadline && mounted.current) {
+      const { transaction } = await apiFetch<{ transaction: TransactionReceipt }>(
+        `/transactions/${transactionId}`,
+      );
+      if (!['pending', 'failed'].includes(transaction.status)) {
+        return transaction;
+      }
+      await new Promise((resolve) => setTimeout(resolve, PAYMENT_POLL_INTERVAL_MS));
+    }
+    return null;
+  };
+
   const handlePurchase = async () => {
     setPurchasing(true);
     try {
-      await apiFetch('/transactions', {
+      // One key per purchase attempt: a retried request returns the same checkout.
+      const idempotencyKey = `${bookId}:${Date.now()}:${Math.random().toString(36).slice(2)}`;
+      const session = await apiFetch<CheckoutSessionResponse>('/checkout-sessions', {
         method: 'POST',
-        body: JSON.stringify({ bookId }),
+        body: JSON.stringify({ bookIds: [bookId], idempotencyKey }),
       });
+      const transactionId = session.transaction.id;
+
+      if (session.checkout.provider === 'simulated') {
+        // Development backend: stand in for the payment provider. This sends
+        // a signed sandbox webhook through the same path a real one takes.
+        await apiFetch(`/sandbox/transactions/${transactionId}/events`, {
+          method: 'POST',
+          body: JSON.stringify({ kind: 'payment_succeeded' }),
+        });
+      } else if (session.checkout.url) {
+        await Linking.openURL(session.checkout.url);
+      } else {
+        throw new Error('Checkout is not available right now. Please try again later.');
+      }
+
+      const settled = await waitForSettlement(transactionId);
+      if (!mounted.current) return;
+
+      if (!settled) {
+        Alert.alert(
+          'Payment pending',
+          "We'll add the book to your library as soon as the payment is confirmed.",
+        );
+        return;
+      }
+      if (settled.status !== 'paid') {
+        Alert.alert('Payment not completed', 'Your card was not charged for this book.');
+        return;
+      }
 
       setIsOwned(true);
       Alert.alert(
@@ -72,6 +138,9 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
       if (err.code === 'ALREADY_OWNED') {
         setIsOwned(true);
         Alert.alert('Notice', 'You already own this book in your library.');
+      } else if (err.code === 'BOOK_NOT_FOR_SALE') {
+        setBook((current) => (current ? { ...current, forSale: false } : current));
+        Alert.alert('Not available', "This book can't be bought right now. Please try again later.");
       } else {
         Alert.alert('Checkout Failed', err.message || 'Could not complete transaction');
       }
@@ -88,7 +157,7 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
     );
   }
 
-  const priceFormatted = `$${(book.price.amountCents / 100).toFixed(2)}`;
+  const priceFormatted = formatPrice(book.price.amountCents, book.price.currency);
 
   return (
     <SafeAreaView style={styles.container}>
@@ -143,6 +212,10 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
           >
             <Text style={styles.buttonText}>Open in Library</Text>
           </TouchableOpacity>
+        ) : book.forSale === false ? (
+          <View style={styles.unavailableButton}>
+            <Text style={styles.unavailableText}>Not available for purchase</Text>
+          </View>
         ) : (
           <TouchableOpacity
             style={styles.buyButton}
@@ -306,6 +379,18 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  unavailableButton: {
+    height: 52,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  unavailableText: {
+    color: '#6B7280',
+    fontSize: 16,
+    fontWeight: '700',
   },
   buttonText: {
     color: '#FFFFFF',

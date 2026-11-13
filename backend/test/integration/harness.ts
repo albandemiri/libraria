@@ -98,6 +98,8 @@ export interface ApiResponse<T = any> {
   headers: Headers;
 }
 
+export type Api = ReturnType<typeof client>;
+
 export function client(baseUrl: string) {
   // biome-ignore lint/suspicious/noExplicitAny: see ApiResponse.
   return async function api<T = any>(
@@ -139,12 +141,28 @@ export function client(baseUrl: string) {
 let sequence = 0;
 const next = () => ++sequence;
 
-export async function createPublisher(name = `Publisher ${next()}`): Promise<string> {
+/**
+ * A publisher with a contract rate (20% from 2020 unless stated), so its books
+ * can be sold. `commissionBps: null` creates one without any rate.
+ */
+export async function createPublisher(
+  name = `Publisher ${next()}`,
+  options: { commissionBps?: number | null; effectiveFrom?: string } = {},
+): Promise<string> {
   const { rows } = await pool.query<{ id: string }>(
     `INSERT INTO publishers (name, contact_email) VALUES ($1, $2) RETURNING id`,
     [name, `contact${next()}@publisher.test`],
   );
-  return rows[0].id;
+  const id = rows[0].id;
+  const commissionBps = options.commissionBps === undefined ? 2000 : options.commissionBps;
+  if (commissionBps !== null) {
+    await pool.query(
+      `INSERT INTO publisher_commission_rates (publisher_id, rate_bps, effective_from)
+       VALUES ($1, $2, $3)`,
+      [id, commissionBps, options.effectiveFrom ?? '2020-01-01T00:00:00Z'],
+    );
+  }
+  return id;
 }
 
 export interface TestUser {
@@ -206,6 +224,10 @@ export async function createBook(
 
 /** Grants ownership without a transaction, as a gift/promo would. */
 export async function grantBook(userId: string, bookId: string): Promise<void> {
+  await pool.query(`INSERT INTO entitlements (user_id, book_id, source) VALUES ($1, $2, 'grant')`, [
+    userId,
+    bookId,
+  ]);
   await pool.query(`INSERT INTO user_libraries (user_id, book_id) VALUES ($1, $2)`, [
     userId,
     bookId,
@@ -213,3 +235,27 @@ export async function grantBook(userId: string, bookId: string): Promise<void> {
 }
 
 export { pool };
+
+// ---------------------------------------------------------------------------
+// Commerce helpers (simulated provider)
+// ---------------------------------------------------------------------------
+
+/** Starts a checkout and confirms payment through the sandbox provider. */
+export async function buy(api: Api, token: string, bookIds: string[]): Promise<string> {
+  const checkout = await api('POST', '/checkout-sessions', { token, body: { bookIds } });
+  if (checkout.status !== 201) {
+    throw new Error(`checkout failed: ${checkout.status} ${JSON.stringify(checkout.body)}`);
+  }
+  const id: string = checkout.body.transaction.id;
+  const paid = await api('POST', `/sandbox/transactions/${id}/events`, {
+    token,
+    body: { kind: 'payment_succeeded' },
+  });
+  if (paid.status !== 200) {
+    throw new Error(`sandbox payment failed: ${paid.status} ${JSON.stringify(paid.body)}`);
+  }
+  return id;
+}
+
+export { signWebhook } from '../../src/commerce/signature';
+export { SIMULATED_SIGNATURE_HEADER } from '../../src/commerce/providers/simulated';

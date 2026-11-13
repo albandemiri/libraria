@@ -1,4 +1,5 @@
 import {
+  buy,
   client,
   createBook,
   createPublisher,
@@ -168,7 +169,7 @@ describe('publisher tenant isolation', () => {
   it("sees only its own sales in stats, even when asking for another publisher's", async () => {
     // A completed sale of publisher B's book.
     const reader = await createUser();
-    await api('POST', '/transactions', { token: reader.token, body: { bookId: bookB } });
+    await buy(api, reader.token, [bookB]);
 
     const own = await api('GET', '/publisher/stats', { token: staffA.token });
     const probe = await api('GET', `/publisher/stats?publisherId=${publisherB}`, {
