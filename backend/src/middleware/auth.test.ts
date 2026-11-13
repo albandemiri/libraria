@@ -34,7 +34,7 @@ describe('Auth Middleware', () => {
 
     assert.ok(capturedError instanceof AppError);
     assert.equal(capturedError.status, 401);
-    assert.equal(capturedError.code, 'unauthenticated');
+    assert.equal(capturedError.code, 'UNAUTHENTICATED');
     assert.equal(capturedError.message, 'Missing bearer token');
   });
 
@@ -49,7 +49,7 @@ describe('Auth Middleware', () => {
 
     assert.ok(capturedError instanceof AppError);
     assert.equal(capturedError.status, 401);
-    assert.equal(capturedError.code, 'unauthenticated');
+    assert.equal(capturedError.code, 'UNAUTHENTICATED');
   });
 
   it('rejects requests with invalid token', () => {
@@ -63,7 +63,7 @@ describe('Auth Middleware', () => {
 
     assert.ok(capturedError instanceof AppError);
     assert.equal(capturedError.status, 401);
-    assert.equal(capturedError.code, 'unauthenticated');
+    assert.equal(capturedError.code, 'UNAUTHENTICATED');
     assert.equal(capturedError.message, 'Invalid or expired token');
   });
 
@@ -97,6 +97,6 @@ describe('Auth Middleware', () => {
 
     assert.ok(capturedError instanceof AppError);
     assert.equal(capturedError.status, 403);
-    assert.equal(capturedError.code, 'forbidden');
+    assert.equal(capturedError.code, 'FORBIDDEN');
   });
 });

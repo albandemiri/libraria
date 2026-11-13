@@ -24,7 +24,8 @@ const sampleBooks: SeedBook[] = [
     author: 'Evelyn Vance',
     genre: 'Science Fiction',
     isbn13: '9781234567890',
-    description: 'An expedition into a biomechanical canopy where artificial life thrives in secrecy.',
+    description:
+      'An expedition into a biomechanical canopy where artificial life thrives in secrecy.',
     priceCents: 499,
     chapters: [
       {

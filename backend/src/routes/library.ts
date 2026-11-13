@@ -1,6 +1,7 @@
-import { Request, Response, Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env';
+import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../db/errors';
 import { pool } from '../db/pool';
 import { authContext, requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
@@ -10,9 +11,6 @@ export const libraryRouter = Router();
 
 // All library and reader-state endpoints require an authenticated user.
 libraryRouter.use(requireAuth);
-
-const UNIQUE_VIOLATION = '23505';
-const FOREIGN_KEY_VIOLATION = '23503';
 
 const SORT_KEYS = ['recent', 'acquired', 'title'] as const;
 
@@ -41,10 +39,12 @@ export const highlightIdParamSchema = bookIdParamSchema.extend({
 });
 
 export const updateProgressSchema = z.object({
-  progress: z.record(z.string(), z.unknown()).refine(
-    (val) => JSON.stringify(val).length <= 16384,
-    'Reading progress JSON payload exceeds 16KB limit',
-  ),
+  progress: z
+    .record(z.string(), z.unknown())
+    .refine(
+      (val) => JSON.stringify(val).length <= 16384,
+      'Reading progress JSON payload exceeds 16KB limit',
+    ),
   lastReadAt: z.coerce.date().optional(),
 });
 
@@ -256,7 +256,7 @@ libraryRouter.get('/:bookId', async (req: Request, res: Response) => {
 
   const row = result.rows[0];
   if (!row) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   res.json({ book: publicLibraryItem(row) });
@@ -286,7 +286,7 @@ libraryRouter.put('/:bookId/progress', async (req: Request, res: Response) => {
 
   const updated = result.rows[0];
   if (!updated) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   res.json({
@@ -313,7 +313,7 @@ libraryRouter.get('/:bookId/asset', async (req: Request, res: Response) => {
   );
 
   if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   const assetResult = await pool.query<AssetRow>(
@@ -328,8 +328,8 @@ libraryRouter.get('/:bookId/asset', async (req: Request, res: Response) => {
   );
 
   const asset = assetResult.rows[0];
-  if (!asset || !asset.encrypted_file_url || !asset.encryption_iv || !asset.encryption_auth_tag) {
-    throw new AppError(409, 'Asset is not yet available for download', 'asset_unavailable');
+  if (!asset?.encrypted_file_url || !asset.encryption_iv || !asset.encryption_auth_tag) {
+    throw new AppError(409, 'Asset is not yet available for download', 'ASSET_UNAVAILABLE');
   }
 
   res.json({
@@ -358,7 +358,7 @@ libraryRouter.get('/:bookId/key', async (req: Request, res: Response) => {
   );
 
   if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   const keyBuffer = deriveBookKey(bookId, env.JWT_SECRET);
@@ -391,7 +391,7 @@ libraryRouter.get('/:bookId/bookmarks', async (req: Request, res: Response) => {
   );
 
   if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   const result = await pool.query<BookmarkRow>(
@@ -425,19 +425,11 @@ libraryRouter.post('/:bookId/bookmarks', async (req: Request, res: Response) => 
 
     res.status(201).json({ bookmark: publicBookmark(result.rows[0]) });
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { code?: string }).code === UNIQUE_VIOLATION
-    ) {
-      throw new AppError(409, 'A bookmark already exists at this location', 'duplicate_bookmark');
+    if (isPgError(error, PG_UNIQUE_VIOLATION)) {
+      throw new AppError(409, 'A bookmark already exists at this location', 'DUPLICATE_BOOKMARK');
     }
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { code?: string }).code === FOREIGN_KEY_VIOLATION
-    ) {
-      throw new AppError(404, 'Book not found in user library', 'not_found');
+    if (isPgError(error, PG_FOREIGN_KEY_VIOLATION)) {
+      throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
     }
     throw error;
   }
@@ -457,7 +449,7 @@ libraryRouter.delete('/:bookId/bookmarks/:bookmarkId', async (req: Request, res:
   );
 
   if (result.rowCount === 0) {
-    throw new AppError(404, 'Bookmark not found', 'not_found');
+    throw new AppError(404, 'Bookmark not found', 'NOT_FOUND');
   }
 
   res.status(204).send();
@@ -484,7 +476,7 @@ libraryRouter.get('/:bookId/highlights', async (req: Request, res: Response) => 
   );
 
   if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'not_found');
+    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
   }
 
   const result = await pool.query<HighlightRow>(
@@ -520,12 +512,8 @@ libraryRouter.post('/:bookId/highlights', async (req: Request, res: Response) =>
 
     res.status(201).json({ highlight: publicHighlight(result.rows[0]) });
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { code?: string }).code === FOREIGN_KEY_VIOLATION
-    ) {
-      throw new AppError(404, 'Book not found in user library', 'not_found');
+    if (isPgError(error, PG_FOREIGN_KEY_VIOLATION)) {
+      throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
     }
     throw error;
   }
@@ -534,54 +522,52 @@ libraryRouter.post('/:bookId/highlights', async (req: Request, res: Response) =>
 /**
  * Updates a highlight's note or color.
  */
-libraryRouter.patch(
-  '/:bookId/highlights/:highlightId',
-  async (req: Request, res: Response) => {
-    const { userId } = authContext(req);
-    const { bookId, highlightId } = highlightIdParamSchema.parse(req.params);
-    const { note, color } = updateHighlightSchema.parse(req.body);
+libraryRouter.patch('/:bookId/highlights/:highlightId', async (req: Request, res: Response) => {
+  const { userId } = authContext(req);
+  const { bookId, highlightId } = highlightIdParamSchema.parse(req.params);
+  const { note, color } = updateHighlightSchema.parse(req.body);
 
-    if (note === undefined && color === undefined) {
-      throw new AppError(400, 'Must provide at least one field to update (note or color)', 'invalid_input');
-    }
+  if (note === undefined && color === undefined) {
+    throw new AppError(
+      400,
+      'Must provide at least one field to update (note or color)',
+      'NO_FIELDS_TO_UPDATE',
+    );
+  }
 
-    const result = await pool.query<HighlightRow>(
-      `UPDATE highlights
+  const result = await pool.query<HighlightRow>(
+    `UPDATE highlights
           SET note = COALESCE($1, note),
               color = COALESCE($2, color)
         WHERE id = $3 AND user_id = $4 AND book_id = $5
     RETURNING id, book_id, start_location, end_location, highlighted_text, note, color, created_at, updated_at`,
-      [note === undefined ? null : note, color ?? null, highlightId, userId, bookId],
-    );
+    [note === undefined ? null : note, color ?? null, highlightId, userId, bookId],
+  );
 
-    const updated = result.rows[0];
-    if (!updated) {
-      throw new AppError(404, 'Highlight not found', 'not_found');
-    }
+  const updated = result.rows[0];
+  if (!updated) {
+    throw new AppError(404, 'Highlight not found', 'NOT_FOUND');
+  }
 
-    res.json({ highlight: publicHighlight(updated) });
-  },
-);
+  res.json({ highlight: publicHighlight(updated) });
+});
 
 /**
  * Deletes a highlight.
  */
-libraryRouter.delete(
-  '/:bookId/highlights/:highlightId',
-  async (req: Request, res: Response) => {
-    const { userId } = authContext(req);
-    const { bookId, highlightId } = highlightIdParamSchema.parse(req.params);
+libraryRouter.delete('/:bookId/highlights/:highlightId', async (req: Request, res: Response) => {
+  const { userId } = authContext(req);
+  const { bookId, highlightId } = highlightIdParamSchema.parse(req.params);
 
-    const result = await pool.query(
-      `DELETE FROM highlights
+  const result = await pool.query(
+    `DELETE FROM highlights
         WHERE id = $1 AND user_id = $2 AND book_id = $3`,
-      [highlightId, userId, bookId],
-    );
+    [highlightId, userId, bookId],
+  );
 
-    if (result.rowCount === 0) {
-      throw new AppError(404, 'Highlight not found', 'not_found');
-    }
+  if (result.rowCount === 0) {
+    throw new AppError(404, 'Highlight not found', 'NOT_FOUND');
+  }
 
-    res.status(204).send();
-  },
-);
+  res.status(204).send();
+});

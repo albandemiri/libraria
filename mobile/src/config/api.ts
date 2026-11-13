@@ -2,8 +2,10 @@ import { Platform } from 'react-native';
 import * as SecureStore from 'expo-secure-store';
 
 // Automatically resolve localhost for Android Emulator (10.0.2.2) vs iOS/Web (localhost)
-export const API_BASE_URL =
-  Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+const SERVER_URL = Platform.OS === 'android' ? 'http://10.0.2.2:3000' : 'http://localhost:3000';
+
+// Must match API_PREFIX in backend/src/app.ts.
+export const API_BASE_URL = `${SERVER_URL}/api/v1`;
 
 const TOKEN_KEY = 'libraria_access_token';
 

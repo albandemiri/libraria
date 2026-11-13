@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { pool } from '../db/pool';
 import { AppError } from '../middleware/errors';
@@ -162,7 +162,7 @@ booksRouter.get('/:id', async (req: Request, res: Response) => {
 
   const book = result.rows[0];
   if (!book) {
-    throw new AppError(404, 'Book not found', 'not_found');
+    throw new AppError(404, 'Book not found', 'NOT_FOUND');
   }
 
   res.json({ book: publicBook(book) });

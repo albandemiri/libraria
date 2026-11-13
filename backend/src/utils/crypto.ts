@@ -36,12 +36,7 @@ export function encryptAsset(data: Buffer, key: Buffer): EncryptedPayload {
  * Decrypts an AES-256-GCM ciphertext payload and validates authenticity.
  * Throws if the payload has been tampered with or the key/authTag is wrong.
  */
-export function decryptAsset(
-  ciphertext: Buffer,
-  key: Buffer,
-  iv: Buffer,
-  authTag: Buffer,
-): Buffer {
+export function decryptAsset(ciphertext: Buffer, key: Buffer, iv: Buffer, authTag: Buffer): Buffer {
   if (key.length !== 32) {
     throw new Error('Encryption key must be exactly 32 bytes (256 bits)');
   }

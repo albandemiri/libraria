@@ -56,4 +56,3 @@ describe('Transactions Validation Schemas', () => {
     });
   });
 });
-

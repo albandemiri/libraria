@@ -1,4 +1,4 @@
-import { Request, Response, Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { pool } from '../db/pool';
 import { authContext, requireAuth, requireRole } from '../middleware/auth';
@@ -14,6 +14,12 @@ export const listPublisherBooksQuerySchema = z.object({
   search: z.string().trim().min(1).max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
+  // Admin-only filter; ignored for publisher accounts, which are always scoped.
+  publisherId: z.string().uuid('Not a valid publisher id').optional(),
+});
+
+export const publisherScopeQuerySchema = z.object({
+  publisherId: z.string().uuid('Not a valid publisher id').optional(),
 });
 
 export const bookIdParamSchema = z.object({
@@ -34,7 +40,11 @@ export const createBookSchema = z
       .optional(),
     description: z.string().trim().max(10000).nullable().optional(),
     genre: z.string().trim().min(1, 'Genre is required').max(100),
-    language: z.string().trim().length(2, 'Language must be a 2-letter ISO 639-1 code').default('en'),
+    language: z
+      .string()
+      .trim()
+      .length(2, 'Language must be a 2-letter ISO 639-1 code')
+      .default('en'),
     priceCents: z.coerce.number().int().min(0, 'Price cannot be negative'),
     currency: z.string().trim().length(3).default('USD'),
     coverImageUrl: z.string().trim().url('Not a valid URL').nullable().optional(),
@@ -42,13 +52,10 @@ export const createBookSchema = z
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
     publisherId: z.string().uuid().optional(),
   })
-  .refine(
-    (data) => data.mediaType === 'audiobook' || data.durationSeconds == null,
-    {
-      message: 'durationSeconds is only allowed for audiobooks',
-      path: ['durationSeconds'],
-    },
-  );
+  .refine((data) => data.mediaType === 'audiobook' || data.durationSeconds == null, {
+    message: 'durationSeconds is only allowed for audiobooks',
+    path: ['durationSeconds'],
+  });
 
 export const updateBookSchema = z
   .object({
@@ -69,13 +76,10 @@ export const updateBookSchema = z
     mediaType: z.enum(['ebook', 'audiobook']).optional(),
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
   })
-  .refine(
-    (data) => data.mediaType === 'audiobook' || data.durationSeconds == null,
-    {
-      message: 'durationSeconds is only allowed for audiobooks',
-      path: ['durationSeconds'],
-    },
-  );
+  .refine((data) => data.mediaType === 'audiobook' || data.durationSeconds == null, {
+    message: 'durationSeconds is only allowed for audiobooks',
+    path: ['durationSeconds'],
+  });
 
 export const setAssetSchema = z.object({
   encryptedFileUrl: z.string().trim().min(1, 'Asset URL is required'),
@@ -115,13 +119,33 @@ function resolvePublisherScope(req: Request, explicitId?: string): string {
   if (auth.role === 'admin') {
     if (explicitId) return explicitId;
     if (auth.publisherId) return auth.publisherId;
-    throw new AppError(400, 'publisherId must be specified for admin operations', 'publisher_id_required');
+    throw new AppError(
+      400,
+      'publisherId must be specified for admin operations',
+      'PUBLISHER_ID_REQUIRED',
+    );
   }
 
   if (!auth.publisherId) {
-    throw new AppError(403, 'Account is not linked to a publishing house', 'forbidden');
+    throw new AppError(403, 'Account is not linked to a publishing house', 'PUBLISHER_NOT_LINKED');
   }
 
+  return auth.publisherId;
+}
+
+/**
+ * The publisher_id to filter by, or null for "all publishers" (admins only).
+ * Fails closed: a publisher account without a linked house is rejected rather
+ * than falling through to the unfiltered query.
+ */
+function tenantFilter(req: Request): string | null {
+  const auth = authContext(req);
+  if (auth.role === 'admin') {
+    return null;
+  }
+  if (!auth.publisherId) {
+    throw new AppError(403, 'Account is not linked to a publishing house', 'PUBLISHER_NOT_LINKED');
+  }
   return auth.publisherId;
 }
 
@@ -159,9 +183,9 @@ function formatPublisherBook(row: PublisherBookRow) {
  * Lists books belonging to the publisher portal account (drafts & published).
  */
 publisherRouter.get('/books', async (req: Request, res: Response) => {
-  const auth = authContext(req);
-  const publisherId = auth.role === 'publisher' ? auth.publisherId : req.query.publisherId ? String(req.query.publisherId) : null;
-  const { status, search, page, limit } = listPublisherBooksQuerySchema.parse(req.query);
+  const query = listPublisherBooksQuerySchema.parse(req.query);
+  const { status, search, page, limit } = query;
+  const publisherId = tenantFilter(req) ?? query.publisherId ?? null;
   const offset = (page - 1) * limit;
 
   const result = await pool.query<PublisherBookRow>(
@@ -232,7 +256,10 @@ publisherRouter.get('/books', async (req: Request, res: Response) => {
  * Overall sales and title metrics for the publisher dashboard.
  */
 publisherRouter.get('/stats', async (req: Request, res: Response) => {
-  const publisherId = resolvePublisherScope(req, req.query.publisherId as string | undefined);
+  const publisherId = resolvePublisherScope(
+    req,
+    publisherScopeQuerySchema.parse(req.query).publisherId,
+  );
 
   const statsResult = await pool.query<{
     total_titles: string;
@@ -324,7 +351,6 @@ publisherRouter.post('/books', async (req: Request, res: Response) => {
  * Retrieves a single book's publisher details.
  */
 publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
-  const auth = authContext(req);
   const { id } = bookIdParamSchema.parse(req.params);
 
   const result = await pool.query<PublisherBookRow>(
@@ -361,12 +387,12 @@ publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
        ) s ON s.book_id = b.id
       WHERE b.id = $1
         AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
-    [id, auth.role === 'admin' ? null : auth.publisherId],
+    [id, tenantFilter(req)],
   );
 
   const book = result.rows[0];
   if (!book) {
-    throw new AppError(404, 'Book not found or access denied', 'not_found');
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
   res.json({ book: formatPublisherBook(book) });
@@ -376,11 +402,10 @@ publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
  * Updates a book draft or existing title's metadata.
  */
 publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
-  const auth = authContext(req);
   const { id } = bookIdParamSchema.parse(req.params);
   const input = updateBookSchema.parse(req.body);
 
-  const publisherId = auth.role === 'admin' ? null : auth.publisherId;
+  const publisherId = tenantFilter(req);
 
   const result = await pool.query<PublisherBookRow>(
     `UPDATE books
@@ -421,7 +446,7 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
 
   const updated = result.rows[0];
   if (!updated) {
-    throw new AppError(404, 'Book not found or access denied', 'not_found');
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
   res.json({ book: formatPublisherBook(updated) });
@@ -431,7 +456,6 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
  * Attaches or updates the encrypted DRM asset payload for a book.
  */
 publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => {
-  const auth = authContext(req);
   const { id } = bookIdParamSchema.parse(req.params);
   const { encryptedFileUrl, encryptionIv, encryptionAuthTag, fileSizeBytes } = setAssetSchema.parse(
     req.body,
@@ -453,19 +477,12 @@ publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => 
             media_type, duration_seconds, encrypted_file_url, file_size_bytes,
             TRUE as has_encryption_keys,
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [
-      encryptedFileUrl,
-      ivBuffer,
-      authTagBuffer,
-      fileSizeBytes,
-      id,
-      auth.role === 'admin' ? null : auth.publisherId,
-    ],
+    [encryptedFileUrl, ivBuffer, authTagBuffer, fileSizeBytes, id, tenantFilter(req)],
   );
 
   const updated = result.rows[0];
   if (!updated) {
-    throw new AppError(404, 'Book not found or access denied', 'not_found');
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
   res.json({ book: formatPublisherBook(updated) });
@@ -476,7 +493,6 @@ publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => 
  * Rejects if the title lacks an encrypted asset.
  */
 publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) => {
-  const auth = authContext(req);
   const { id } = bookIdParamSchema.parse(req.params);
 
   // Check asset completeness first
@@ -489,19 +505,19 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
        FROM books
       WHERE id = $1
         AND ($2::uuid IS NULL OR publisher_id = $2)`,
-    [id, auth.role === 'admin' ? null : auth.publisherId],
+    [id, tenantFilter(req)],
   );
 
   const existing = existingResult.rows[0];
   if (!existing) {
-    throw new AppError(404, 'Book not found or access denied', 'not_found');
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
   if (!existing.encrypted_file_url || !existing.encryption_iv || !existing.encryption_auth_tag) {
     throw new AppError(
       400,
       'Cannot publish a book without an uploaded encrypted asset (URL, IV, and Auth Tag required)',
-      'asset_required',
+      'ASSET_REQUIRED',
     );
   }
 
@@ -525,7 +541,6 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
  * Unpublishes a book from the storefront (`is_available = false`).
  */
 publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response) => {
-  const auth = authContext(req);
   const { id } = bookIdParamSchema.parse(req.params);
 
   const result = await pool.query<PublisherBookRow>(
@@ -538,14 +553,13 @@ publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response)
             media_type, duration_seconds, encrypted_file_url, file_size_bytes,
             (encryption_iv IS NOT NULL AND encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [id, auth.role === 'admin' ? null : auth.publisherId],
+    [id, tenantFilter(req)],
   );
 
   const updated = result.rows[0];
   if (!updated) {
-    throw new AppError(404, 'Book not found or access denied', 'not_found');
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
   res.json({ book: formatPublisherBook(updated) });
 });
-

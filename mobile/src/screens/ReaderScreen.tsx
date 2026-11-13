@@ -93,7 +93,7 @@ export const ReaderScreen = ({ route, navigation }: { route: any; navigation: an
       setBookmarks((prev) => [res.bookmark, ...prev]);
       Alert.alert('Bookmark Added', `Saved location at ${currentProgress.toFixed(0)}%`);
     } catch (err: any) {
-      if (err.code === 'duplicate_bookmark') {
+      if (err.code === 'DUPLICATE_BOOKMARK') {
         Alert.alert('Bookmark', 'A bookmark already exists at this location');
       } else {
         Alert.alert('Error', 'Could not save bookmark');

@@ -1,5 +1,5 @@
-import { NextFunction, Request, Response } from 'express';
-import { AuthContext, UserRole, verifyAccessToken } from '../auth/tokens';
+import type { NextFunction, Request, Response } from 'express';
+import { type AuthContext, type UserRole, verifyAccessToken } from '../auth/tokens';
 import { AppError } from './errors';
 
 export type { AuthContext } from '../auth/tokens';
@@ -22,13 +22,13 @@ function bearerToken(req: Request): string | null {
 export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
   const token = bearerToken(req);
   if (!token) {
-    next(new AppError(401, 'Missing bearer token', 'unauthenticated'));
+    next(new AppError(401, 'Missing bearer token', 'UNAUTHENTICATED'));
     return;
   }
 
   const auth = verifyAccessToken(token);
   if (!auth) {
-    next(new AppError(401, 'Invalid or expired token', 'unauthenticated'));
+    next(new AppError(401, 'Invalid or expired token', 'UNAUTHENTICATED'));
     return;
   }
 
@@ -40,12 +40,12 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 export function requireRole(...roles: UserRole[]) {
   return (req: Request, _res: Response, next: NextFunction): void => {
     if (!req.auth) {
-      next(new AppError(401, 'Missing bearer token', 'unauthenticated'));
+      next(new AppError(401, 'Missing bearer token', 'UNAUTHENTICATED'));
       return;
     }
 
     if (!roles.includes(req.auth.role)) {
-      next(new AppError(403, 'Insufficient permissions', 'forbidden'));
+      next(new AppError(403, 'Insufficient permissions', 'FORBIDDEN'));
       return;
     }
 
@@ -56,7 +56,7 @@ export function requireRole(...roles: UserRole[]) {
 /** Narrows `req.auth` for handlers already behind `requireAuth`. */
 export function authContext(req: Request): AuthContext {
   if (!req.auth) {
-    throw new AppError(401, 'Missing bearer token', 'unauthenticated');
+    throw new AppError(401, 'Missing bearer token', 'UNAUTHENTICATED');
   }
   return req.auth;
 }
