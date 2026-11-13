@@ -1,0 +1,105 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  backend:
+    name: Backend
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: backend
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: libraria_user
+          POSTGRES_PASSWORD: libraria_password
+          POSTGRES_DB: libraria
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U libraria_user -d libraria"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      POSTGRES_HOST: localhost
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: libraria_user
+      POSTGRES_PASSWORD: libraria_password
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - run: npm ci
+
+      - name: Lint and format
+        run: npm run lint
+
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Unit tests
+        run: npm test
+
+      # Applies every migration to an empty database via the CLI, then re-runs
+      # it to prove a second deploy is a no-op.
+      - name: Migrations (fresh database, then idempotent re-run)
+        env:
+          POSTGRES_DB: libraria
+        run: |
+          npm run migrate
+          npm run migrate
+
+      - name: Integration tests
+        env:
+          POSTGRES_DB: libraria_test
+        run: npm run test:integration
+
+      - name: Build
+        run: npm run build
+
+      - name: Production image builds
+        run: docker build --target production -t libraria-backend:ci .
+
+  mobile:
+    name: Mobile
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: mobile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: mobile/package-lock.json
+
+      - run: npm ci
+
+      - name: Typecheck
+        run: npm run typecheck
