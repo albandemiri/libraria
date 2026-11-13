@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
-import { Request, Response, Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
+import { isPgError, PG_UNIQUE_VIOLATION } from '../db/errors';
+import { env } from '../config/env';
 import { pool, withTransaction } from '../db/pool';
 import { authContext, requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
@@ -9,8 +11,6 @@ export const transactionsRouter = Router();
 
 // All transactions endpoints require authentication.
 transactionsRouter.use(requireAuth);
-
-const UNIQUE_VIOLATION = '23505';
 
 export const listTransactionsQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
@@ -83,9 +83,20 @@ function publicTransaction(row: TransactionRow) {
 }
 
 /**
- * Purchases a book and immediately adds it to the user's digital bookshelf.
+ * SIMULATED CHECKOUT — development and test only.
+ *
+ * Marks the transaction completed and grants library access without any
+ * payment provider. This is exactly what spec section 7.2 forbids in
+ * production, so it only runs when PAYMENTS_MODE=simulated, which the env
+ * loader refuses to accept when NODE_ENV=production. The Commerce MVP
+ * (spec 7.1) replaces this with pending checkout sessions that complete only
+ * on a verified provider webhook.
  */
 transactionsRouter.post('/', async (req: Request, res: Response) => {
+  if (env.PAYMENTS_MODE !== 'simulated') {
+    throw new AppError(503, 'Purchasing is not available yet', 'PAYMENTS_UNAVAILABLE');
+  }
+
   const { userId } = authContext(req);
   const { bookId, idempotencyKey } = checkoutSchema.parse(req.body);
 
@@ -99,7 +110,7 @@ transactionsRouter.post('/', async (req: Request, res: Response) => {
   );
 
   if (existingOwnership.rows[0]?.exists) {
-    throw new AppError(409, 'You already own this book', 'already_owned');
+    throw new AppError(409, 'You already own this book', 'ALREADY_OWNED');
   }
 
   // 2. Fetch the book and ensure it is listed in the storefront
@@ -120,12 +131,15 @@ transactionsRouter.post('/', async (req: Request, res: Response) => {
   );
 
   const book = bookResult.rows[0];
-  if (!book || !book.is_available) {
-    throw new AppError(404, 'Book not found or unavailable for purchase', 'not_found');
+  if (!book?.is_available) {
+    throw new AppError(404, 'Book not found or unavailable for purchase', 'NOT_FOUND');
   }
 
   // 3. Atomically record the transaction and grant library access
-  const gatewayRef = idempotencyKey ? `ref_${idempotencyKey}` : `txn_${randomUUID()}`;
+  // The `sim_` prefix makes simulated rows unmistakable in the database. The
+  // client key is scoped to the user so two users choosing the same key do not
+  // collide on the global unique constraint.
+  const gatewayRef = idempotencyKey ? `sim_${userId}_${idempotencyKey}` : `sim_${randomUUID()}`;
 
   try {
     const transaction = await withTransaction(async (client) => {
@@ -180,12 +194,12 @@ transactionsRouter.post('/', async (req: Request, res: Response) => {
       },
     });
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { code?: string }).code === UNIQUE_VIOLATION
-    ) {
-      throw new AppError(409, 'A purchase for this title is already completed or processing', 'already_owned');
+    if (isPgError(error, PG_UNIQUE_VIOLATION)) {
+      throw new AppError(
+        409,
+        'A purchase for this title is already completed or processing',
+        'ALREADY_OWNED',
+      );
     }
     throw error;
   }
@@ -268,7 +282,7 @@ transactionsRouter.get('/:id', async (req: Request, res: Response) => {
 
   const row = result.rows[0];
   if (!row) {
-    throw new AppError(404, 'Transaction not found', 'not_found');
+    throw new AppError(404, 'Transaction not found', 'NOT_FOUND');
   }
 
   res.json({ transaction: publicTransaction(row) });

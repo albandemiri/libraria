@@ -1,5 +1,6 @@
 import { Pool } from 'pg';
 import { env } from '../config/env';
+import { logger } from '../lib/logger';
 
 export const pool = new Pool({
   host: env.POSTGRES_HOST,
@@ -12,7 +13,7 @@ export const pool = new Pool({
 // An idle client erroring out is a background event with no request to reject,
 // so without this listener it would take the process down.
 pool.on('error', (error) => {
-  console.error('Unexpected error on idle database client', error);
+  logger.error('unexpected error on idle database client', { err: error });
 });
 
 /** Runs `fn` inside a transaction, rolling back if it throws. */

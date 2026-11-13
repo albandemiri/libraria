@@ -22,16 +22,16 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
     // 1. Local File Header (30 bytes + filename length)
     const localHeader = Buffer.alloc(30 + fileNameBuf.length);
     localHeader.writeUInt32LE(0x04034b50, 0); // Local file header signature
-    localHeader.writeUInt16LE(20, 4);         // Version needed: 2.0
-    localHeader.writeUInt16LE(0, 6);          // General purpose bit flag
-    localHeader.writeUInt16LE(0, 8);          // Compression method: 0 (STORE)
-    localHeader.writeUInt16LE(0, 10);         // Last mod time
-    localHeader.writeUInt16LE(0, 12);         // Last mod date
-    localHeader.writeUInt32LE(fileCrc, 14);    // CRC-32
-    localHeader.writeUInt32LE(size, 18);       // Compressed size
-    localHeader.writeUInt32LE(size, 22);       // Uncompressed size
+    localHeader.writeUInt16LE(20, 4); // Version needed: 2.0
+    localHeader.writeUInt16LE(0, 6); // General purpose bit flag
+    localHeader.writeUInt16LE(0, 8); // Compression method: 0 (STORE)
+    localHeader.writeUInt16LE(0, 10); // Last mod time
+    localHeader.writeUInt16LE(0, 12); // Last mod date
+    localHeader.writeUInt32LE(fileCrc, 14); // CRC-32
+    localHeader.writeUInt32LE(size, 18); // Compressed size
+    localHeader.writeUInt32LE(size, 22); // Uncompressed size
     localHeader.writeUInt16LE(fileNameBuf.length, 26); // File name length
-    localHeader.writeUInt16LE(0, 28);         // Extra field length
+    localHeader.writeUInt16LE(0, 28); // Extra field length
     fileNameBuf.copy(localHeader, 30);
 
     localHeaders.push(localHeader, file.data);
@@ -39,22 +39,22 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
     // 2. Central Directory Header (46 bytes + filename length)
     const centralHeader = Buffer.alloc(46 + fileNameBuf.length);
     centralHeader.writeUInt32LE(0x02014b50, 0); // Central file header signature
-    centralHeader.writeUInt16LE(20, 4);         // Version made by: 2.0
-    centralHeader.writeUInt16LE(20, 6);         // Version needed: 2.0
-    centralHeader.writeUInt16LE(0, 8);          // General purpose bit flag
-    centralHeader.writeUInt16LE(0, 10);         // Compression method: 0 (STORE)
-    centralHeader.writeUInt16LE(0, 12);         // Last mod time
-    centralHeader.writeUInt16LE(0, 14);         // Last mod date
-    centralHeader.writeUInt32LE(fileCrc, 16);    // CRC-32
-    centralHeader.writeUInt32LE(size, 20);       // Compressed size
-    centralHeader.writeUInt32LE(size, 24);       // Uncompressed size
+    centralHeader.writeUInt16LE(20, 4); // Version made by: 2.0
+    centralHeader.writeUInt16LE(20, 6); // Version needed: 2.0
+    centralHeader.writeUInt16LE(0, 8); // General purpose bit flag
+    centralHeader.writeUInt16LE(0, 10); // Compression method: 0 (STORE)
+    centralHeader.writeUInt16LE(0, 12); // Last mod time
+    centralHeader.writeUInt16LE(0, 14); // Last mod date
+    centralHeader.writeUInt32LE(fileCrc, 16); // CRC-32
+    centralHeader.writeUInt32LE(size, 20); // Compressed size
+    centralHeader.writeUInt32LE(size, 24); // Uncompressed size
     centralHeader.writeUInt16LE(fileNameBuf.length, 28); // File name length
-    centralHeader.writeUInt16LE(0, 30);         // Extra field length
-    centralHeader.writeUInt16LE(0, 32);         // File comment length
-    centralHeader.writeUInt16LE(0, 34);         // Disk number start
-    centralHeader.writeUInt16LE(0, 36);         // Internal file attributes
-    centralHeader.writeUInt32LE(0, 38);         // External file attributes
-    centralHeader.writeUInt32LE(offset, 42);    // Relative offset of local header
+    centralHeader.writeUInt16LE(0, 30); // Extra field length
+    centralHeader.writeUInt16LE(0, 32); // File comment length
+    centralHeader.writeUInt16LE(0, 34); // Disk number start
+    centralHeader.writeUInt16LE(0, 36); // Internal file attributes
+    centralHeader.writeUInt32LE(0, 38); // External file attributes
+    centralHeader.writeUInt32LE(offset, 42); // Relative offset of local header
     fileNameBuf.copy(centralHeader, 46);
 
     centralHeaders.push(centralHeader);
@@ -67,14 +67,14 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
 
   // 3. End of Central Directory Record (22 bytes)
   const eocd = Buffer.alloc(22);
-  eocd.writeUInt32LE(0x06054b50, 0);               // EOCD signature
-  eocd.writeUInt16LE(0, 4);                        // Number of this disk
-  eocd.writeUInt16LE(0, 6);                        // Disk with start of central directory
-  eocd.writeUInt16LE(files.length, 8);             // Total entries on this disk
-  eocd.writeUInt16LE(files.length, 10);            // Total entries in central directory
-  eocd.writeUInt32LE(centralDirSize, 12);          // Size of central directory
-  eocd.writeUInt32LE(centralDirOffset, 16);        // Offset of central directory
-  eocd.writeUInt16LE(0, 20);                       // Comment length
+  eocd.writeUInt32LE(0x06054b50, 0); // EOCD signature
+  eocd.writeUInt16LE(0, 4); // Number of this disk
+  eocd.writeUInt16LE(0, 6); // Disk with start of central directory
+  eocd.writeUInt16LE(files.length, 8); // Total entries on this disk
+  eocd.writeUInt16LE(files.length, 10); // Total entries in central directory
+  eocd.writeUInt32LE(centralDirSize, 12); // Size of central directory
+  eocd.writeUInt32LE(centralDirOffset, 16); // Offset of central directory
+  eocd.writeUInt16LE(0, 20); // Comment length
 
   return Buffer.concat([...localHeaders, ...centralHeaders, eocd]);
 }
@@ -125,9 +125,7 @@ export function buildSampleEpub(metadata: EpubMetadata): Buffer {
     )
     .join('\n');
 
-  const spineItems = metadata.chapters
-    .map((_, i) => `    <itemref idref="chap_${i}"/>`)
-    .join('\n');
+  const spineItems = metadata.chapters.map((_, i) => `    <itemref idref="chap_${i}"/>`).join('\n');
 
   files.push({
     path: 'OEBPS/content.opf',

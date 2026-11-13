@@ -39,4 +39,3 @@ describe('DRM Crypto (AES-256-GCM)', () => {
     });
   });
 });
-

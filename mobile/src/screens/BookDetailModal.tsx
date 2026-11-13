@@ -69,7 +69,7 @@ export const BookDetailModal = ({ route, navigation }: { route: any; navigation:
         ],
       );
     } catch (err: any) {
-      if (err.code === 'already_owned') {
+      if (err.code === 'ALREADY_OWNED') {
         setIsOwned(true);
         Alert.alert('Notice', 'You already own this book in your library.');
       } else {

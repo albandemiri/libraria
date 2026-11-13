@@ -34,4 +34,3 @@ describe('Auth Tokens', () => {
     assert.equal(verifyAccessToken(''), null);
   });
 });
-

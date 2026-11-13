@@ -1,8 +1,9 @@
 import bcrypt from 'bcryptjs';
-import { Request, Response, Router } from 'express';
+import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
-import { signAccessToken, UserRole } from '../auth/tokens';
+import { signAccessToken, type UserRole } from '../auth/tokens';
 import { env } from '../config/env';
+import { isPgError, PG_UNIQUE_VIOLATION } from '../db/errors';
 import { pool } from '../db/pool';
 import { authContext } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
@@ -62,8 +63,6 @@ function publicUser(row: UserRow) {
  */
 const DUMMY_HASH = bcrypt.hashSync('unused-placeholder-password', env.BCRYPT_ROUNDS);
 
-const UNIQUE_VIOLATION = '23505';
-
 authRouter.post('/register', async (req: Request, res: Response) => {
   const { email, password, displayName } = registerSchema.parse(req.body);
 
@@ -89,12 +88,8 @@ authRouter.post('/register', async (req: Request, res: Response) => {
       }),
     });
   } catch (error) {
-    if (
-      typeof error === 'object' &&
-      error !== null &&
-      (error as { code?: string }).code === UNIQUE_VIOLATION
-    ) {
-      throw new AppError(409, 'An account with that email already exists', 'email_taken');
+    if (isPgError(error, PG_UNIQUE_VIOLATION)) {
+      throw new AppError(409, 'An account with that email already exists', 'EMAIL_TAKEN');
     }
     throw error;
   }
@@ -116,7 +111,7 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   // One message for both failure modes, so the response cannot be used to
   // enumerate registered emails.
   if (!user || !matches) {
-    throw new AppError(401, 'Invalid email or password', 'invalid_credentials');
+    throw new AppError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
   }
 
   res.json({
@@ -142,7 +137,7 @@ authRouter.get('/me', requireAuth, async (req: Request, res: Response) => {
   const user = result.rows[0];
   // The token verified, but the account has since been deleted.
   if (!user) {
-    throw new AppError(401, 'Account no longer exists', 'unauthenticated');
+    throw new AppError(401, 'Account no longer exists', 'UNAUTHENTICATED');
   }
 
   res.json({ user: publicUser(user) });
