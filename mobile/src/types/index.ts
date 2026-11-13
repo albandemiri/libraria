@@ -25,6 +25,8 @@ export interface Book {
     id: string;
     name: string;
   };
+  /** False when the book is listed but cannot be bought right now. */
+  forSale: boolean;
 }
 
 export interface ReadingProgress {
@@ -73,20 +75,44 @@ export interface Highlight {
   createdAt: string;
 }
 
+export type TransactionStatus =
+  | 'pending'
+  | 'paid'
+  | 'failed'
+  | 'cancelled'
+  | 'expired'
+  | 'refunded'
+  | 'partially_refunded'
+  | 'disputed';
+
 export interface TransactionReceipt {
   id: string;
-  status: 'pending' | 'completed' | 'failed' | 'refunded';
-  amount: {
+  status: TransactionStatus;
+  provider: string;
+  total: {
     amountCents: number;
     currency: string;
   };
-  paymentGatewayRef: string | null;
+  /** Set only while the transaction is pending. */
+  checkoutUrl: string | null;
   createdAt: string;
-  book: {
-    id: string;
-    title: string;
-    author: string;
-    coverImageUrl: string | null;
-  };
+  paidAt: string | null;
+  items: Array<{
+    book: {
+      id: string;
+      title: string;
+      author: string;
+      coverImageUrl: string | null;
+      publisher: { id: string; name: string };
+    };
+    unitPriceCents: number;
+    refundedCents: number;
+    refunded: boolean;
+  }>;
+}
+
+export interface CheckoutSessionResponse {
+  transaction: TransactionReceipt;
+  checkout: { provider: 'paddle' | 'simulated'; url: string | null };
 }
 

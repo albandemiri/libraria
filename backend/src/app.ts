@@ -1,14 +1,18 @@
 import path from 'node:path';
 import express, { type Request, type Response, Router } from 'express';
+import { env } from './config/env';
 import { pool } from './db/pool';
 import { logger } from './lib/logger';
 import { errorHandler, notFoundHandler } from './middleware/errors';
 import { requestContext } from './middleware/request-context';
+import { adminRouter } from './routes/admin';
 import { authRouter } from './routes/auth';
 import { booksRouter } from './routes/books';
 import { libraryRouter } from './routes/library';
 import { publisherRouter } from './routes/publisher';
-import { transactionsRouter } from './routes/transactions';
+import { sandboxRouter } from './routes/sandbox';
+import { checkoutRouter, transactionsRouter } from './routes/transactions';
+import { webhooksRouter } from './routes/webhooks';
 
 export const API_PREFIX = '/api/v1';
 
@@ -18,6 +22,10 @@ app.disable('x-powered-by');
 
 // First, so every later log line and error body can carry the request ID.
 app.use(requestContext);
+
+// Before express.json(): webhook signatures cover the raw request bytes.
+app.use(`${API_PREFIX}/webhooks`, webhooksRouter);
+
 app.use(express.json({ limit: '1mb' }));
 
 // TODO(phase 3, spec 8.3/17.2): ciphertext is still served from a public
@@ -40,8 +48,15 @@ const v1 = Router();
 v1.use('/auth', authRouter);
 v1.use('/books', booksRouter);
 v1.use('/library', libraryRouter);
+v1.use('/checkout-sessions', checkoutRouter);
 v1.use('/transactions', transactionsRouter);
 v1.use('/publisher', publisherRouter);
+v1.use('/admin', adminRouter);
+
+// Development only: lets the app and tests play the payment provider's part.
+if (env.PAYMENTS_MODE === 'simulated') {
+  v1.use('/sandbox', sandboxRouter);
+}
 
 app.use(API_PREFIX, v1);
 

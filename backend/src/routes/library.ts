@@ -2,6 +2,7 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { env } from '../config/env';
 import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../db/errors';
+import { requireEntitlement } from '../commerce/entitlements';
 import { pool } from '../db/pool';
 import { authContext, requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
@@ -201,6 +202,8 @@ libraryRouter.get('/', async (req: Request, res: Response) => {
             p.name AS publisher_name,
             COUNT(*) OVER() AS total_count
        FROM user_libraries ul
+       JOIN entitlements e
+         ON e.user_id = ul.user_id AND e.book_id = ul.book_id AND e.status = 'active'
        JOIN books b ON b.id = ul.book_id
        JOIN publishers p ON p.id = b.publisher_id
       WHERE ul.user_id = $1
@@ -248,6 +251,8 @@ libraryRouter.get('/:bookId', async (req: Request, res: Response) => {
             (SELECT COUNT(*)::text FROM bookmarks bm WHERE bm.user_id = ul.user_id AND bm.book_id = ul.book_id) AS bookmarks_count,
             (SELECT COUNT(*)::text FROM highlights hl WHERE hl.user_id = ul.user_id AND hl.book_id = ul.book_id) AS highlights_count
        FROM user_libraries ul
+       JOIN entitlements e
+         ON e.user_id = ul.user_id AND e.book_id = ul.book_id AND e.status = 'active'
        JOIN books b ON b.id = ul.book_id
        JOIN publishers p ON p.id = b.publisher_id
       WHERE ul.user_id = $1 AND ul.book_id = $2`,
@@ -269,6 +274,7 @@ libraryRouter.put('/:bookId/progress', async (req: Request, res: Response) => {
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
   const { progress, lastReadAt } = updateProgressSchema.parse(req.body);
+  await requireEntitlement(userId, bookId);
 
   const timestamp = lastReadAt ?? new Date();
 
@@ -303,18 +309,7 @@ libraryRouter.get('/:bookId/asset', async (req: Request, res: Response) => {
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
 
-  // Check ownership first
-  const ownership = await pool.query<{ exists: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM user_libraries
-        WHERE user_id = $1 AND book_id = $2
-     ) AS exists`,
-    [userId, bookId],
-  );
-
-  if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
-  }
+  await requireEntitlement(userId, bookId);
 
   const assetResult = await pool.query<AssetRow>(
     `SELECT encrypted_file_url,
@@ -349,17 +344,7 @@ libraryRouter.get('/:bookId/key', async (req: Request, res: Response) => {
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
 
-  const ownership = await pool.query<{ exists: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM user_libraries
-        WHERE user_id = $1 AND book_id = $2
-     ) AS exists`,
-    [userId, bookId],
-  );
-
-  if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
-  }
+  await requireEntitlement(userId, bookId);
 
   const keyBuffer = deriveBookKey(bookId, env.JWT_SECRET);
 
@@ -381,18 +366,7 @@ libraryRouter.get('/:bookId/bookmarks', async (req: Request, res: Response) => {
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
 
-  // Verify ownership
-  const ownership = await pool.query<{ exists: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM user_libraries
-        WHERE user_id = $1 AND book_id = $2
-     ) AS exists`,
-    [userId, bookId],
-  );
-
-  if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
-  }
+  await requireEntitlement(userId, bookId);
 
   const result = await pool.query<BookmarkRow>(
     `SELECT id, book_id, location, label, created_at
@@ -414,6 +388,7 @@ libraryRouter.post('/:bookId/bookmarks', async (req: Request, res: Response) => 
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
   const { location, label } = createBookmarkSchema.parse(req.body);
+  await requireEntitlement(userId, bookId);
 
   try {
     const result = await pool.query<BookmarkRow>(
@@ -466,18 +441,7 @@ libraryRouter.get('/:bookId/highlights', async (req: Request, res: Response) => 
   const { userId } = authContext(req);
   const { bookId } = bookIdParamSchema.parse(req.params);
 
-  // Verify ownership
-  const ownership = await pool.query<{ exists: boolean }>(
-    `SELECT EXISTS (
-       SELECT 1 FROM user_libraries
-        WHERE user_id = $1 AND book_id = $2
-     ) AS exists`,
-    [userId, bookId],
-  );
-
-  if (!ownership.rows[0]?.exists) {
-    throw new AppError(404, 'Book not found in user library', 'NOT_FOUND');
-  }
+  await requireEntitlement(userId, bookId);
 
   const result = await pool.query<HighlightRow>(
     `SELECT id, book_id, start_location, end_location, highlighted_text, note, color, created_at, updated_at
@@ -501,6 +465,7 @@ libraryRouter.post('/:bookId/highlights', async (req: Request, res: Response) =>
   const { startLocation, endLocation, highlightedText, note, color } = createHighlightSchema.parse(
     req.body,
   );
+  await requireEntitlement(userId, bookId);
 
   try {
     const result = await pool.query<HighlightRow>(
@@ -526,6 +491,7 @@ libraryRouter.patch('/:bookId/highlights/:highlightId', async (req: Request, res
   const { userId } = authContext(req);
   const { bookId, highlightId } = highlightIdParamSchema.parse(req.params);
   const { note, color } = updateHighlightSchema.parse(req.body);
+  await requireEntitlement(userId, bookId);
 
   if (note === undefined && color === undefined) {
     throw new AppError(

@@ -29,19 +29,29 @@ describe('Transactions Validation Schemas', () => {
   });
 
   describe('checkoutSchema', () => {
-    it('accepts valid bookId and optional parameters', () => {
+    it('accepts one or more book ids and an optional idempotency key', () => {
       const parsed = checkoutSchema.parse({
-        bookId: validUuid,
-        paymentMethodToken: 'pm_card_visa_123',
+        bookIds: [validUuid],
         idempotencyKey: 'client-key-456',
       });
-      assert.equal(parsed.bookId, validUuid);
-      assert.equal(parsed.paymentMethodToken, 'pm_card_visa_123');
+      assert.deepEqual(parsed.bookIds, [validUuid]);
       assert.equal(parsed.idempotencyKey, 'client-key-456');
     });
 
-    it('rejects invalid bookId', () => {
-      assert.throws(() => checkoutSchema.parse({ bookId: 'invalid-uuid' }));
+    it('rejects an empty cart, invalid ids and oversized carts', () => {
+      assert.throws(() => checkoutSchema.parse({ bookIds: [] }));
+      assert.throws(() => checkoutSchema.parse({ bookIds: ['invalid-uuid'] }));
+      assert.throws(() => checkoutSchema.parse({ bookIds: Array(21).fill(validUuid) }));
+    });
+
+    it('ignores client-supplied prices and payment state', () => {
+      const parsed = checkoutSchema.parse({
+        bookIds: [validUuid],
+        amountCents: 1,
+        status: 'paid',
+      }) as Record<string, unknown>;
+      assert.equal(parsed.amountCents, undefined);
+      assert.equal(parsed.status, undefined);
     });
   });
 

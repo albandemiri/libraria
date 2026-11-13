@@ -1,5 +1,7 @@
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
+import { listRates } from '../commerce/rates';
+import { SUPPORTED_CURRENCIES } from '../commerce/service';
 import { pool } from '../db/pool';
 import { authContext, requireAuth, requireRole } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
@@ -46,7 +48,8 @@ export const createBookSchema = z
       .length(2, 'Language must be a 2-letter ISO 639-1 code')
       .default('en'),
     priceCents: z.coerce.number().int().min(0, 'Price cannot be negative'),
-    currency: z.string().trim().length(3).default('USD'),
+    // EUR only at launch (see SUPPORTED_CURRENCIES).
+    currency: z.enum(SUPPORTED_CURRENCIES).default('EUR'),
     coverImageUrl: z.string().trim().url('Not a valid URL').nullable().optional(),
     mediaType: z.enum(['ebook', 'audiobook']).default('ebook'),
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
@@ -71,7 +74,7 @@ export const updateBookSchema = z
     genre: z.string().trim().min(1).max(100).optional(),
     language: z.string().trim().length(2).optional(),
     priceCents: z.coerce.number().int().min(0).optional(),
-    currency: z.string().trim().length(3).optional(),
+    currency: z.enum(SUPPORTED_CURRENCIES).optional(),
     coverImageUrl: z.string().trim().url().nullable().optional(),
     mediaType: z.enum(['ebook', 'audiobook']).optional(),
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
@@ -109,6 +112,8 @@ interface PublisherBookRow {
   has_encryption_keys: boolean;
   sales_count: number;
   total_revenue_cents: number;
+  /** Publisher's share after refund reversals; absent on write responses. */
+  earnings_cents?: string;
   created_at: Date;
   updated_at: Date;
   total_count?: string;
@@ -173,6 +178,7 @@ function formatPublisherBook(row: PublisherBookRow) {
     metrics: {
       salesCount: Number(row.sales_count ?? 0),
       totalRevenueCents: Number(row.total_revenue_cents ?? 0),
+      earningsCents: Number(row.earnings_cents ?? 0),
     },
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -211,16 +217,13 @@ publisherRouter.get('/books', async (req: Request, res: Response) => {
             b.updated_at,
             COALESCE(s.sales_count, 0) AS sales_count,
             COALESCE(s.total_revenue, 0) AS total_revenue_cents,
+            COALESCE(s.earnings, 0)::bigint AS earnings_cents,
             COUNT(*) OVER() AS total_count
        FROM books b
-       LEFT JOIN (
-         SELECT book_id,
-                COUNT(*)::int AS sales_count,
-                SUM(amount_cents)::int AS total_revenue
-           FROM transactions
-          WHERE status = 'completed'
-          GROUP BY book_id
-       ) s ON s.book_id = b.id
+       LEFT JOIN (SELECT book_id, sales_count, gross_revenue_cents AS total_revenue,
+                         publisher_earnings_cents AS earnings,
+                         platform_commission_cents AS commission
+                    FROM book_sales) s ON s.book_id = b.id
       WHERE ($1::uuid IS NULL OR b.publisher_id = $1)
         AND (
           $2::text = 'all'
@@ -267,21 +270,21 @@ publisherRouter.get('/stats', async (req: Request, res: Response) => {
     draft_titles: string;
     total_copies_sold: string;
     total_revenue_cents: string;
+    total_earnings_cents: string;
+    total_platform_commission_cents: string;
   }>(
     `SELECT COUNT(b.id)::int AS total_titles,
             COUNT(b.id) FILTER (WHERE b.is_available)::int AS published_titles,
             COUNT(b.id) FILTER (WHERE NOT b.is_available)::int AS draft_titles,
-            COALESCE(SUM(s.sales_count), 0)::int AS total_copies_sold,
-            COALESCE(SUM(s.total_revenue), 0)::int AS total_revenue_cents
+            COALESCE(SUM(s.sales_count), 0)::bigint AS total_copies_sold,
+            COALESCE(SUM(s.total_revenue), 0)::bigint AS total_revenue_cents,
+            COALESCE(SUM(s.earnings), 0)::bigint AS total_earnings_cents,
+            COALESCE(SUM(s.commission), 0)::bigint AS total_platform_commission_cents
        FROM books b
-       LEFT JOIN (
-         SELECT book_id,
-                COUNT(*)::int AS sales_count,
-                SUM(amount_cents)::int AS total_revenue
-           FROM transactions
-          WHERE status = 'completed'
-          GROUP BY book_id
-       ) s ON s.book_id = b.id
+       LEFT JOIN (SELECT book_id, sales_count, gross_revenue_cents AS total_revenue,
+                         publisher_earnings_cents AS earnings,
+                         platform_commission_cents AS commission
+                    FROM book_sales) s ON s.book_id = b.id
       WHERE b.publisher_id = $1`,
     [publisherId],
   );
@@ -296,7 +299,31 @@ publisherRouter.get('/stats', async (req: Request, res: Response) => {
       draftTitles: Number(row?.draft_titles ?? 0),
       totalCopiesSold: Number(row?.total_copies_sold ?? 0),
       totalRevenueCents: Number(row?.total_revenue_cents ?? 0),
+      // Publisher's and Libraria's shares of net, after refund reversals.
+      totalEarningsCents: Number(row?.total_earnings_cents ?? 0),
+      totalPlatformCommissionCents: Number(row?.total_platform_commission_cents ?? 0),
     },
+  });
+});
+
+/**
+ * The publisher's commission contract: the rate in force and its history.
+ * Read-only; rates are set by Libraria admins.
+ */
+publisherRouter.get('/contract', async (req: Request, res: Response) => {
+  const publisherId = resolvePublisherScope(
+    req,
+    publisherScopeQuerySchema.parse(req.query).publisherId,
+  );
+  // Only reachable for admins naming a publisher; staff are always linked.
+  const { rowCount } = await pool.query('SELECT 1 FROM publishers WHERE id = $1', [publisherId]);
+  if (rowCount === 0) throw new AppError(404, 'Publisher not found', 'NOT_FOUND');
+
+  const history = await listRates(publisherId);
+  res.json({
+    publisherId,
+    current: history.find((rate) => rate.inForce) ?? null,
+    history,
   });
 });
 
@@ -375,16 +402,13 @@ publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
             b.created_at,
             b.updated_at,
             COALESCE(s.sales_count, 0) AS sales_count,
-            COALESCE(s.total_revenue, 0) AS total_revenue_cents
+            COALESCE(s.total_revenue, 0) AS total_revenue_cents,
+            COALESCE(s.earnings, 0)::bigint AS earnings_cents
        FROM books b
-       LEFT JOIN (
-         SELECT book_id,
-                COUNT(*)::int AS sales_count,
-                SUM(amount_cents)::int AS total_revenue
-           FROM transactions
-          WHERE status = 'completed'
-          GROUP BY book_id
-       ) s ON s.book_id = b.id
+       LEFT JOIN (SELECT book_id, sales_count, gross_revenue_cents AS total_revenue,
+                         publisher_earnings_cents AS earnings,
+                         platform_commission_cents AS commission
+                    FROM book_sales) s ON s.book_id = b.id
       WHERE b.id = $1
         AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
     [id, tenantFilter(req)],

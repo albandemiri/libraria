@@ -40,8 +40,12 @@ services:
       # NODE_ENV=production, so a real secret must be supplied there.
       JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      # Simulated checkout: grants books without payment. Refused in production.
+      # simulated: payments confirmed by signed sandbox webhooks (dev only).
+      # paddle: real Paddle checkout; needs the PADDLE_* values below.
       PAYMENTS_MODE: ${PAYMENTS_MODE:-simulated}
+      PADDLE_ENVIRONMENT: ${PADDLE_ENVIRONMENT:-sandbox}
+      PADDLE_API_KEY: ${PADDLE_API_KEY:-}
+      PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
       LOG_LEVEL: ${LOG_LEVEL:-info}
     # Installs deps if the lockfile changed, migrates, then starts tsx watch.
     command: ["sh", "docker/dev-entrypoint.sh"]
