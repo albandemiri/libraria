@@ -197,6 +197,64 @@ transaction or anything the app says.
   - `GET /api/v1/publisher/stats` reports `totalEarningsCents` and
     `totalPlatformCommissionCents` next to gross revenue; each book's
     `metrics.earningsCents` on `/publisher/books` is its publisher share.
+  - `GET /api/v1/publisher/reports/{summary,by-book,by-country,sales}` and
+    `sales.csv` feed the publisher portal (see **Portal** below). Admins pass
+    `publisherId`; publishers are always scoped to their own house.
+  - `POST /api/v1/auth/portal/login` and `/portal/logout` set and clear the
+    portal's session cookie. A cookie-authenticated write must send
+    `X-Libraria-Portal: 1`, otherwise `403 CSRF_CHECK_FAILED`. Mobile Bearer
+    requests are unaffected.
+
+## Portal
+
+The publisher portal (`portal/`) is a React single-page app: sales and
+earnings reports, the book catalogue and the publisher's contract. It is in
+Albanian and English; **the Albanian text needs a native-speaker review before
+launch.**
+
+```sh
+cd portal
+npm ci
+npm run dev
+```
+
+The API must be running on `:3000`. The dev server proxies `/api` to it, so
+the portal and API share an origin and `CORS_ORIGINS` stays empty in dev.
+
+- **Login** uses an HttpOnly cookie (`libraria_portal`, `SameSite=Lax`,
+  `Path=/api`, `Secure` in production) set by `POST /api/v1/auth/portal/login`.
+  Only publisher and admin accounts may sign in. **In production the portal
+  and the API must be served from the same site** (for example
+  `portal.example.com` and `api.example.com`, or one host with `/api`
+  proxied), because the cookie is `SameSite=Lax`.
+- Settings (`backend/.env.example`): `CORS_ORIGINS` is a comma-separated list
+  of portal origins allowed to call the API with credentials (empty by
+  default); `PORTAL_SESSION_HOURS` (12) is the lifetime of a session login;
+  `PORTAL_REMEMBER_DAYS` (30) is the lifetime with "Remember me".
+- **Reporting rules.** A sale is an item whose transaction is `paid`,
+  `partially_refunded`, `disputed` or `refunded`. Periods use
+  `transactions.paid_at` in **UTC** (`from` inclusive, `to` exclusive, weeks
+  start on Monday). A refund counts in the period of the sale it refunds, not
+  the refund date. VAT and payment fees are shown **as at the time of sale**.
+  Commission is shown as at sale only in the Earnings by-month, by-book and
+  by-country tables, where refund reversals appear on their own line; the
+  Sales lines and the CSV show commission and earnings **after refund
+  reversals**. A line's status is the item's own: `refunded`, else
+  `partially_refunded`, else `disputed`, else `paid`. Sales whose provider fee
+  is not yet known show "Fee pending" and are not counted in earnings until
+  split.
+- **CSV export.** The Sales page exports the current filters from
+  `GET /api/v1/publisher/reports/sales.csv`, in the portal's language.
+  Cells starting with `=`, `+`, `-` or `@` are neutralised so spreadsheets
+  do not run them.
+- **Pointing a built portal at the API.** In dev the Vite proxy forwards
+  `/api` to the backend, so the default API base is `/api/v1`. For a
+  production build served from a different origin, set `VITE_API_BASE` at
+  build time (for example `VITE_API_BASE=https://api.example.com/api/v1
+  npm run build`) and add the portal's origin to `CORS_ORIGINS`.
+- The portal never computes money; it formats figures supplied by the API.
+- Publishing a book needs an uploaded file; file upload in the portal is not
+  built yet, so Publish answers "coming soon" for books without one.
 
 ## Mobile
 

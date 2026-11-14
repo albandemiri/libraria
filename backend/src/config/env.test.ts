@@ -59,4 +59,18 @@ describe('parseEnv: payments', () => {
     assert.equal(env.PAYMENTS_MODE, 'simulated');
     assert.equal(env.PADDLE_API_KEY, undefined);
   });
+
+  it('splits CORS_ORIGINS into a trimmed list', () => {
+    assert.deepEqual(
+      parseEnv({ CORS_ORIGINS: 'https://a.example, https://b.example' }).CORS_ORIGINS,
+      ['https://a.example', 'https://b.example'],
+    );
+    assert.deepEqual(parseEnv({}).CORS_ORIGINS, []);
+  });
+
+  it('defaults portal session lifetimes', () => {
+    const env = parseEnv({});
+    assert.equal(env.PORTAL_SESSION_HOURS, 12);
+    assert.equal(env.PORTAL_REMEMBER_DAYS, 30);
+  });
 });

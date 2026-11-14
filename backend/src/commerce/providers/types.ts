@@ -62,7 +62,13 @@ interface EventBase {
 
 export type ProviderEvent = EventBase &
   (
-    | { kind: 'payment_succeeded'; totals: ProviderTotals; lineItems: ProviderLineItem[] }
+    | {
+        kind: 'payment_succeeded';
+        totals: ProviderTotals;
+        lineItems: ProviderLineItem[];
+        /** Buyer's billing country (ISO alpha-2); null when the provider did not report it. */
+        countryCode: string | null;
+      }
     | { kind: 'payment_failed' }
     | { kind: 'checkout_cancelled' }
     | { kind: 'refund'; adjustmentId: string; lines: RefundLine[] }
@@ -83,6 +89,9 @@ export interface PaymentProvider {
    * event for authentic events Libraria does not act on.
    */
   parseWebhook(rawBody: Buffer, header: (name: string) => string | undefined): ProviderEvent;
+
+  /** Fetches the buyer's country for a transaction when the webhook lacked it. Never throws. */
+  lookupCountry?(providerTransactionId: string): Promise<string | null>;
 }
 
 /** The provider could not be reached or rejected the request. */

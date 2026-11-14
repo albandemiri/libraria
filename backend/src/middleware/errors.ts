@@ -22,6 +22,8 @@ export const errorCodes = [
   // Identity
   'EMAIL_TAKEN',
   'INVALID_CREDENTIALS',
+  'PORTAL_ACCESS_DENIED',
+  'CSRF_CHECK_FAILED',
   // Commerce
   'ALREADY_OWNED',
   'PAYMENTS_UNAVAILABLE',
@@ -40,6 +42,8 @@ export const errorCodes = [
   'PUBLISHER_ID_REQUIRED',
   'PUBLISHER_NOT_LINKED',
   'ASSET_REQUIRED',
+  // Reports
+  'EXPORT_TOO_LARGE',
 ] as const;
 
 export type ErrorCode = (typeof errorCodes)[number];

@@ -33,6 +33,7 @@ const cents = z.number().int();
 const eventSchema = z.discriminatedUnion('kind', [
   z.object({
     kind: z.literal('payment_succeeded'),
+    countryCode: z.string().nullable().optional(),
     totals: z.object({
       currency: z.string().length(3),
       subtotalCents: cents,
@@ -115,6 +116,9 @@ export class SimulatedProvider implements PaymentProvider {
     }
 
     const { event, ...base } = parsed.data;
+    if (event.kind === 'payment_succeeded') {
+      return { ...base, ...event, countryCode: event.countryCode ?? null };
+    }
     return { ...base, ...event };
   }
 }

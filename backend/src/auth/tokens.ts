@@ -22,9 +22,12 @@ const claimsSchema = z.object({
   publisherId: z.string().uuid().nullable().default(null),
 });
 
-export function signAccessToken(context: AuthContext): string {
+export function signAccessToken(
+  context: AuthContext,
+  expiresIn: string = env.JWT_EXPIRES_IN,
+): string {
   const options: SignOptions = {
-    expiresIn: env.JWT_EXPIRES_IN as SignOptions['expiresIn'],
+    expiresIn: expiresIn as SignOptions['expiresIn'],
   };
 
   return jwt.sign(

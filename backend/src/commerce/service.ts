@@ -4,6 +4,7 @@ import { isPgError, PG_UNIQUE_VIOLATION } from '../db/errors';
 import { pool, withTransaction } from '../db/pool';
 import { logger } from '../lib/logger';
 import { AppError } from '../middleware/errors';
+import { normalizeCountry } from './country';
 import { reverseShares, splitEarnings } from './commission';
 import { allocate } from './money';
 import { rateInForceSql } from './rates';
@@ -251,6 +252,17 @@ export async function processWebhook(
 ): Promise<WebhookResult> {
   // Throws WebhookVerificationError before anything is written.
   const event = provider.parseWebhook(rawBody, header);
+
+  // The webhook may lack the buyer's country; ask the provider before opening
+  // the database transaction so no connection is held during the HTTP call.
+  if (
+    event.kind === 'payment_succeeded' &&
+    event.countryCode === null &&
+    event.providerTransactionId &&
+    provider.lookupCountry
+  ) {
+    event.countryCode = await provider.lookupCountry(event.providerTransactionId);
+  }
   const digest = createHash('sha256').update(rawBody).digest('hex');
 
   return withTransaction(async (client) => {
@@ -479,7 +491,8 @@ async function applyPayment(
     `UPDATE transactions
         SET status = 'paid', paid_at = COALESCE($2, CURRENT_TIMESTAMP),
             subtotal_cents = $3, tax_cents = $4, provider_fee_cents = $5, earnings_cents = $6,
-            provider_transaction_id = COALESCE(provider_transaction_id, $7)
+            provider_transaction_id = COALESCE(provider_transaction_id, $7),
+            customer_country = $8
       WHERE id = $1`,
     [
       txn.id,
@@ -489,6 +502,7 @@ async function applyPayment(
       totals.feeCents,
       totals.earningsCents,
       event.providerTransactionId,
+      normalizeCountry(event.countryCode),
     ],
   );
 

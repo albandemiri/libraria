@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { z } from 'zod';
+import { normalizeCountry } from '../country';
 import { parseMinorUnits } from '../money';
 import { verifyWebhookSignature } from '../signature';
 import {
@@ -86,6 +87,8 @@ const transactionDataSchema = z.object({
 });
 
 const completedDataSchema = transactionDataSchema.extend({
+  // VERIFY: billing country path on the completed transaction.
+  address: z.object({ country_code: z.unknown() }).passthrough().nullable().optional(),
   details: z.object({
     totals: z.object({
       subtotal: amount,
@@ -222,6 +225,24 @@ export class PaddleProvider implements PaymentProvider {
     };
   }
 
+  async lookupCountry(providerTransactionId: string): Promise<string | null> {
+    try {
+      const response = await this.fetchImpl(
+        `${API_BASE[this.config.environment]}/transactions/${encodeURIComponent(providerTransactionId)}?include=address`,
+        {
+          headers: { Authorization: `Bearer ${this.config.apiKey}` },
+          signal: AbortSignal.timeout(3_000),
+        },
+      );
+      if (!response.ok) return null;
+      const json = (await response.json()) as { data?: { address?: { country_code?: unknown } } };
+      // VERIFY: address path on the get-transaction response.
+      return normalizeCountry(json?.data?.address?.country_code);
+    } catch {
+      return null;
+    }
+  }
+
   parseWebhook(rawBody: Buffer, header: (name: string) => string | undefined): ProviderEvent {
     verifyWebhookSignature(header(PADDLE_SIGNATURE_HEADER), rawBody, this.config.webhookSecret, {
       toleranceSeconds: this.config.toleranceSeconds,
@@ -283,6 +304,7 @@ function mapEvent(
           earningsCents: totals.earnings ?? null,
         },
         lineItems,
+        countryCode: normalizeCountry(txn.address?.country_code),
       };
     }
 

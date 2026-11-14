@@ -144,6 +144,34 @@ describe('PaddleProvider.parseWebhook', () => {
     ]);
   });
 
+  it('maps the billing country, or null without an address', () => {
+    const completed = (extra: object) =>
+      deliver(
+        envelope('transaction.completed', {
+          id: 'txn_01paddle',
+          ...extra,
+          details: {
+            totals: { subtotal: '416', tax: '83', total: '499', currency_code: 'EUR' },
+            line_items: [],
+          },
+        }),
+      );
+    const withAddress = completed({ address: { country_code: 'AL' } });
+    const without = completed({});
+    assert.equal(withAddress.kind, 'payment_succeeded');
+    assert.equal(without.kind, 'payment_succeeded');
+    if (withAddress.kind !== 'payment_succeeded' || without.kind !== 'payment_succeeded') return;
+    assert.equal(withAddress.countryCode, 'AL');
+    assert.equal(without.countryCode, null);
+
+    // A malformed country must never drop the payment event.
+    for (const bad of [42, { code: 'AL' }, ['AL']]) {
+      const odd = completed({ address: { country_code: bad } });
+      assert.equal(odd.kind, 'payment_succeeded');
+      if (odd.kind === 'payment_succeeded') assert.equal(odd.countryCode, null);
+    }
+  });
+
   it('does not fulfil on transaction.paid (fulfilment keys off completed)', () => {
     const event = deliver(envelope('transaction.paid', { id: 'txn_01paddle' }));
     assert.equal(event.kind, 'ignored');
@@ -212,5 +240,33 @@ describe('PaddleProvider.parseWebhook', () => {
     const data = { id: 'txn_01paddle', custom_data: { libraria_transaction_id: TXN_ID } };
     assert.equal(deliver(envelope('transaction.payment_failed', data)).kind, 'payment_failed');
     assert.equal(deliver(envelope('transaction.canceled', data)).kind, 'checkout_cancelled');
+  });
+});
+
+describe('PaddleProvider.lookupCountry', () => {
+  it('fetches the transaction with its address and returns the country', async () => {
+    let seen: { url: string; auth: string | null } | undefined;
+    const fetchImpl = (async (url: string, init?: RequestInit) => {
+      seen = { url, auth: new Headers(init?.headers).get('Authorization') };
+      return new Response(JSON.stringify({ data: { address: { country_code: 'XK' } } }), {
+        status: 200,
+      });
+    }) as unknown as typeof fetch;
+
+    assert.equal(await provider(fetchImpl).lookupCountry('txn_1'), 'XK');
+    assert.equal(seen?.url, 'https://sandbox-api.paddle.com/transactions/txn_1?include=address');
+    assert.equal(seen?.auth, 'Bearer pdl_sdbx_apikey_test');
+  });
+
+  it('returns null on an HTTP error', async () => {
+    const fetchImpl = (async () => new Response('{}', { status: 500 })) as unknown as typeof fetch;
+    assert.equal(await provider(fetchImpl).lookupCountry('txn_1'), null);
+  });
+
+  it('returns null on a network error', async () => {
+    const fetchImpl = (async () => {
+      throw new TypeError('fetch failed');
+    }) as unknown as typeof fetch;
+    assert.equal(await provider(fetchImpl).lookupCountry('txn_1'), null);
   });
 });
