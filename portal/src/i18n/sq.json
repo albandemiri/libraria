@@ -1,0 +1,199 @@
+{
+  "app": {
+    "name": "Libraria",
+    "tagline": "Portali i botuesve"
+  },
+  "common": {
+    "unknown": "E panjohur",
+    "loading": "Po ngarkohet…",
+    "error": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+    "retry": "Provo përsëri",
+    "none": "—",
+    "empty": "Nuk ka të dhëna për këtë periudhë.",
+    "previous": "Mëparshmja",
+    "next": "Tjetra",
+    "book": "Libri",
+    "country": "Shteti",
+    "copies": "Kopje",
+    "pickPublisher": "Zgjidhni një botues më sipër për të parë të dhënat e tij."
+  },
+  "language": {
+    "label": "Gjuha",
+    "sq": "Shqip",
+    "en": "English"
+  },
+  "login": {
+    "title": "Hyni në portalin tuaj të botuesit",
+    "email": "Email",
+    "password": "Fjalëkalimi",
+    "remember": "Më mbaj mend",
+    "submit": "Hyr",
+    "submitting": "Po hyni…",
+    "sessionExpired": "Sesioni juaj ka skaduar. Ju lutemi hyni përsëri.",
+    "errors": {
+      "INVALID_CREDENTIALS": "Email-i ose fjalëkalimi është i pasaktë.",
+      "PORTAL_ACCESS_DENIED": "Ky portal është për partnerët botues. Lexuesit mund të përdorin aplikacionin Libraria.",
+      "generic": "Nuk mundëm t'ju identifikojmë. Ju lutemi provoni përsëri."
+    }
+  },
+  "nav": {
+    "label": "Navigimi kryesor",
+    "groups": {
+      "money": "Paratë",
+      "catalogue": "Katalogu",
+      "account": "Llogaria"
+    },
+    "overview": "Përmbledhje",
+    "sales": "Shitjet",
+    "earnings": "Të ardhurat",
+    "books": "Librat",
+    "newBook": "Libër i ri",
+    "contract": "Kontrata"
+  },
+  "topbar": {
+    "publisher": "Botuesi",
+    "pickPublisher": "Zgjidhni një botues",
+    "logout": "Dil"
+  },
+  "pages": {
+    "overview": "Përmbledhje",
+    "sales": "Shitjet",
+    "earnings": "Të ardhurat",
+    "books": "Librat",
+    "newBook": "Libër i ri",
+    "contract": "Kontrata"
+  },
+  "period": {
+    "label": "Periudha",
+    "this_month": "Ky muaj",
+    "last_month": "Muaji i kaluar",
+    "last_90_days": "90 ditët e fundit",
+    "this_year": "Ky vit",
+    "custom": "E personalizuar",
+    "from": "Nga",
+    "to": "Deri (pa përfshirë)"
+  },
+  "status": {
+    "label": "Statusi",
+    "all": "Të gjitha statuset",
+    "paid": "Paguar",
+    "partially_refunded": "Rimbursuar pjesërisht",
+    "refunded": "Rimbursuar",
+    "disputed": "Në kontestim"
+  },
+  "metrics": {
+    "gross": "Shitjet bruto",
+    "refunds": "Rimbursimet",
+    "vat": "TVSH",
+    "fees": "Tarifat e pagesës",
+    "commission": "Komisioni",
+    "earnings": "Të ardhurat",
+    "copies": "Kopje"
+  },
+  "overview": {
+    "vsPrevious": "kundrejt periudhës së kaluar",
+    "chartTitle": "Shitjet bruto me kalimin e kohës",
+    "chartLabel": "Grafik i shitjeve bruto me kalimin e kohës",
+    "topBooks": "5 librat kryesorë"
+  },
+  "sales": {
+    "allBooks": "Të gjithë librat",
+    "allCountries": "Të gjitha shtetet",
+    "unknownCountry": "E panjohur",
+    "date": "Data",
+    "price": "Çmimi",
+    "vat": "TVSH",
+    "fee": "Tarifa",
+    "commissionPct": "Komisioni %",
+    "commission": "Komisioni",
+    "earnings": "Të ardhurat",
+    "refunded": "Rimbursuar",
+    "feePending": "Tarifa në pritje",
+    "notSplit": "Pa ndarje (shitur para kontratës suaj)",
+    "exportErrors": {
+      "EXPORT_TOO_LARGE": "Ka shumë rreshta për t'u eksportuar. Zgjidhni një periudhë më të shkurtër ose shtoni filtra.",
+      "generic": "Nuk e eksportuam dot CSV-në. Ju lutemi provoni përsëri."
+    },
+    "exportCsv": "Eksporto CSV",
+    "page": "Faqja {{page}} nga {{total}}",
+    "empty": "Asnjë shitje nuk përputhet me këto filtra."
+  },
+  "earnings": {
+    "view": "Pamja",
+    "month": "Sipas muajit",
+    "book": "Sipas librit",
+    "country": "Sipas shtetit",
+    "line": "Rreshti",
+    "total": "Totali",
+    "gross": "Shitjet bruto",
+    "vat": "− TVSH",
+    "fees": "− Tarifat e pagesës",
+    "net": "= Neto",
+    "commission": "− Komisioni i Libraria-s",
+    "unsplit": "− Ende pa ndarë",
+    "atSale": "= Të ardhurat në shitje",
+    "reversals": "− Kthimet nga rimbursimet",
+    "earnings": "= Të ardhurat",
+    "refundedInfo": "Rimbursuar lexuesve (vetëm informim, nuk zbritet më sipër)",
+    "note": "TVSH-ja dhe tarifat e pagesës shfaqen siç ishin në momentin e shitjes; rimbursimet nuk i ulin ato. Rimbursimet ulin të ardhurat tuaja përmes rreshtit të kthimeve nga rimbursimet."
+  },
+  "books": {
+    "title": "Titulli",
+    "search": "Kërko",
+    "statusFilter": "Statusi",
+    "price": "Çmimi",
+    "empty": "Ende nuk ka libra.",
+    "filter": {
+      "all": "Të gjithë",
+      "published": "Të publikuar",
+      "draft": "Draft"
+    }
+  },
+  "bookForm": {
+    "editTitle": "Ndrysho librin",
+    "author": "Autori",
+    "isbn13": "ISBN-13 (13 shifra, pa viza)",
+    "description": "Përshkrimi",
+    "genre": "Zhanri",
+    "language": "Gjuha (2 shkronja, p.sh. sq)",
+    "price": "Çmimi në euro (me TVSH)",
+    "priceInvalid": "Shkruani një çmim si 9,99 ose 9.99.",
+    "coverImageUrl": "Lidhja e kopertinës",
+    "mediaType": "Formati",
+    "ebook": "E-libër",
+    "audiobook": "Audiolibër",
+    "create": "Krijo librin",
+    "save": "Ruaj",
+    "publish": "Publiko",
+    "unpublish": "Çpubliko",
+    "saved": "U ruajt.",
+    "published": "Libri tani është i publikuar.",
+    "unpublished": "Libri tani nuk është më i publikuar.",
+    "fieldErrors": {
+      "title": "Shkruani një titull.",
+      "author": "Shkruani autorin.",
+      "isbn13": "ISBN-13 duhet të ketë 13 shifra, pa viza.",
+      "description": "Kontrolloni përshkrimin.",
+      "genre": "Shkruani zhanrin.",
+      "language": "Përdorni një kod gjuhe me 2 shkronja, p.sh. sq.",
+      "priceCents": "Shkruani një çmim të vlefshëm.",
+      "coverImageUrl": "Shkruani një lidhje të vlefshme për imazhin.",
+      "mediaType": "Zgjidhni formatin.",
+      "generic": "Kontrolloni këtë fushë."
+    },
+    "fixFields": "Ju lutemi korrigjoni fushat e shënuara.",
+    "errors": {
+      "ASSET_REQUIRED": "Ngarkimi i skedarit vjen së shpejti. Libri ka nevojë për një skedar të ngarkuar para se të publikohet.",
+      "NOT_FOUND": "Ky libër nuk u gjet.",
+      "generic": "Nuk i ruajtëm dot ndryshimet. Ju lutemi provoni përsëri."
+    }
+  },
+  "contract": {
+    "rate": "Komisioni i Libraria-s",
+    "since": "E vlefshme që nga",
+    "reference": "Referenca",
+    "history": "Historiku i kontratës",
+    "inForce": "E vlefshme tani",
+    "none": "Nuk ka kontratë aktive. Kontaktoni Libraria-n."
+  }
+}

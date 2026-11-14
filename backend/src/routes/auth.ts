@@ -1,8 +1,14 @@
 import bcrypt from 'bcryptjs';
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
+import {
+  clearedCookie,
+  isPortalRole,
+  portalTokenLifetime,
+  sessionCookie,
+} from '../auth/portal-session';
 import { signAccessToken, type UserRole } from '../auth/tokens';
-import { env } from '../config/env';
+import { env, isProduction } from '../config/env';
 import { isPgError, PG_UNIQUE_VIOLATION } from '../db/errors';
 import { pool } from '../db/pool';
 import { authContext } from '../middleware/auth';
@@ -35,6 +41,8 @@ const loginSchema = z.object({
   email: z.email().max(254).trim(),
   password: z.string().min(1),
 });
+
+const portalLoginSchema = loginSchema.extend({ rememberMe: z.boolean().optional() });
 
 interface UserRow {
   id: string;
@@ -95,9 +103,12 @@ authRouter.post('/register', async (req: Request, res: Response) => {
   }
 });
 
-authRouter.post('/login', async (req: Request, res: Response) => {
-  const { email, password } = loginSchema.parse(req.body);
-
+/**
+ * Checks an email and password. Always performs one bcrypt compare, against
+ * DUMMY_HASH when the account is unknown, and fails with one message for both
+ * cases so neither timing nor wording reveals which emails are registered.
+ */
+async function verifyCredentials(email: string, password: string): Promise<UserRow> {
   const result = await pool.query<UserRow & { password_hash: string }>(
     `SELECT id, email, password_hash, display_name, role, publisher_id, created_at
        FROM users
@@ -114,6 +125,13 @@ authRouter.post('/login', async (req: Request, res: Response) => {
     throw new AppError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
   }
 
+  return user;
+}
+
+authRouter.post('/login', async (req: Request, res: Response) => {
+  const { email, password } = loginSchema.parse(req.body);
+  const user = await verifyCredentials(email, password);
+
   res.json({
     user: publicUser(user),
     token: signAccessToken({
@@ -124,7 +142,35 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   });
 });
 
+/**
+ * Publisher portal login: the session lives in an HttpOnly cookie, so page
+ * scripts (and any XSS) never see the token and it is absent from the body.
+ */
+authRouter.post('/portal/login', async (req: Request, res: Response) => {
+  const { email, password, rememberMe = false } = portalLoginSchema.parse(req.body);
+  const user = await verifyCredentials(email, password);
+
+  // Checked after the password so a reader cannot probe for roles unauthenticated.
+  if (!isPortalRole(user.role)) {
+    throw new AppError(403, 'This account cannot use the publisher portal', 'PORTAL_ACCESS_DENIED');
+  }
+
+  const token = signAccessToken(
+    { userId: user.id, role: user.role, publisherId: user.publisher_id },
+    portalTokenLifetime(rememberMe),
+  );
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Set-Cookie', sessionCookie(token, rememberMe, isProduction));
+  res.json({ user: publicUser(user) });
+});
+
+authRouter.post('/portal/logout', (_req: Request, res: Response) => {
+  res.setHeader('Set-Cookie', clearedCookie(isProduction));
+  res.status(204).end();
+});
+
 authRouter.get('/me', requireAuth, async (req: Request, res: Response) => {
+  res.setHeader('Cache-Control', 'no-store');
   const { userId } = authContext(req);
 
   const result = await pool.query<UserRow>(

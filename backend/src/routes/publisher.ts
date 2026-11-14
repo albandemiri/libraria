@@ -5,11 +5,16 @@ import { SUPPORTED_CURRENCIES } from '../commerce/service';
 import { pool } from '../db/pool';
 import { authContext, requireAuth, requireRole } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
+import { resolvePublisherScope } from './publisher-scope';
+import { reportsRouter } from './reports';
+
+export { resolvePublisherScope };
 
 export const publisherRouter = Router();
 
 // Publisher endpoints require an authenticated user with 'publisher' or 'admin' role.
 publisherRouter.use(requireAuth, requireRole('publisher', 'admin'));
+publisherRouter.use('/reports', reportsRouter);
 
 export const listPublisherBooksQuerySchema = z.object({
   status: z.enum(['all', 'published', 'draft']).default('all'),
@@ -119,25 +124,6 @@ interface PublisherBookRow {
   total_count?: string;
 }
 
-function resolvePublisherScope(req: Request, explicitId?: string): string {
-  const auth = authContext(req);
-  if (auth.role === 'admin') {
-    if (explicitId) return explicitId;
-    if (auth.publisherId) return auth.publisherId;
-    throw new AppError(
-      400,
-      'publisherId must be specified for admin operations',
-      'PUBLISHER_ID_REQUIRED',
-    );
-  }
-
-  if (!auth.publisherId) {
-    throw new AppError(403, 'Account is not linked to a publishing house', 'PUBLISHER_NOT_LINKED');
-  }
-
-  return auth.publisherId;
-}
-
 /**
  * The publisher_id to filter by, or null for "all publishers" (admins only).
  * Fails closed: a publisher account without a linked house is rejected rather
@@ -152,6 +138,17 @@ function tenantFilter(req: Request): string | null {
     throw new AppError(403, 'Account is not linked to a publishing house', 'PUBLISHER_NOT_LINKED');
   }
   return auth.publisherId;
+}
+
+/**
+ * The publisher_id a book write is checked against. Publishers: their own
+ * house. Admins: the publisher they picked in the portal (query parameter), so a
+ * stale picker cannot edit another house's book; none means any book.
+ */
+function bookWriteScope(req: Request): string | null {
+  const scope = tenantFilter(req);
+  if (scope !== null) return scope;
+  return publisherScopeQuerySchema.parse(req.query).publisherId ?? null;
 }
 
 function formatPublisherBook(row: PublisherBookRow) {
@@ -411,7 +408,7 @@ publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
                     FROM book_sales) s ON s.book_id = b.id
       WHERE b.id = $1
         AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
-    [id, tenantFilter(req)],
+    [id, bookWriteScope(req)],
   );
 
   const book = result.rows[0];
@@ -429,21 +426,21 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
   const { id } = bookIdParamSchema.parse(req.params);
   const input = updateBookSchema.parse(req.body);
 
-  const publisherId = tenantFilter(req);
+  const publisherId = bookWriteScope(req);
 
   const result = await pool.query<PublisherBookRow>(
     `UPDATE books
         SET title = COALESCE($1, title),
             author = COALESCE($2, author),
-            isbn13 = CASE WHEN $3::text IS NOT NULL THEN $3 ELSE isbn13 END,
-            description = CASE WHEN $4::text IS NOT NULL THEN $4 ELSE description END,
+            isbn13 = CASE WHEN $14::boolean THEN $3::text ELSE isbn13 END,
+            description = CASE WHEN $15::boolean THEN $4::text ELSE description END,
             genre = COALESCE($5, genre),
             language = COALESCE($6, language),
             price_cents = COALESCE($7, price_cents),
             currency = COALESCE($8, currency),
-            cover_image_url = CASE WHEN $9::text IS NOT NULL THEN $9 ELSE cover_image_url END,
+            cover_image_url = CASE WHEN $16::boolean THEN $9::text ELSE cover_image_url END,
             media_type = COALESCE($10, media_type),
-            duration_seconds = CASE WHEN $11::int IS NOT NULL THEN $11 ELSE duration_seconds END
+            duration_seconds = CASE WHEN $17::boolean THEN $11::int ELSE duration_seconds END
       WHERE id = $12
         AND ($13::uuid IS NULL OR publisher_id = $13)
   RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
@@ -465,6 +462,11 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
       input.durationSeconds === undefined ? null : input.durationSeconds,
       id,
       publisherId,
+      // An absent field leaves the column alone; an explicit null clears it.
+      input.isbn13 !== undefined,
+      input.description !== undefined,
+      input.coverImageUrl !== undefined,
+      input.durationSeconds !== undefined,
     ],
   );
 
@@ -501,7 +503,7 @@ publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => 
             media_type, duration_seconds, encrypted_file_url, file_size_bytes,
             TRUE as has_encryption_keys,
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [encryptedFileUrl, ivBuffer, authTagBuffer, fileSizeBytes, id, tenantFilter(req)],
+    [encryptedFileUrl, ivBuffer, authTagBuffer, fileSizeBytes, id, bookWriteScope(req)],
   );
 
   const updated = result.rows[0];
@@ -519,6 +521,8 @@ publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => 
 publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) => {
   const { id } = bookIdParamSchema.parse(req.params);
 
+  const publisherId = bookWriteScope(req);
+
   // Check asset completeness first
   const existingResult = await pool.query<{
     encrypted_file_url: string | null;
@@ -529,7 +533,7 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
        FROM books
       WHERE id = $1
         AND ($2::uuid IS NULL OR publisher_id = $2)`,
-    [id, tenantFilter(req)],
+    [id, publisherId],
   );
 
   const existing = existingResult.rows[0];
@@ -550,12 +554,13 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
         SET is_available = TRUE,
             published_at = COALESCE(published_at, CURRENT_DATE)
       WHERE id = $1
+        AND ($2::uuid IS NULL OR publisher_id = $2)
   RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
             price_cents, currency, cover_image_url, published_at, is_available,
             media_type, duration_seconds, encrypted_file_url, file_size_bytes,
             TRUE as has_encryption_keys,
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [id],
+    [id, publisherId],
   );
 
   res.json({ book: formatPublisherBook(result.rows[0]) });
@@ -577,7 +582,7 @@ publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response)
             media_type, duration_seconds, encrypted_file_url, file_size_bytes,
             (encryption_iv IS NOT NULL AND encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [id, tenantFilter(req)],
+    [id, bookWriteScope(req)],
   );
 
   const updated = result.rows[0];

@@ -25,6 +25,21 @@ const schema = z.object({
   JWT_SECRET: z.string().min(1).default(DEV_JWT_SECRET),
   JWT_EXPIRES_IN: z.string().min(1).default('7d'),
 
+  /** Comma-separated exact origins allowed to call the API with cookies (the portal). */
+  CORS_ORIGINS: z
+    .string()
+    .default('')
+    .transform((value) =>
+      value
+        .split(',')
+        .map((origin) => origin.trim())
+        .filter(Boolean),
+    ),
+  /** Lifetime of a portal login without "Remember me". */
+  PORTAL_SESSION_HOURS: z.coerce.number().int().min(1).max(168).default(12),
+  /** Lifetime of a portal login with "Remember me". */
+  PORTAL_REMEMBER_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+
   BCRYPT_ROUNDS: z.coerce.number().int().min(10).max(15).default(12),
 
   LOG_LEVEL: z.enum(['debug', 'info', 'warn', 'error', 'silent']).optional(),

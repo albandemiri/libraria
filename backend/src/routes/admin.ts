@@ -30,6 +30,14 @@ async function requirePublisher(publisherId: string): Promise<void> {
   if (rowCount === 0) throw new AppError(404, 'Publisher not found', 'NOT_FOUND');
 }
 
+/** Publishing houses, for the portal's admin picker. */
+adminRouter.get('/publishers', async (_req: Request, res: Response) => {
+  const { rows } = await pool.query<{ id: string; name: string }>(
+    'SELECT id, name FROM publishers ORDER BY name, id',
+  );
+  res.json({ publishers: rows });
+});
+
 /**
  * Adds a contract rate. Rates are never edited: a new contract, or a
  * correction, is a new row. Sales already made keep their snapshotted rate.

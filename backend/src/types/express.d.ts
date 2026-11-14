@@ -7,6 +7,8 @@ declare global {
       requestId: string;
       /** Populated by `requireAuth`; absent on unauthenticated routes. */
       auth?: AuthContext;
+      /** How `requireAuth` authenticated the request; absent when it did not. */
+      authSource?: 'bearer' | 'cookie';
     }
   }
 }

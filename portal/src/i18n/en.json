@@ -1,0 +1,199 @@
+{
+  "app": {
+    "name": "Libraria",
+    "tagline": "Publisher portal"
+  },
+  "common": {
+    "unknown": "Unknown",
+    "loading": "Loading…",
+    "error": "Something went wrong. Please try again.",
+    "retry": "Retry",
+    "none": "—",
+    "empty": "No data for this period.",
+    "previous": "Previous",
+    "next": "Next",
+    "book": "Book",
+    "country": "Country",
+    "copies": "Copies",
+    "pickPublisher": "Choose a publisher above to see its data."
+  },
+  "language": {
+    "label": "Language",
+    "sq": "Shqip",
+    "en": "English"
+  },
+  "login": {
+    "title": "Sign in to your publisher portal",
+    "email": "Email",
+    "password": "Password",
+    "remember": "Remember me",
+    "submit": "Sign in",
+    "submitting": "Signing in…",
+    "sessionExpired": "Your session has expired. Please sign in again.",
+    "errors": {
+      "INVALID_CREDENTIALS": "The email or password is incorrect.",
+      "PORTAL_ACCESS_DENIED": "This portal is for publishing partners. Readers can use the Libraria app.",
+      "generic": "We could not sign you in. Please try again."
+    }
+  },
+  "nav": {
+    "label": "Main navigation",
+    "groups": {
+      "money": "Money",
+      "catalogue": "Catalogue",
+      "account": "Account"
+    },
+    "overview": "Overview",
+    "sales": "Sales",
+    "earnings": "Earnings",
+    "books": "Books",
+    "newBook": "New book",
+    "contract": "Contract"
+  },
+  "topbar": {
+    "publisher": "Publisher",
+    "pickPublisher": "Choose a publisher",
+    "logout": "Log out"
+  },
+  "pages": {
+    "overview": "Overview",
+    "sales": "Sales",
+    "earnings": "Earnings",
+    "books": "Books",
+    "newBook": "New book",
+    "contract": "Contract"
+  },
+  "period": {
+    "label": "Period",
+    "this_month": "This month",
+    "last_month": "Last month",
+    "last_90_days": "Last 90 days",
+    "this_year": "This year",
+    "custom": "Custom",
+    "from": "From",
+    "to": "To (exclusive)"
+  },
+  "status": {
+    "label": "Status",
+    "all": "All statuses",
+    "paid": "Paid",
+    "partially_refunded": "Partially refunded",
+    "refunded": "Refunded",
+    "disputed": "Disputed"
+  },
+  "metrics": {
+    "gross": "Gross sales",
+    "refunds": "Refunds",
+    "vat": "VAT",
+    "fees": "Payment fees",
+    "commission": "Commission",
+    "earnings": "Earnings",
+    "copies": "Copies"
+  },
+  "overview": {
+    "vsPrevious": "vs previous period",
+    "chartTitle": "Gross sales over time",
+    "chartLabel": "Chart of gross sales over time",
+    "topBooks": "Top 5 books"
+  },
+  "sales": {
+    "allBooks": "All books",
+    "allCountries": "All countries",
+    "unknownCountry": "Unknown",
+    "date": "Date",
+    "price": "Price",
+    "vat": "VAT",
+    "fee": "Fee",
+    "commissionPct": "Commission %",
+    "commission": "Commission",
+    "earnings": "Earnings",
+    "refunded": "Refunded",
+    "feePending": "Fee pending",
+    "notSplit": "Not split (sold before your contract)",
+    "exportErrors": {
+      "EXPORT_TOO_LARGE": "Too many rows to export. Choose a shorter period or add filters.",
+      "generic": "We could not export the CSV. Please try again."
+    },
+    "exportCsv": "Export CSV",
+    "page": "Page {{page}} of {{total}}",
+    "empty": "No sales match these filters."
+  },
+  "earnings": {
+    "view": "View",
+    "month": "By month",
+    "book": "By book",
+    "country": "By country",
+    "line": "Line",
+    "total": "Total",
+    "gross": "Gross sales",
+    "vat": "− VAT",
+    "fees": "− Payment fees",
+    "net": "= Net",
+    "commission": "− Libraria commission",
+    "unsplit": "− Not yet split",
+    "atSale": "= Earnings at sale",
+    "reversals": "− Refund reversals",
+    "earnings": "= Earnings",
+    "refundedInfo": "Refunded to readers (information only, not deducted above)",
+    "note": "VAT and payment fees are shown as at the time of sale; refunds do not reduce them. Refunds reduce your earnings through the refund reversals line."
+  },
+  "books": {
+    "title": "Title",
+    "search": "Search",
+    "statusFilter": "Status",
+    "price": "Price",
+    "empty": "No books yet.",
+    "filter": {
+      "all": "All",
+      "published": "Published",
+      "draft": "Draft"
+    }
+  },
+  "bookForm": {
+    "editTitle": "Edit book",
+    "author": "Author",
+    "isbn13": "ISBN-13 (13 digits, no hyphens)",
+    "description": "Description",
+    "genre": "Genre",
+    "language": "Language (2 letters, e.g. sq)",
+    "price": "Price in euros (VAT included)",
+    "priceInvalid": "Enter a price like 9,99 or 9.99.",
+    "coverImageUrl": "Cover image URL",
+    "mediaType": "Format",
+    "ebook": "E-book",
+    "audiobook": "Audiobook",
+    "create": "Create book",
+    "save": "Save",
+    "publish": "Publish",
+    "unpublish": "Unpublish",
+    "saved": "Saved.",
+    "published": "The book is now published.",
+    "unpublished": "The book is now unpublished.",
+    "fieldErrors": {
+      "title": "Enter a title.",
+      "author": "Enter the author.",
+      "isbn13": "ISBN-13 must be 13 digits, with no hyphens.",
+      "description": "Check the description.",
+      "genre": "Enter a genre.",
+      "language": "Use a 2-letter language code, e.g. sq.",
+      "priceCents": "Enter a valid price.",
+      "coverImageUrl": "Enter a valid image link.",
+      "mediaType": "Choose a format.",
+      "generic": "Check this field."
+    },
+    "fixFields": "Please fix the highlighted fields.",
+    "errors": {
+      "ASSET_REQUIRED": "File upload is coming soon. A book needs an uploaded file before it can be published.",
+      "NOT_FOUND": "This book could not be found.",
+      "generic": "We could not save your changes. Please try again."
+    }
+  },
+  "contract": {
+    "rate": "Libraria commission",
+    "since": "In force since",
+    "reference": "Reference",
+    "history": "Contract history",
+    "inForce": "In force now",
+    "none": "No active contract. Contact Libraria."
+  }
+}

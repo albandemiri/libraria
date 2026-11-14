@@ -3,6 +3,7 @@ import express, { type Request, type Response, Router } from 'express';
 import { env } from './config/env';
 import { pool } from './db/pool';
 import { logger } from './lib/logger';
+import { cors } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/errors';
 import { requestContext } from './middleware/request-context';
 import { adminRouter } from './routes/admin';
@@ -22,6 +23,9 @@ app.disable('x-powered-by');
 
 // First, so every later log line and error body can carry the request ID.
 app.use(requestContext);
+
+// Before everything else so preflights never reach a router. Allowlist only.
+app.use(cors(env.CORS_ORIGINS));
 
 // Before express.json(): webhook signatures cover the raw request bytes.
 app.use(`${API_PREFIX}/webhooks`, webhooksRouter);

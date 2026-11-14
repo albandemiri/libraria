@@ -45,6 +45,8 @@ export const sandboxEventSchema = z.object({
   partialAmountCents: z.number().int().positive().optional(),
   /** payment_succeeded only: report a different total, to exercise mismatch handling. */
   overrideTotalCents: z.number().int().min(0).optional(),
+  /** payment_succeeded only: buyer country; defaults to DE, null means unknown. */
+  countryCode: z.string().nullable().optional(),
 });
 
 const idParamSchema = z.object({ id: z.string().uuid('Not a valid transaction id') });
@@ -91,7 +93,12 @@ sandboxRouter.post('/transactions/:id/events', async (req: Request, res: Respons
         })),
       );
       if (input.overrideTotalCents !== undefined) totals.totalCents = input.overrideTotalCents;
-      event = { kind: 'payment_succeeded', totals, lineItems };
+      event = {
+        kind: 'payment_succeeded',
+        totals,
+        lineItems,
+        countryCode: input.countryCode === undefined ? 'DE' : input.countryCode,
+      };
       break;
     }
     case 'refund': {
