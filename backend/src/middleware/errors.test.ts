@@ -41,7 +41,8 @@ describe('error responses', () => {
     const { status, body } = run((res) => errorHandler(result.error, req, res, next));
     assert.equal(status, 400);
     assert.equal(body?.error.code, 'VALIDATION_FAILED');
-    assert.equal(body?.error.details?.[0].path, 'email');
+    assert.ok(Array.isArray(body?.error.details));
+    assert.equal(body.error.details[0].path, 'email');
   });
 
   it('maps body-parser JSON failures to MALFORMED_JSON', () => {

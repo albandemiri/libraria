@@ -403,3 +403,31 @@ tr.strong td {
 .contract-current dd {
   margin: 0;
 }
+
+.asset-panel {
+  margin-top: 1.5rem;
+}
+.asset-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+.asset-row {
+  padding: 0.75rem 0;
+  border-top: 1px solid var(--border, #ddd);
+}
+.badge {
+  display: inline-block;
+  padding: 0.1rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  background: rgba(127, 127, 127, 0.2);
+}
+.badge-ready,
+.badge-live {
+  background: rgba(40, 160, 80, 0.25);
+}
+.badge-rejected,
+.badge-failed {
+  background: rgba(200, 50, 50, 0.25);
+}

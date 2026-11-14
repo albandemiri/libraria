@@ -1,3 +1,36 @@
+x-backend-env: &backend-env
+  NODE_ENV: development
+  PORT: 3000
+  POSTGRES_HOST: db
+  POSTGRES_PORT: 5432
+  POSTGRES_USER: ${POSTGRES_USER:-libraria_user}
+  POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libraria_password}
+  POSTGRES_DB: ${POSTGRES_DB:-libraria}
+  # Dev-only fallback. The app refuses to boot with this value when
+  # NODE_ENV=production, so a real secret must be supplied there.
+  JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret}
+  JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+  # simulated: payments confirmed by signed sandbox webhooks (dev only).
+  # paddle: real Paddle checkout; needs the PADDLE_* values below.
+  PAYMENTS_MODE: ${PAYMENTS_MODE:-simulated}
+  PADDLE_ENVIRONMENT: ${PADDLE_ENVIRONMENT:-sandbox}
+  PADDLE_API_KEY: ${PADDLE_API_KEY:-}
+  PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
+  LOG_LEVEL: ${LOG_LEVEL:-info}
+  # Book assets. Unset/empty values fall back to the development defaults in
+  # env.ts, which the app refuses in production.
+  KMS_PROVIDER: ${KMS_PROVIDER:-local}
+  DRM_LOCAL_KEK: ${DRM_LOCAL_KEK:-}
+  LICENCE_SIGNING_PRIVATE_KEY: ${LICENCE_SIGNING_PRIVATE_KEY:-}
+  # none: no scanning (development only). clamav: needs the optional service, started with
+  #   docker compose --profile scan up -d clamav
+  SCANNER: ${SCANNER:-none}
+  CLAMAV_HOST: ${CLAMAV_HOST:-clamav}
+  CLAMAV_PORT: ${CLAMAV_PORT:-3310}
+  CLAMAV_TIMEOUT_MS: ${CLAMAV_TIMEOUT_MS:-}
+  ASSET_MAX_UPLOAD_BYTES: ${ASSET_MAX_UPLOAD_BYTES:-}
+  ASSET_PROCESSING_TIMEOUT_MS: ${ASSET_PROCESSING_TIMEOUT_MS:-}
+
 services:
   db:
     image: postgres:15
@@ -28,25 +61,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment:
-      NODE_ENV: development
-      PORT: 3000
-      POSTGRES_HOST: db
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: ${POSTGRES_USER:-libraria_user}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-libraria_password}
-      POSTGRES_DB: ${POSTGRES_DB:-libraria}
-      # Dev-only fallback. The app refuses to boot with this value when
-      # NODE_ENV=production, so a real secret must be supplied there.
-      JWT_SECRET: ${JWT_SECRET:-dev-only-insecure-secret}
-      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
-      # simulated: payments confirmed by signed sandbox webhooks (dev only).
-      # paddle: real Paddle checkout; needs the PADDLE_* values below.
-      PAYMENTS_MODE: ${PAYMENTS_MODE:-simulated}
-      PADDLE_ENVIRONMENT: ${PADDLE_ENVIRONMENT:-sandbox}
-      PADDLE_API_KEY: ${PADDLE_API_KEY:-}
-      PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
-      LOG_LEVEL: ${LOG_LEVEL:-info}
+    environment: *backend-env
     # Installs deps if the lockfile changed, migrates, then starts tsx watch.
     command: ["sh", "docker/dev-entrypoint.sh"]
     ports:
@@ -56,6 +71,45 @@ services:
       # Keep the image's Linux-built node_modules from being shadowed by the
       # host's, which matters on Windows/macOS workstations.
       - backend_node_modules:/app/node_modules
+
+  # Asset-ingestion worker: validates, scans, encrypts and stores uploaded EPUBs.
+  # Same image, code and asset storage (the bind-mounted ./backend/var) as the API.
+  worker:
+    build:
+      context: ./backend
+      target: dev
+    container_name: libraria_worker
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    environment: *backend-env
+    command: ["sh", "-c", "npm run worker"]
+    volumes:
+      - ./backend:/app
+      - backend_node_modules:/app/node_modules
+
+  # Optional malware scanner. Not started by default; enable with
+  #   docker compose --profile scan up -d clamav
+  # and set SCANNER=clamav.
+  clamav:
+    image: clamav/clamav:stable
+    container_name: libraria_clamav
+    restart: unless-stopped
+    profiles: ["scan"]
+    environment:
+      # The official image turns CLAMD_CONF_<Option> variables into clamd.conf lines. clamd's
+      # defaults (25 MB stream, 100 MB scan) are below our limits, and by default an object
+      # over a limit is skipped silently, i.e. reported clean. Size the limits to the upload
+      # cap (100 MB EPUB, at most 500 MB uncompressed, 10,000 entries) and make an exceeded
+      # limit an alert, so the scanner fails closed instead of letting an oversize file through.
+      CLAMD_CONF_StreamMaxLength: 100M
+      CLAMD_CONF_MaxFileSize: 500M
+      CLAMD_CONF_MaxScanSize: 500M
+      CLAMD_CONF_MaxFiles: "10000"
+      CLAMD_CONF_AlertExceedsMax: "yes"
+    expose:
+      - "3310"
 
 volumes:
   db_data:

@@ -183,7 +183,7 @@
     },
     "fixFields": "Ju lutemi korrigjoni fushat e shënuara.",
     "errors": {
-      "ASSET_REQUIRED": "Ngarkimi i skedarit vjen së shpejti. Libri ka nevojë për një skedar të ngarkuar para se të publikohet.",
+      "ASSET_REQUIRED": "Libri ka nevojë për një skedar EPUB gati dhe aktiv para se të publikohet. Ngarkoni një më poshtë.",
       "NOT_FOUND": "Ky libër nuk u gjet.",
       "generic": "Nuk i ruajtëm dot ndryshimet. Ju lutemi provoni përsëri."
     }
@@ -195,5 +195,54 @@
     "history": "Historiku i kontratës",
     "inForce": "E vlefshme tani",
     "none": "Nuk ka kontratë aktive. Kontaktoni Libraria-n."
+  },
+  "assets": {
+    "title": "Skedari EPUB",
+    "upload": "Ngarko EPUB",
+    "uploadHint": "Një skedar .epub deri në 100 MB. Çdo ngarkim bëhet version i ri; lexuesit mbajnë versionin aktiv derisa të vendosni një tjetër.",
+    "empty": "Ende nuk është ngarkuar asnjë skedar.",
+    "version": "Versioni {{n}}",
+    "live": "Aktiv",
+    "activate": "Bëje këtë version aktiv",
+    "confirm": "Lexuesit do ta marrin këtë version herën tjetër që ta hapin librin. Të vazhdojmë?",
+    "confirmYes": "Po, bëje aktiv",
+    "cancel": "Anulo",
+    "states": {
+      "uploaded": "U ngarkua",
+      "validating": "Po kontrollohet",
+      "scanning": "Po skanohet",
+      "encrypting": "Po enkriptohet",
+      "storing": "Po ruhet",
+      "ready": "Gati",
+      "rejected": "U refuzua",
+      "failed": "Dështoi"
+    },
+    "reasons": {
+      "generic": "Skedari nuk u përpunua dot.",
+      "NOT_AN_EPUB": "Ky nuk është skedar EPUB i vlefshëm.",
+      "ARCHIVE_TOO_LARGE": "Libri i shpaketuar është shumë i madh.",
+      "TOO_MANY_ENTRIES": "EPUB përmban shumë skedarë.",
+      "COMPRESSION_RATIO": "EPUB është ngjeshur në mënyrë të dyshimtë.",
+      "UNSAFE_PATH": "EPUB përmban shtigje skedarësh të pasigurta.",
+      "DUPLICATE_ENTRY": "EPUB përmban skedarë të dyfishtë.",
+      "INVALID_CONTAINER": "Kontejneri i EPUB është i dëmtuar ose i paplotë.",
+      "INVALID_PACKAGE": "Përshkrimi i paketës EPUB nuk është i vlefshëm.",
+      "UNSUPPORTED_ENCRYPTION": "EPUB ka tashmë enkriptimin e vet, i cili nuk mbështetet.",
+      "ENCRYPTED_ARCHIVE": "EPUB është i mbrojtur me fjalëkalim.",
+      "SCRIPTED_CONTENT": "EPUB përmban skripte, që nuk lejohen.",
+      "REMOTE_RESOURCES": "EPUB ngarkon përmbajtje nga interneti, gjë që nuk lejohet.",
+      "UNSUPPORTED_MEDIA": "EPUB përmban një lloj media që nuk mbështetet.",
+      "MALWARE_DETECTED": "Skedari u refuzua nga skanimi i sigurisë.",
+      "SCAN_UNAVAILABLE": "Skanimi i sigurisë nuk është i disponueshëm. Provoni përsëri më vonë.",
+      "PROCESSING_TIMEOUT": "Përpunimi zgjati shumë. Provoni një skedar më të vogël.",
+      "PROCESSING_ERROR": "Përpunimi dështoi. Ju lutemi provoni përsëri."
+    },
+    "errors": {
+      "generic": "Ngarkimi dështoi. Ju lutemi provoni përsëri.",
+      "PAYLOAD_TOO_LARGE": "Skedari e kalon kufirin prej 100 MB.",
+      "ASSET_PROCESSING": "Një ngarkim tjetër për këtë libër po përpunohet ende. Prisni të mbarojë.",
+      "RATE_LIMITED": "Shumë ngarkime. Ju lutemi provoni përsëri më vonë.",
+      "NOT_FOUND": "Ky libër ose version nuk u gjet."
+    }
   }
 }

@@ -1,12 +1,15 @@
-import { crc32 } from 'node:zlib';
+import { crc32, deflateRawSync } from 'node:zlib';
 
 interface ZipFileEntry {
   path: string;
   data: Buffer;
+  /** Raw-deflate this entry (method 8). Default is STORE (method 0). */
+  compress?: boolean;
 }
 
 /**
- * Creates a valid uncompressed (STORE) ZIP archive buffer.
+ * Creates a valid ZIP archive buffer. Entries are STORE (uncompressed) unless
+ * `compress: true`, which deflates them (method 8).
  * In EPUB specification, the `mimetype` file must be stored uncompressed as the first entry.
  */
 export function createZipArchive(files: ZipFileEntry[]): Buffer {
@@ -18,23 +21,26 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
     const fileNameBuf = Buffer.from(file.path, 'utf8');
     const fileCrc = crc32(file.data);
     const size = file.data.length;
+    const body = file.compress ? deflateRawSync(file.data) : file.data;
+    const method = file.compress ? 8 : 0;
+    const compressedSize = body.length;
 
     // 1. Local File Header (30 bytes + filename length)
     const localHeader = Buffer.alloc(30 + fileNameBuf.length);
     localHeader.writeUInt32LE(0x04034b50, 0); // Local file header signature
     localHeader.writeUInt16LE(20, 4); // Version needed: 2.0
     localHeader.writeUInt16LE(0, 6); // General purpose bit flag
-    localHeader.writeUInt16LE(0, 8); // Compression method: 0 (STORE)
+    localHeader.writeUInt16LE(method, 8); // Compression method: 0 (STORE) or 8 (DEFLATE)
     localHeader.writeUInt16LE(0, 10); // Last mod time
     localHeader.writeUInt16LE(0, 12); // Last mod date
     localHeader.writeUInt32LE(fileCrc, 14); // CRC-32
-    localHeader.writeUInt32LE(size, 18); // Compressed size
+    localHeader.writeUInt32LE(compressedSize, 18); // Compressed size
     localHeader.writeUInt32LE(size, 22); // Uncompressed size
     localHeader.writeUInt16LE(fileNameBuf.length, 26); // File name length
     localHeader.writeUInt16LE(0, 28); // Extra field length
     fileNameBuf.copy(localHeader, 30);
 
-    localHeaders.push(localHeader, file.data);
+    localHeaders.push(localHeader, body);
 
     // 2. Central Directory Header (46 bytes + filename length)
     const centralHeader = Buffer.alloc(46 + fileNameBuf.length);
@@ -42,11 +48,11 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
     centralHeader.writeUInt16LE(20, 4); // Version made by: 2.0
     centralHeader.writeUInt16LE(20, 6); // Version needed: 2.0
     centralHeader.writeUInt16LE(0, 8); // General purpose bit flag
-    centralHeader.writeUInt16LE(0, 10); // Compression method: 0 (STORE)
+    centralHeader.writeUInt16LE(method, 10); // Compression method
     centralHeader.writeUInt16LE(0, 12); // Last mod time
     centralHeader.writeUInt16LE(0, 14); // Last mod date
     centralHeader.writeUInt32LE(fileCrc, 16); // CRC-32
-    centralHeader.writeUInt32LE(size, 20); // Compressed size
+    centralHeader.writeUInt32LE(compressedSize, 20); // Compressed size
     centralHeader.writeUInt32LE(size, 24); // Uncompressed size
     centralHeader.writeUInt16LE(fileNameBuf.length, 28); // File name length
     centralHeader.writeUInt16LE(0, 30); // Extra field length
@@ -59,7 +65,7 @@ export function createZipArchive(files: ZipFileEntry[]): Buffer {
 
     centralHeaders.push(centralHeader);
 
-    offset += localHeader.length + file.data.length;
+    offset += localHeader.length + body.length;
   }
 
   const centralDirSize = centralHeaders.reduce((sum, h) => sum + h.length, 0);

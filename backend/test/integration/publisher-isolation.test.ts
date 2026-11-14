@@ -113,22 +113,17 @@ describe('publisher tenant isolation', () => {
     assert.equal(rows[0].price_cents, 1000);
   });
 
-  it("cannot replace another publisher's asset", async () => {
+  it("cannot change another publisher's current asset", async () => {
+    const before = await pool.query('SELECT current_asset_id FROM books WHERE id = $1', [bookB]);
     const res = await api('POST', `/publisher/books/${bookB}/asset`, {
       token: staffA.token,
-      body: {
-        encryptedFileUrl: '/assets/books/evil.epub.enc',
-        encryptionIv: Buffer.alloc(12).toString('base64'),
-        encryptionAuthTag: Buffer.alloc(16).toString('base64'),
-        fileSizeBytes: 10,
-      },
+      body: {},
     });
     assert.equal(res.status, 404);
 
-    const { rows } = await pool.query('SELECT encrypted_file_url FROM books WHERE id = $1', [
-      bookB,
-    ]);
-    assert.equal(rows[0].encrypted_file_url, '/assets/books/fixture.epub.enc');
+    const after = await pool.query('SELECT current_asset_id FROM books WHERE id = $1', [bookB]);
+    assert.ok(before.rows[0].current_asset_id);
+    assert.equal(after.rows[0].current_asset_id, before.rows[0].current_asset_id);
   });
 
   it("cannot publish or unpublish another publisher's book", async () => {

@@ -51,6 +51,7 @@ interface UserRow {
   role: UserRole;
   publisher_id: string | null;
   created_at: Date;
+  status?: 'active' | 'suspended';
 }
 
 function publicUser(row: UserRow) {
@@ -110,7 +111,7 @@ authRouter.post('/register', async (req: Request, res: Response) => {
  */
 async function verifyCredentials(email: string, password: string): Promise<UserRow> {
   const result = await pool.query<UserRow & { password_hash: string }>(
-    `SELECT id, email, password_hash, display_name, role, publisher_id, created_at
+    `SELECT id, email, password_hash, display_name, role, publisher_id, created_at, status
        FROM users
       WHERE email = $1`,
     [email],
@@ -123,6 +124,11 @@ async function verifyCredentials(email: string, password: string): Promise<UserR
   // enumerate registered emails.
   if (!user || !matches) {
     throw new AppError(401, 'Invalid email or password', 'INVALID_CREDENTIALS');
+  }
+
+  // After the password check, so suspension is never revealed to a stranger.
+  if (user.status === 'suspended') {
+    throw new AppError(403, 'This account is suspended', 'ACCOUNT_SUSPENDED');
   }
 
   return user;

@@ -95,12 +95,7 @@ describe('admin book writes with a picked publisher', () => {
 
     const asset = await api('POST', `/publisher/books/${bookB}/asset?publisherId=${publisherA}`, {
       token: admin.token,
-      body: {
-        encryptedFileUrl: '/assets/x.enc',
-        encryptionIv: Buffer.alloc(12, 1).toString('base64'),
-        encryptionAuthTag: Buffer.alloc(16, 2).toString('base64'),
-        fileSizeBytes: 10,
-      },
+      body: {},
     });
     assert.equal(asset.status, 404);
   });

@@ -1,10 +1,11 @@
-import fs from 'node:fs/promises';
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import { env } from '../config/env';
-import { pool } from './pool';
-import { deriveBookKey, encryptAsset } from '../utils/crypto';
+import { activateAsset, ingestNow } from '../drm/asset-ingestion.service';
+import { currentReadyAsset } from '../drm/asset-repository';
 import { buildSampleEpub } from '../utils/epub';
+import { pool } from './pool';
+
+const SEED_INGEST_WAIT_MS = 120_000;
 
 interface SeedBook {
   id: string;
@@ -86,26 +87,25 @@ const sampleBooks: SeedBook[] = [
 export async function runSeed(): Promise<void> {
   console.log('--- Starting Libraria Database Seeder ---');
 
-  const assetsDir = path.resolve(process.cwd(), 'public/assets/books');
-  await fs.mkdir(assetsDir, { recursive: true });
-
   const passwordHash = await bcrypt.hash('Password123!', env.BCRYPT_ROUNDS);
 
   // 1. Create Publishers
-  const pub1Result = await pool.query<{ id: string }>(
-    `INSERT INTO publishers (name, contact_email)
-     VALUES ('Apex Publishing House', 'contact@apexpublishing.example')
-     ON CONFLICT DO NOTHING
-     RETURNING id`,
+  // The table has no unique key on the email, so look first: ON CONFLICT would
+  // never fire and every run would add another house.
+  const existingPublisher = await pool.query<{ id: string }>(
+    `SELECT id FROM publishers
+      WHERE contact_email = 'contact@apexpublishing.example'
+      ORDER BY created_at LIMIT 1`,
   );
-
-  let publisherId = pub1Result.rows[0]?.id;
-  if (!publisherId) {
-    const existing = await pool.query<{ id: string }>(
-      `SELECT id FROM publishers WHERE contact_email = 'contact@apexpublishing.example'`,
-    );
-    publisherId = existing.rows[0].id;
-  }
+  const publisherId =
+    existingPublisher.rows[0]?.id ??
+    (
+      await pool.query<{ id: string }>(
+        `INSERT INTO publishers (name, contact_email)
+         VALUES ('Apex Publishing House', 'contact@apexpublishing.example')
+         RETURNING id`,
+      )
+    ).rows[0].id;
 
   // A contract rate, so the demo books can be sold (20% of net, from 2020).
   await pool.query(
@@ -145,40 +145,23 @@ export async function runSeed(): Promise<void> {
   const readerId = readerResult.rows[0]?.id;
   console.log(`✓ Seeded demo users (Admin, Publisher, Reader: ${readerId})`);
 
-  // 3. Generate & Encrypt EPUBs, seed books
+  // 3. Seed books through the real ingestion pipeline: build each sample EPUB,
+  // validate/scan/encrypt/store it, make it the live asset and publish.
+  // Safe to repeat, and restores books that migration 0006 delisted on a
+  // previously seeded database (their rows keep their ids and purchases).
+  const editor = await pool.query<{ id: string }>(
+    `SELECT id FROM users WHERE email = 'editor@apexpublishing.example'`,
+  );
+  const editorId = editor.rows[0]?.id ?? null;
+
   for (const book of sampleBooks) {
-    // Generate valid EPUB buffer
-    const rawEpub = buildSampleEpub({
-      id: book.id,
-      title: book.title,
-      author: book.author,
-      chapters: book.chapters,
-    });
-
-    // Derive deterministic title key and encrypt
-    const titleKey = deriveBookKey(book.id, env.JWT_SECRET);
-    const { ciphertext, iv, authTag } = encryptAsset(rawEpub, titleKey);
-
-    // Save encrypted file to public assets directory
-    const fileName = `${book.id}.enc`;
-    const filePath = path.join(assetsDir, fileName);
-    await fs.writeFile(filePath, ciphertext);
-
-    const assetUrl = `/assets/books/${fileName}`;
-
     await pool.query(
       `INSERT INTO books (
          id, publisher_id, title, author, isbn13, description,
          genre, language, price_cents, currency, is_available,
-         media_type, encrypted_file_url, encryption_iv,
-         encryption_auth_tag, file_size_bytes, published_at
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'en', $8, 'EUR', TRUE, 'ebook', $9, $10, $11, $12, CURRENT_DATE)
-       ON CONFLICT (id) DO UPDATE SET
-         encrypted_file_url = EXCLUDED.encrypted_file_url,
-         encryption_iv = EXCLUDED.encryption_iv,
-         encryption_auth_tag = EXCLUDED.encryption_auth_tag,
-         file_size_bytes = EXCLUDED.file_size_bytes,
-         is_available = TRUE`,
+         media_type, published_at
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, 'en', $8, 'EUR', FALSE, 'ebook', CURRENT_DATE)
+       ON CONFLICT (id) DO NOTHING`,
       [
         book.id,
         publisherId,
@@ -188,14 +171,39 @@ export async function runSeed(): Promise<void> {
         book.description,
         book.genre,
         book.priceCents,
-        assetUrl,
-        iv,
-        authTag,
-        ciphertext.length,
       ],
     );
 
-    console.log(`✓ Seeded & encrypted book: "${book.title}" (${ciphertext.length} bytes)`);
+    let asset = await currentReadyAsset(book.id);
+    if (!asset) {
+      const ingested = await ingestNow(
+        book.id,
+        editorId,
+        buildSampleEpub({
+          id: book.id,
+          title: book.title,
+          author: book.author,
+          chapters: book.chapters,
+        }),
+        // The compose worker may claim the job first: wait for it instead of reading `idle`.
+        { waitMs: SEED_INGEST_WAIT_MS },
+      );
+      if (ingested.state !== 'ready') {
+        throw new Error(
+          `Sample book "${book.title}" was not ingested (${ingested.state}: ${ingested.reason_code ?? 'no reason'})`,
+        );
+      }
+      await activateAsset(book.id, ingested.id, editorId);
+      asset = ingested;
+    }
+
+    await pool.query(
+      `UPDATE books
+          SET is_available = TRUE, published_at = COALESCE(published_at, CURRENT_DATE)
+        WHERE id = $1`,
+      [book.id],
+    );
+    console.log(`✓ Ingested and published: "${book.title}" (asset v${asset.version})`);
   }
 
   // 4. Grant first book to demo reader with sample progress, bookmark, and highlight

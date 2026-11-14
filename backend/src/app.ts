@@ -1,4 +1,3 @@
-import path from 'node:path';
 import express, { type Request, type Response, Router } from 'express';
 import { env } from './config/env';
 import { pool } from './db/pool';
@@ -7,9 +6,13 @@ import { cors } from './middleware/cors';
 import { errorHandler, notFoundHandler } from './middleware/errors';
 import { requestContext } from './middleware/request-context';
 import { adminRouter } from './routes/admin';
+import { assetsRouter, downloadsRouter } from './routes/assets';
+import { uploadAssetHandlers } from './routes/assets-publisher';
 import { authRouter } from './routes/auth';
 import { booksRouter } from './routes/books';
+import { devicesRouter } from './routes/devices';
 import { libraryRouter } from './routes/library';
+import { drmRouter, licencesRouter } from './routes/licences';
 import { publisherRouter } from './routes/publisher';
 import { sandboxRouter } from './routes/sandbox';
 import { checkoutRouter, transactionsRouter } from './routes/transactions';
@@ -30,12 +33,11 @@ app.use(cors(env.CORS_ORIGINS));
 // Before express.json(): webhook signatures cover the raw request bytes.
 app.use(`${API_PREFIX}/webhooks`, webhooksRouter);
 
-app.use(express.json({ limit: '1mb' }));
+// Also before express.json(): an EPUB upload is a raw body with its own, much
+// larger, hard limit, and nothing may buffer it as JSON first.
+app.post(`${API_PREFIX}/publisher/books/:bookId/assets`, ...uploadAssetHandlers);
 
-// TODO(phase 3, spec 8.3/17.2): ciphertext is still served from a public
-// static path. Replace with authorized download grants from private storage.
-const assetsDir = path.resolve(process.cwd(), 'public/assets');
-app.use('/assets', express.static(assetsDir));
+app.use(express.json({ limit: '1mb' }));
 
 // Unversioned: probed by infrastructure, not by API clients.
 app.get('/health', async (req: Request, res: Response) => {
@@ -52,6 +54,11 @@ const v1 = Router();
 v1.use('/auth', authRouter);
 v1.use('/books', booksRouter);
 v1.use('/library', libraryRouter);
+v1.use('/devices', devicesRouter);
+v1.use('/assets', assetsRouter);
+v1.use('/asset-downloads', downloadsRouter);
+v1.use('/licences', licencesRouter);
+v1.use('/drm', drmRouter);
 v1.use('/checkout-sessions', checkoutRouter);
 v1.use('/transactions', transactionsRouter);
 v1.use('/publisher', publisherRouter);

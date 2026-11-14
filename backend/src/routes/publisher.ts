@@ -3,18 +3,25 @@ import { z } from 'zod';
 import { listRates } from '../commerce/rates';
 import { SUPPORTED_CURRENCIES } from '../commerce/service';
 import { pool } from '../db/pool';
-import { authContext, requireAuth, requireRole } from '../middleware/auth';
+import { requireAuth, requireRole } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
-import { resolvePublisherScope } from './publisher-scope';
+import { assetsRouter } from './assets-publisher';
+import {
+  bookWriteScope,
+  publisherScopeQuerySchema,
+  resolvePublisherScope,
+  tenantFilter,
+} from './publisher-scope';
 import { reportsRouter } from './reports';
 
-export { resolvePublisherScope };
+export { publisherScopeQuerySchema, resolvePublisherScope };
 
 export const publisherRouter = Router();
 
 // Publisher endpoints require an authenticated user with 'publisher' or 'admin' role.
 publisherRouter.use(requireAuth, requireRole('publisher', 'admin'));
 publisherRouter.use('/reports', reportsRouter);
+publisherRouter.use('/books/:bookId/assets', assetsRouter);
 
 export const listPublisherBooksQuerySchema = z.object({
   status: z.enum(['all', 'published', 'draft']).default('all'),
@@ -22,10 +29,6 @@ export const listPublisherBooksQuerySchema = z.object({
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   // Admin-only filter; ignored for publisher accounts, which are always scoped.
-  publisherId: z.string().uuid('Not a valid publisher id').optional(),
-});
-
-export const publisherScopeQuerySchema = z.object({
   publisherId: z.string().uuid('Not a valid publisher id').optional(),
 });
 
@@ -89,12 +92,17 @@ export const updateBookSchema = z
     path: ['durationSeconds'],
   });
 
-export const setAssetSchema = z.object({
-  encryptedFileUrl: z.string().trim().min(1, 'Asset URL is required'),
-  encryptionIv: z.string().trim().base64('encryptionIv must be base64-encoded bytes'),
-  encryptionAuthTag: z.string().trim().base64('encryptionAuthTag must be base64-encoded bytes'),
-  fileSizeBytes: z.coerce.number().int().positive('fileSizeBytes must be positive'),
-});
+/**
+ * `has_asset` / `file_size_bytes`: whether the book has a ready current asset,
+ * and that asset's original size. `ref` is the books table name or alias.
+ */
+function assetColumns(ref: string): string {
+  const current = `(SELECT ba.original_size_bytes FROM book_assets ba
+                     WHERE ba.id = ${ref}.current_asset_id AND ba.state = 'ready')`;
+  return `${current} AS file_size_bytes,
+            EXISTS (SELECT 1 FROM book_assets ba
+                     WHERE ba.id = ${ref}.current_asset_id AND ba.state = 'ready') AS has_asset`;
+}
 
 interface PublisherBookRow {
   id: string;
@@ -112,9 +120,9 @@ interface PublisherBookRow {
   is_available: boolean;
   media_type: 'ebook' | 'audiobook';
   duration_seconds: number | null;
-  encrypted_file_url: string | null;
+  /** original_size_bytes of the current asset; null without a ready one. */
   file_size_bytes: string | null;
-  has_encryption_keys: boolean;
+  has_asset: boolean;
   sales_count: number;
   total_revenue_cents: number;
   /** Publisher's share after refund reversals; absent on write responses. */
@@ -122,33 +130,6 @@ interface PublisherBookRow {
   created_at: Date;
   updated_at: Date;
   total_count?: string;
-}
-
-/**
- * The publisher_id to filter by, or null for "all publishers" (admins only).
- * Fails closed: a publisher account without a linked house is rejected rather
- * than falling through to the unfiltered query.
- */
-function tenantFilter(req: Request): string | null {
-  const auth = authContext(req);
-  if (auth.role === 'admin') {
-    return null;
-  }
-  if (!auth.publisherId) {
-    throw new AppError(403, 'Account is not linked to a publishing house', 'PUBLISHER_NOT_LINKED');
-  }
-  return auth.publisherId;
-}
-
-/**
- * The publisher_id a book write is checked against. Publishers: their own
- * house. Admins: the publisher they picked in the portal (query parameter), so a
- * stale picker cannot edit another house's book; none means any book.
- */
-function bookWriteScope(req: Request): string | null {
-  const scope = tenantFilter(req);
-  if (scope !== null) return scope;
-  return publisherScopeQuerySchema.parse(req.query).publisherId ?? null;
 }
 
 function formatPublisherBook(row: PublisherBookRow) {
@@ -170,7 +151,7 @@ function formatPublisherBook(row: PublisherBookRow) {
     isAvailable: row.is_available,
     mediaType: row.media_type,
     durationSeconds: row.duration_seconds,
-    hasAsset: Boolean(row.encrypted_file_url && row.has_encryption_keys),
+    hasAsset: row.has_asset,
     fileSizeBytes: row.file_size_bytes ? Number(row.file_size_bytes) : null,
     metrics: {
       salesCount: Number(row.sales_count ?? 0),
@@ -207,9 +188,7 @@ publisherRouter.get('/books', async (req: Request, res: Response) => {
             b.is_available,
             b.media_type,
             b.duration_seconds,
-            b.encrypted_file_url,
-            b.file_size_bytes,
-            (b.encryption_iv IS NOT NULL AND b.encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
+            ${assetColumns('b')},
             b.created_at,
             b.updated_at,
             COALESCE(s.sales_count, 0) AS sales_count,
@@ -349,8 +328,7 @@ publisherRouter.post('/books', async (req: Request, res: Response) => {
      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)
      RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
                price_cents, currency, cover_image_url, published_at, is_available,
-               media_type, duration_seconds, encrypted_file_url, file_size_bytes,
-               FALSE as has_encryption_keys,
+               media_type, duration_seconds, ${assetColumns('books')},
                0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
     [
       publisherId,
@@ -393,9 +371,7 @@ publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
             b.is_available,
             b.media_type,
             b.duration_seconds,
-            b.encrypted_file_url,
-            b.file_size_bytes,
-            (b.encryption_iv IS NOT NULL AND b.encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
+            ${assetColumns('b')},
             b.created_at,
             b.updated_at,
             COALESCE(s.sales_count, 0) AS sales_count,
@@ -445,8 +421,7 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
         AND ($13::uuid IS NULL OR publisher_id = $13)
   RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
             price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, encrypted_file_url, file_size_bytes,
-            (encryption_iv IS NOT NULL AND encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
+            media_type, duration_seconds, ${assetColumns('books')},
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
     [
       input.title ?? null,
@@ -478,61 +453,29 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
   res.json({ book: formatPublisherBook(updated) });
 });
 
-/**
- * Attaches or updates the encrypted DRM asset payload for a book.
- */
-publisherRouter.post('/books/:id/asset', async (req: Request, res: Response) => {
-  const { id } = bookIdParamSchema.parse(req.params);
-  const { encryptedFileUrl, encryptionIv, encryptionAuthTag, fileSizeBytes } = setAssetSchema.parse(
-    req.body,
-  );
+let publishHook: (() => Promise<void>) | null = null;
 
-  const ivBuffer = Buffer.from(encryptionIv, 'base64');
-  const authTagBuffer = Buffer.from(encryptionAuthTag, 'base64');
-
-  const result = await pool.query<PublisherBookRow>(
-    `UPDATE books
-        SET encrypted_file_url = $1,
-            encryption_iv = $2,
-            encryption_auth_tag = $3,
-            file_size_bytes = $4
-      WHERE id = $5
-        AND ($6::uuid IS NULL OR publisher_id = $6)
-  RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
-            price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, encrypted_file_url, file_size_bytes,
-            TRUE as has_encryption_keys,
-            0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [encryptedFileUrl, ivBuffer, authTagBuffer, fileSizeBytes, id, bookWriteScope(req)],
-  );
-
-  const updated = result.rows[0];
-  if (!updated) {
-    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
-  }
-
-  res.json({ book: formatPublisherBook(updated) });
-});
+/** Test seam: runs between the publish checks and the update, to exercise races. */
+export function setPublishHookForTests(hook: (() => Promise<void>) | null): void {
+  publishHook = hook;
+}
 
 /**
  * Publishes a staged title to the live reader storefront (`is_available = true`).
- * Rejects if the title lacks an encrypted asset.
+ * Rejects unless the title has a ready current asset.
  */
 publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) => {
   const { id } = bookIdParamSchema.parse(req.params);
 
   const publisherId = bookWriteScope(req);
 
-  // Check asset completeness first
-  const existingResult = await pool.query<{
-    encrypted_file_url: string | null;
-    encryption_iv: Buffer | null;
-    encryption_auth_tag: Buffer | null;
-  }>(
-    `SELECT encrypted_file_url, encryption_iv, encryption_auth_tag
-       FROM books
-      WHERE id = $1
-        AND ($2::uuid IS NULL OR publisher_id = $2)`,
+  const existingResult = await pool.query<{ has_ready_asset: boolean; withdrawn: boolean }>(
+    `SELECT EXISTS (SELECT 1 FROM book_assets ba
+                     WHERE ba.id = b.current_asset_id AND ba.state = 'ready') AS has_ready_asset,
+            b.withdrawn_at IS NOT NULL AS withdrawn
+       FROM books b
+      WHERE b.id = $1
+        AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
     [id, publisherId],
   );
 
@@ -541,27 +484,38 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
     throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
-  if (!existing.encrypted_file_url || !existing.encryption_iv || !existing.encryption_auth_tag) {
+  if (existing.withdrawn) {
+    throw new AppError(403, 'This title has been withdrawn and cannot be published', 'FORBIDDEN');
+  }
+
+  if (!existing.has_ready_asset) {
     throw new AppError(
       400,
-      'Cannot publish a book without an uploaded encrypted asset (URL, IV, and Auth Tag required)',
+      'Cannot publish a book without a ready asset. Upload and process an EPUB first.',
       'ASSET_REQUIRED',
     );
   }
+
+  await publishHook?.();
 
   const result = await pool.query<PublisherBookRow>(
     `UPDATE books
         SET is_available = TRUE,
             published_at = COALESCE(published_at, CURRENT_DATE)
       WHERE id = $1
+        AND withdrawn_at IS NULL
         AND ($2::uuid IS NULL OR publisher_id = $2)
   RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
             price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, encrypted_file_url, file_size_bytes,
-            TRUE as has_encryption_keys,
+            media_type, duration_seconds, ${assetColumns('books')},
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
     [id, publisherId],
   );
+
+  // The book exists (checked above), so no row means a takedown landed after that check.
+  if (result.rows.length === 0) {
+    throw new AppError(403, 'This title has been withdrawn and cannot be published', 'FORBIDDEN');
+  }
 
   res.json({ book: formatPublisherBook(result.rows[0]) });
 });
@@ -579,8 +533,7 @@ publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response)
         AND ($2::uuid IS NULL OR publisher_id = $2)
   RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
             price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, encrypted_file_url, file_size_bytes,
-            (encryption_iv IS NOT NULL AND encryption_auth_tag IS NOT NULL) AS has_encryption_keys,
+            media_type, duration_seconds, ${assetColumns('books')},
             0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
     [id, bookWriteScope(req)],
   );
