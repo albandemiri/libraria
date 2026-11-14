@@ -1,12 +1,11 @@
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
-import { env } from '../config/env';
 import { isPgError, PG_FOREIGN_KEY_VIOLATION, PG_UNIQUE_VIOLATION } from '../db/errors';
 import { requireEntitlement } from '../commerce/entitlements';
 import { pool } from '../db/pool';
+import { revokeDeviceAccess } from '../drm/licence.service';
 import { authContext, requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
-import { deriveBookKey } from '../utils/crypto';
 
 export const libraryRouter = Router();
 
@@ -88,6 +87,10 @@ interface LibraryRow {
   total_count?: string;
   bookmarks_count?: string;
   highlights_count?: string;
+  asset_id: string | null;
+  asset_version: number | null;
+  asset_size_bytes: string | null;
+  asset_sha256: string | null;
 }
 
 interface BookmarkRow {
@@ -110,14 +113,6 @@ interface HighlightRow {
   updated_at: Date;
 }
 
-interface AssetRow {
-  encrypted_file_url: string | null;
-  encryption_iv: Buffer | null;
-  encryption_auth_tag: Buffer | null;
-  file_size_bytes: string | null;
-  media_type: 'ebook' | 'audiobook';
-}
-
 function publicLibraryItem(row: LibraryRow) {
   return {
     book: {
@@ -136,6 +131,15 @@ function publicLibraryItem(row: LibraryRow) {
         name: row.publisher_name,
       },
     },
+    // The current ready asset; null once the book is withdrawn or has no ready asset.
+    asset: row.asset_id
+      ? {
+          assetId: row.asset_id,
+          version: row.asset_version,
+          sizeBytes: Number(row.asset_size_bytes),
+          sha256: row.asset_sha256,
+        }
+      : null,
     acquiredAt: row.acquired_at,
     lastReadAt: row.last_read_at,
     readingProgress: row.reading_progress ?? {},
@@ -200,12 +204,18 @@ libraryRouter.get('/', async (req: Request, res: Response) => {
             b.duration_seconds,
             b.publisher_id,
             p.name AS publisher_name,
+            ba.id AS asset_id,
+            ba.version AS asset_version,
+            ba.ciphertext_size_bytes AS asset_size_bytes,
+            ba.ciphertext_sha256 AS asset_sha256,
             COUNT(*) OVER() AS total_count
        FROM user_libraries ul
        JOIN entitlements e
          ON e.user_id = ul.user_id AND e.book_id = ul.book_id AND e.status = 'active'
        JOIN books b ON b.id = ul.book_id
        JOIN publishers p ON p.id = b.publisher_id
+       LEFT JOIN book_assets ba
+         ON ba.id = b.current_asset_id AND ba.state = 'ready' AND b.withdrawn_at IS NULL
       WHERE ul.user_id = $1
       ORDER BY ${SORTS[sort]}
       LIMIT $2 OFFSET $3`,
@@ -248,6 +258,10 @@ libraryRouter.get('/:bookId', async (req: Request, res: Response) => {
             b.duration_seconds,
             b.publisher_id,
             p.name AS publisher_name,
+            ba.id AS asset_id,
+            ba.version AS asset_version,
+            ba.ciphertext_size_bytes AS asset_size_bytes,
+            ba.ciphertext_sha256 AS asset_sha256,
             (SELECT COUNT(*)::text FROM bookmarks bm WHERE bm.user_id = ul.user_id AND bm.book_id = ul.book_id) AS bookmarks_count,
             (SELECT COUNT(*)::text FROM highlights hl WHERE hl.user_id = ul.user_id AND hl.book_id = ul.book_id) AS highlights_count
        FROM user_libraries ul
@@ -255,6 +269,8 @@ libraryRouter.get('/:bookId', async (req: Request, res: Response) => {
          ON e.user_id = ul.user_id AND e.book_id = ul.book_id AND e.status = 'active'
        JOIN books b ON b.id = ul.book_id
        JOIN publishers p ON p.id = b.publisher_id
+       LEFT JOIN book_assets ba
+         ON ba.id = b.current_asset_id AND ba.state = 'ready' AND b.withdrawn_at IS NULL
       WHERE ul.user_id = $1 AND ul.book_id = $2`,
     [userId, bookId],
   );
@@ -299,59 +315,6 @@ libraryRouter.put('/:bookId/progress', async (req: Request, res: Response) => {
     bookId,
     readingProgress: updated.reading_progress,
     lastReadAt: updated.last_read_at,
-  });
-});
-
-/**
- * Securely retrieves asset decryption parameters for an owned title.
- */
-libraryRouter.get('/:bookId/asset', async (req: Request, res: Response) => {
-  const { userId } = authContext(req);
-  const { bookId } = bookIdParamSchema.parse(req.params);
-
-  await requireEntitlement(userId, bookId);
-
-  const assetResult = await pool.query<AssetRow>(
-    `SELECT encrypted_file_url,
-            encryption_iv,
-            encryption_auth_tag,
-            file_size_bytes,
-            media_type
-       FROM books
-      WHERE id = $1`,
-    [bookId],
-  );
-
-  const asset = assetResult.rows[0];
-  if (!asset?.encrypted_file_url || !asset.encryption_iv || !asset.encryption_auth_tag) {
-    throw new AppError(409, 'Asset is not yet available for download', 'ASSET_UNAVAILABLE');
-  }
-
-  res.json({
-    bookId,
-    mediaType: asset.media_type,
-    fileSizeBytes: asset.file_size_bytes ? Number(asset.file_size_bytes) : null,
-    encryptedFileUrl: asset.encrypted_file_url,
-    encryptionIv: asset.encryption_iv.toString('base64'),
-    encryptionAuthTag: asset.encryption_auth_tag.toString('base64'),
-  });
-});
-
-/**
- * Delivers the 256-bit AES-GCM decryption key for an owned title.
- */
-libraryRouter.get('/:bookId/key', async (req: Request, res: Response) => {
-  const { userId } = authContext(req);
-  const { bookId } = bookIdParamSchema.parse(req.params);
-
-  await requireEntitlement(userId, bookId);
-
-  const keyBuffer = deriveBookKey(bookId, env.JWT_SECRET);
-
-  res.json({
-    bookId,
-    key: keyBuffer.toString('base64'),
-    algorithm: 'aes-256-gcm',
   });
 });
 
@@ -535,5 +498,36 @@ libraryRouter.delete('/:bookId/highlights/:highlightId', async (req: Request, re
     throw new AppError(404, 'Highlight not found', 'NOT_FOUND');
   }
 
+  res.status(204).send();
+});
+
+// ---------------------------------------------------------------------------
+// Device access
+// ---------------------------------------------------------------------------
+
+const deviceAccessSchema = z.object({
+  deviceId: z
+    .string()
+    .uuid('Not a valid device id')
+    .transform((id) => id.toLowerCase()),
+});
+
+/**
+ * Withdraws one device's access to one book: its licences report `revoked` at the
+ * next check-in. The device stays registered and no removal is counted.
+ */
+libraryRouter.delete('/:bookId/device-access', async (req: Request, res: Response) => {
+  const { userId } = authContext(req);
+  const { bookId } = bookIdParamSchema.parse(req.params);
+  const { deviceId } = deviceAccessSchema.parse(req.body);
+
+  // Another user's device looks exactly like one that does not exist.
+  const { rows } = await pool.query('SELECT 1 FROM devices WHERE id = $1 AND user_id = $2', [
+    deviceId,
+    userId,
+  ]);
+  if (rows.length === 0) throw new AppError(404, 'Device not found', 'NOT_FOUND');
+
+  await revokeDeviceAccess(userId, bookId, deviceId);
   res.status(204).send();
 });

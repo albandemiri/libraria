@@ -6,6 +6,7 @@
  */
 
 import './env';
+import { createHash, randomUUID } from 'node:crypto';
 import type { AddressInfo } from 'node:net';
 import { Pool } from 'pg';
 import { app, API_PREFIX } from '../../src/app';
@@ -13,6 +14,10 @@ import { signAccessToken, type UserRole } from '../../src/auth/tokens';
 import { env } from '../../src/config/env';
 import { runMigrations } from '../../src/db/migrate';
 import { pool } from '../../src/db/pool';
+import { assetAad, encryptAsset } from '../../src/drm/encryption.service';
+import { buildEpub } from '../../src/drm/epub/fixtures';
+import { keyManagement } from '../../src/drm/key-management.service';
+import { objectStorage } from '../../src/drm/object-storage';
 
 /** Guards the TRUNCATE below from ever reaching a development database. */
 function assertTestDatabase(): void {
@@ -197,29 +202,84 @@ export async function createUser(
   };
 }
 
+/** An EPUB accepted by the ingestion validator, unique per call. */
+export function sampleEpub(title = 'Test Book'): Buffer {
+  return buildEpub({ title });
+}
+
+/**
+ * Creates a real ready asset for a book (real encryption with a fresh DEK from
+ * the configured KMS, ciphertext in the configured object storage) and makes it
+ * the book's current asset.
+ */
+export async function createReadyAsset(
+  bookId: string,
+  epub: Buffer = sampleEpub(),
+): Promise<{ assetId: string; version: number }> {
+  const assetId = randomUUID();
+  const { rows: versionRows } = await pool.query<{ version: number }>(
+    `SELECT COALESCE(MAX(version), 0) + 1 AS version FROM book_assets WHERE book_id = $1`,
+    [bookId],
+  );
+  const version = versionRows[0].version;
+
+  const dek = await keyManagement().generateDataKey();
+  try {
+    const { ciphertext, nonce, authTag } = encryptAsset(
+      epub,
+      dek.plaintext,
+      assetAad({ assetId, version, kmsKeyId: dek.keyId }),
+    );
+    const objectKey = `assets/${assetId}/v${version}`;
+    await objectStorage().put(objectKey, ciphertext);
+
+    await pool.query(
+      `INSERT INTO book_assets (id, book_id, version, state, original_size_bytes, object_key,
+                                ciphertext_size_bytes, ciphertext_sha256, nonce, auth_tag,
+                                ready_at, activated_at)
+       VALUES ($1, $2, $3, 'ready', $4, $5, $6, $7, $8, $9, NOW(), NOW())`,
+      [
+        assetId,
+        bookId,
+        version,
+        epub.length,
+        objectKey,
+        ciphertext.length,
+        createHash('sha256').update(ciphertext).digest('hex'),
+        nonce,
+        authTag,
+      ],
+    );
+    await pool.query(
+      `INSERT INTO asset_keys (asset_id, wrapped_dek, kms_key_id, kms_key_version, wrapping_algorithm)
+       VALUES ($1, $2, $3, $4, 'AES-256-GCM')`,
+      [assetId, dek.wrapped, dek.keyId, dek.keyVersion],
+    );
+    await pool.query(`UPDATE books SET current_asset_id = $1 WHERE id = $2`, [assetId, bookId]);
+  } finally {
+    dek.plaintext.fill(0);
+  }
+  return { assetId, version };
+}
+
 export async function createBook(
   publisherId: string,
   options: { available?: boolean; priceCents?: number; title?: string } = {},
 ): Promise<string> {
   const available = options.available ?? true;
   const { rows } = await pool.query<{ id: string }>(
-    `INSERT INTO books (publisher_id, title, author, genre, price_cents, is_available,
-                        encrypted_file_url, encryption_iv, encryption_auth_tag, file_size_bytes)
-     VALUES ($1, $2, 'Test Author', 'Fiction', $3, $4, $5, $6, $7, $8)
+    `INSERT INTO books (publisher_id, title, author, genre, price_cents, is_available)
+     VALUES ($1, $2, 'Test Author', 'Fiction', $3, FALSE)
      RETURNING id`,
-    [
-      publisherId,
-      options.title ?? `Book ${next()}`,
-      options.priceCents ?? 499,
-      available,
-      // Available books must reference an asset (books.available_needs_asset).
-      available ? '/assets/books/fixture.epub.enc' : null,
-      available ? Buffer.alloc(12, 1) : null,
-      available ? Buffer.alloc(16, 2) : null,
-      available ? 1024 : null,
-    ],
+    [publisherId, options.title ?? `Book ${next()}`, options.priceCents ?? 499],
   );
-  return rows[0].id;
+  const bookId = rows[0].id;
+  if (available) {
+    // An available book must have a ready current asset.
+    await createReadyAsset(bookId);
+    await pool.query(`UPDATE books SET is_available = TRUE WHERE id = $1`, [bookId]);
+  }
+  return bookId;
 }
 
 /** Grants ownership without a transaction, as a gift/promo would. */

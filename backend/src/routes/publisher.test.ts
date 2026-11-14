@@ -1,11 +1,6 @@
 import assert from 'node:assert/strict';
 import { describe, it } from 'node:test';
-import {
-  createBookSchema,
-  listPublisherBooksQuerySchema,
-  setAssetSchema,
-  updateBookSchema,
-} from './publisher';
+import { createBookSchema, listPublisherBooksQuerySchema, updateBookSchema } from './publisher';
 
 describe('Publisher Validation Schemas', () => {
   describe('listPublisherBooksQuerySchema', () => {
@@ -112,34 +107,6 @@ describe('Publisher Validation Schemas', () => {
       assert.equal(parsed.priceCents, 1499);
       assert.equal(parsed.description, 'New expanded edition.');
       assert.equal(parsed.title, undefined);
-    });
-  });
-
-  describe('setAssetSchema', () => {
-    it('accepts valid base64 IV and AuthTag', () => {
-      const ivBase64 = Buffer.alloc(12).toString('base64');
-      const authTagBase64 = Buffer.alloc(16).toString('base64');
-
-      const parsed = setAssetSchema.parse({
-        encryptedFileUrl: 'https://cdn.libraria.com/assets/book-1.enc',
-        encryptionIv: ivBase64,
-        encryptionAuthTag: authTagBase64,
-        fileSizeBytes: 2048576,
-      });
-
-      assert.equal(parsed.encryptedFileUrl, 'https://cdn.libraria.com/assets/book-1.enc');
-      assert.equal(parsed.fileSizeBytes, 2048576);
-    });
-
-    it('rejects non-base64 encryption keys', () => {
-      assert.throws(() =>
-        setAssetSchema.parse({
-          encryptedFileUrl: 'https://cdn.libraria.com/asset.enc',
-          encryptionIv: '!!!not-base64!!!',
-          encryptionAuthTag: '!!!not-base64!!!',
-          fileSizeBytes: 100,
-        }),
-      );
     });
   });
 });

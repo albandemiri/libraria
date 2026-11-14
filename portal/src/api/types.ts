@@ -111,3 +111,27 @@ export type ContractResponse = {
   current: CommissionRate | null;
   history: CommissionRate[];
 };
+
+export type AssetState =
+  | 'uploaded'
+  | 'validating'
+  | 'scanning'
+  | 'encrypting'
+  | 'storing'
+  | 'ready'
+  | 'rejected'
+  | 'failed';
+
+export type BookAsset = {
+  id: string;
+  version: number;
+  state: AssetState;
+  reasonCode: string | null;
+  /** Backend English text; never shown, the portal translates `reasonCode`. */
+  reasonDetail: string | null;
+  originalSizeBytes: number;
+  isCurrent: boolean;
+  createdAt: string;
+  readyAt: string | null;
+  activatedAt: string | null;
+};

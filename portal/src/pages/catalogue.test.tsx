@@ -143,7 +143,7 @@ describe('BookFormPage', () => {
     renderAt('/books/b1');
     await screen.findByDisplayValue('Draft Novel');
     await user.click(screen.getByRole('button', { name: 'Publish' }));
-    expect(await screen.findByText(/File upload is coming soon/)).toBeInTheDocument();
+    expect(await screen.findByText(/needs a ready, live EPUB file/)).toBeInTheDocument();
   });
 
   it('shows validation details next to their field', async () => {

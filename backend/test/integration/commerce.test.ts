@@ -56,7 +56,7 @@ async function sandbox(user: TestUser, transactionId: string, body: Record<strin
 }
 
 async function canRead(user: TestUser, bookId: string): Promise<boolean> {
-  const res = await api('GET', `/library/${bookId}/key`, { token: user.token });
+  const res = await api('GET', `/library/${bookId}`, { token: user.token });
   return res.status === 200;
 }
 

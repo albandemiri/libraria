@@ -14,7 +14,7 @@ import assert from 'node:assert/strict';
 import { after, before, beforeEach, describe, it } from 'node:test';
 
 /**
- * Spec 13.1 #1: a reader cannot access a book's asset or key without an
+ * Spec 13.1 #1: a reader cannot access a book's library entry without an
  * entitlement. Today ownership is a user_libraries row; the entitlements table
  * replaces it in the Commerce MVP, and these tests should carry over.
  */
@@ -47,22 +47,22 @@ after(async () => {
 const CFI = 'epubcfi(/6/4[chap01]!/4/2/10)';
 
 describe('library access requires ownership', () => {
-  it('lets the owner read library entry, asset metadata and key', async () => {
-    for (const path of [
-      `/library/${bookId}`,
-      `/library/${bookId}/asset`,
-      `/library/${bookId}/key`,
-    ]) {
+  it('lets the owner read the library entry', async () => {
+    const res = await api('GET', `/library/${bookId}`, { token: owner.token });
+    assert.equal(res.status, 200);
+  });
+
+  it('no longer serves asset parameters or keys, even to the owner', async () => {
+    for (const path of [`/library/${bookId}/asset`, `/library/${bookId}/key`]) {
       const res = await api('GET', path, { token: owner.token });
-      assert.equal(res.status, 200, path);
+      assert.equal(res.status, 404, path);
+      assert.equal(res.body.error.code, 'ROUTE_NOT_FOUND', path);
     }
   });
 
   it('hides every per-book library endpoint from a non-owner', async () => {
     const probes: Array<[string, string, unknown?]> = [
       ['GET', `/library/${bookId}`],
-      ['GET', `/library/${bookId}/asset`],
-      ['GET', `/library/${bookId}/key`],
       ['GET', `/library/${bookId}/bookmarks`],
       ['GET', `/library/${bookId}/highlights`],
       ['PUT', `/library/${bookId}/progress`, { progress: { cfi: CFI } }],
@@ -87,8 +87,8 @@ describe('library access requires ownership', () => {
     assert.deepEqual(res.body.books, []);
   });
 
-  it('requires authentication for the key endpoint', async () => {
-    const res = await api('GET', `/library/${bookId}/key`);
+  it('requires authentication for the library entry', async () => {
+    const res = await api('GET', `/library/${bookId}`);
     assert.equal(res.status, 401);
   });
 });

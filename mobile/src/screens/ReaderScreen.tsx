@@ -47,11 +47,9 @@ export const ReaderScreen = ({ route, navigation }: { route: any; navigation: an
       setBookmarks(bmData.bookmarks);
       setHighlights(hlData.highlights);
 
-      // 3. Verify asset and key delivery
-      await Promise.all([
-        apiFetch(`/library/${bookId}/asset`),
-        apiFetch(`/library/${bookId}/key`),
-      ]);
+      // 3. Asset delivery (download grants, device licences) is not wired up yet:
+      // the legacy /asset and /key endpoints are gone. Placeholder content stays.
+      // real reader: next project
 
       setLoading(false);
     } catch (err: any) {
@@ -204,7 +202,7 @@ export const ReaderScreen = ({ route, navigation }: { route: any; navigation: an
         <View style={styles.centered}>
           <ActivityIndicator size="large" color="#2563EB" />
           <Text style={[styles.loadingText, { color: themeColors[theme].text }]}>
-            Decrypting asset...
+            Opening book...
           </Text>
         </View>
       ) : (

@@ -1,4 +1,5 @@
 import type { NextFunction, Request, Response } from 'express';
+import { accountStatus } from '../auth/account-status';
 import { PORTAL_COOKIE, PORTAL_HEADER, readCookie } from '../auth/portal-session';
 import { type AuthContext, type UserRole, verifyAccessToken } from '../auth/tokens';
 import { AppError } from './errors';
@@ -30,7 +31,25 @@ const SAFE_METHODS = new Set(['GET', 'HEAD', 'OPTIONS']);
  * must also prove it came from our portal by sending `X-Libraria-Portal: 1`
  * (a custom header cannot be set cross-origin without a CORS preflight).
  */
-export function requireAuth(req: Request, _res: Response, next: NextFunction): void {
+export function requireAuth(req: Request, res: Response, next: NextFunction): void {
+  authenticate(req, res, next, false);
+}
+
+/**
+ * Like `requireAuth`, but a suspended account is let through. Only for the licence
+ * check-in, which must be able to tell a suspended account's apps that their licences
+ * are `revoked`. The handler must not treat the caller as an active account.
+ */
+export function requireAuthAllowSuspended(req: Request, res: Response, next: NextFunction): void {
+  authenticate(req, res, next, true);
+}
+
+function authenticate(
+  req: Request,
+  _res: Response,
+  next: NextFunction,
+  allowSuspended: boolean,
+): void {
   const bearer = bearerToken(req);
   const cookie = bearer ? null : readCookie(req.get('cookie'), PORTAL_COOKIE);
   const token = bearer ?? cookie;
@@ -52,7 +71,23 @@ export function requireAuth(req: Request, _res: Response, next: NextFunction): v
 
   req.auth = auth;
   req.authSource = bearer ? 'bearer' : 'cookie';
-  next();
+
+  // A token outlives the account's standing, so status is checked per request
+  // (through a short cache), not baked into the token.
+  accountStatus(auth.userId)
+    .then(
+      (status) => {
+        if (status === null) {
+          next(new AppError(401, 'Account no longer exists', 'UNAUTHENTICATED'));
+        } else if (status === 'suspended' && !allowSuspended) {
+          next(new AppError(403, 'This account is suspended', 'ACCOUNT_SUSPENDED'));
+        } else {
+          next();
+        }
+      },
+      (error: unknown) => next(error),
+    )
+    .catch(next);
 }
 
 /** Must be mounted after `requireAuth`. */

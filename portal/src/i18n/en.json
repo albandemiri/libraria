@@ -183,7 +183,7 @@
     },
     "fixFields": "Please fix the highlighted fields.",
     "errors": {
-      "ASSET_REQUIRED": "File upload is coming soon. A book needs an uploaded file before it can be published.",
+      "ASSET_REQUIRED": "A book needs a ready, live EPUB file before it can be published. Upload one below.",
       "NOT_FOUND": "This book could not be found.",
       "generic": "We could not save your changes. Please try again."
     }
@@ -195,5 +195,54 @@
     "history": "Contract history",
     "inForce": "In force now",
     "none": "No active contract. Contact Libraria."
+  },
+  "assets": {
+    "title": "EPUB file",
+    "upload": "Upload EPUB",
+    "uploadHint": "An .epub file up to 100 MB. A new upload becomes a new version; readers keep the live version until you make another one live.",
+    "empty": "No file uploaded yet.",
+    "version": "Version {{n}}",
+    "live": "Live",
+    "activate": "Make this version live",
+    "confirm": "Readers will receive this version the next time they open the book. Continue?",
+    "confirmYes": "Yes, make it live",
+    "cancel": "Cancel",
+    "states": {
+      "uploaded": "Uploaded",
+      "validating": "Checking",
+      "scanning": "Scanning",
+      "encrypting": "Encrypting",
+      "storing": "Storing",
+      "ready": "Ready",
+      "rejected": "Rejected",
+      "failed": "Failed"
+    },
+    "reasons": {
+      "generic": "The file could not be processed.",
+      "NOT_AN_EPUB": "This is not a valid EPUB file.",
+      "ARCHIVE_TOO_LARGE": "The unpacked book is too large.",
+      "TOO_MANY_ENTRIES": "The EPUB contains too many files.",
+      "COMPRESSION_RATIO": "The EPUB is compressed in a suspicious way.",
+      "UNSAFE_PATH": "The EPUB contains unsafe file paths.",
+      "DUPLICATE_ENTRY": "The EPUB contains duplicate files.",
+      "INVALID_CONTAINER": "The EPUB container is damaged or incomplete.",
+      "INVALID_PACKAGE": "The EPUB package description is invalid.",
+      "UNSUPPORTED_ENCRYPTION": "The EPUB already has its own encryption, which is not supported.",
+      "ENCRYPTED_ARCHIVE": "The EPUB is password protected.",
+      "SCRIPTED_CONTENT": "The EPUB contains scripts, which are not allowed.",
+      "REMOTE_RESOURCES": "The EPUB loads content from the internet, which is not allowed.",
+      "UNSUPPORTED_MEDIA": "The EPUB contains an unsupported media type.",
+      "MALWARE_DETECTED": "The file was rejected by the security scan.",
+      "SCAN_UNAVAILABLE": "The security scan is unavailable. Please try again later.",
+      "PROCESSING_TIMEOUT": "Processing took too long. Try a smaller file.",
+      "PROCESSING_ERROR": "Processing failed. Please try again."
+    },
+    "errors": {
+      "generic": "The upload failed. Please try again.",
+      "PAYLOAD_TOO_LARGE": "The file is larger than the 100 MB limit.",
+      "ASSET_PROCESSING": "Another upload for this book is still being processed. Wait for it to finish.",
+      "RATE_LIMITED": "Too many uploads. Please try again later.",
+      "NOT_FOUND": "This book or version could not be found."
+    }
   }
 }

@@ -2,14 +2,14 @@ import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { rateInForceSql } from '../commerce/rates';
 import { pool } from '../db/pool';
+import { objectStorage } from '../drm/object-storage';
 import { AppError } from '../middleware/errors';
 
 export const booksRouter = Router();
 
 /**
- * Catalogue responses are assembled from an explicit column list. The DRM
- * columns (encrypted_file_url, encryption_iv, encryption_auth_tag) are never
- * part of it — asset access goes through the key-delivery endpoint instead.
+ * Catalogue responses are assembled from an explicit column list, so nothing
+ * about assets or keys can leak into them.
  */
 const CATALOGUE_COLUMNS = `
   b.id,
@@ -167,4 +167,52 @@ booksRouter.get('/:id', async (req: Request, res: Response) => {
   }
 
   res.json({ book: publicBook(book) });
+});
+
+/** The image type from its first bytes, never from anything the uploader declared. */
+function sniffImageType(data: Buffer): string | null {
+  if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
+    return 'image/png';
+  }
+  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
+    return 'image/jpeg';
+  }
+  if (data.length >= 6 && /^GIF8[79]a$/.test(data.subarray(0, 6).toString('latin1'))) {
+    return 'image/gif';
+  }
+  if (
+    data.length >= 12 &&
+    data.subarray(0, 4).toString('latin1') === 'RIFF' &&
+    data.subarray(8, 12).toString('latin1') === 'WEBP'
+  ) {
+    return 'image/webp';
+  }
+  return null;
+}
+
+/** The cover the ingestion worker extracted from the book's current asset. Public, cacheable. */
+booksRouter.get('/:id/cover', async (req: Request, res: Response) => {
+  const { id } = idParamSchema.parse(req.params);
+  const { rows } = await pool.query<{ current_asset_id: string | null }>(
+    'SELECT current_asset_id FROM books WHERE id = $1 AND withdrawn_at IS NULL',
+    [id],
+  );
+  const assetId = rows[0]?.current_asset_id;
+  if (!assetId) throw new AppError(404, 'Cover not found', 'NOT_FOUND');
+
+  const key = `covers/${id}/${assetId}`;
+  const storage = objectStorage();
+  const data = (await storage.head(key)) ? await storage.get(key).catch(() => null) : null;
+  const type = data ? sniffImageType(data) : null;
+  if (!data || !type) throw new AppError(404, 'Cover not found', 'NOT_FOUND');
+
+  res
+    .status(200)
+    .set({
+      'Content-Type': type,
+      'Content-Length': String(data.length),
+      'Cache-Control': 'public, max-age=86400',
+      'X-Content-Type-Options': 'nosniff',
+    })
+    .end(data);
 });

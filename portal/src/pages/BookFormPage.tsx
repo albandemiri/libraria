@@ -4,6 +4,7 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { useBook, useBookMutations } from '../api/books';
 import { ApiError } from '../api/client';
 import type { Book, MediaType } from '../api/types';
+import AssetPanel from '../components/AssetPanel';
 import DataState from '../components/DataState';
 import ScopeGate from '../components/ScopeGate';
 import { parseEuroInput } from '../lib/format';
@@ -203,6 +204,7 @@ function BookForm({ book }: { book?: Book }) {
           )}
         </div>
       </form>
+      {book && <AssetPanel bookId={book.id} />}
     </div>
   );
 }

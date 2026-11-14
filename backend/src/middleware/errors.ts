@@ -42,6 +42,15 @@ export const errorCodes = [
   'PUBLISHER_ID_REQUIRED',
   'PUBLISHER_NOT_LINKED',
   'ASSET_REQUIRED',
+  'ASSET_PROCESSING',
+  'ASSET_ACCESS_DENIED',
+  'ASSET_SUPERSEDED',
+  // Devices and accounts
+  'ACCOUNT_SUSPENDED',
+  'DEVICE_LIMIT_REACHED',
+  'DEVICE_REMOVAL_LIMIT',
+  // Rate limiting
+  'RATE_LIMITED',
   // Reports
   'EXPORT_TOO_LARGE',
 ] as const;
@@ -54,6 +63,8 @@ export class AppError extends Error {
     readonly status: number,
     message: string,
     readonly code: ErrorCode,
+    /** Structured, client-safe context, sent as `error.details`. */
+    readonly details?: unknown,
   ) {
     super(message);
     this.name = 'AppError';
@@ -65,7 +76,7 @@ export interface ErrorBody {
     code: ErrorCode;
     message: string;
     requestId: string;
-    details?: Array<{ path: string; message: string }>;
+    details?: Array<{ path: string; message: string }> | Record<string, unknown>;
   };
 }
 
@@ -119,7 +130,14 @@ export function errorHandler(
   }
 
   if (error instanceof AppError) {
-    send(req, res, error.status, error.code, error.message);
+    send(
+      req,
+      res,
+      error.status,
+      error.code,
+      error.message,
+      error.details as ErrorBody['error']['details'],
+    );
     return;
   }
 

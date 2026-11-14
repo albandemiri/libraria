@@ -10,6 +10,14 @@ const INCOMING_ID = /^[A-Za-z0-9._-]{8,128}$/;
 
 export const REQUEST_ID_HEADER = 'X-Request-Id';
 
+/** A download token in the path is a bearer credential: it never reaches a log line. */
+const DOWNLOAD_TOKEN_PATH = /(\/asset-downloads\/)[^/?#]*/i;
+
+/** Path only: query strings can carry search terms and other user input. */
+export function loggablePath(originalUrl: string): string {
+  return (originalUrl.split('?')[0] ?? '').replace(DOWNLOAD_TOKEN_PATH, '$1[redacted]');
+}
+
 /** Assigns `req.requestId`, echoes it as a response header, and logs completion. */
 export function requestContext(req: Request, res: Response, next: NextFunction): void {
   const incoming = req.get(REQUEST_ID_HEADER);
@@ -23,8 +31,7 @@ export function requestContext(req: Request, res: Response, next: NextFunction):
     logger.info('request completed', {
       requestId: req.requestId,
       method: req.method,
-      // Path only: query strings can carry search terms and other user input.
-      path: req.originalUrl.split('?')[0],
+      path: loggablePath(req.originalUrl),
       status: res.statusCode,
       durationMs: Math.round(durationMs * 10) / 10,
       ...(req.auth && { userId: req.auth.userId }),
