@@ -74,6 +74,7 @@ export function Dialog({
   actions,
   onOpenAutoFocus,
   onCloseAutoFocus,
+  dismissible = true,
 }: OverlayProps & {
   description?: string;
   actions: ReactNode;
@@ -81,6 +82,8 @@ export function Dialog({
   onOpenAutoFocus?: (event: Event) => void;
   /** Where focus goes when it closes. Replaces the default "back to whatever opened it". */
   onCloseAutoFocus?: (event: Event) => void;
+  /** False: Esc, an outside click and the close button do nothing; only the actions close it. */
+  dismissible?: boolean;
 }) {
   const returnFocus = useReturnFocus(open);
   return (
@@ -91,6 +94,8 @@ export function Dialog({
           className={styles.dialog}
           onOpenAutoFocus={onOpenAutoFocus}
           onCloseAutoFocus={onCloseAutoFocus ?? returnFocus}
+          onEscapeKeyDown={dismissible ? undefined : (e) => e.preventDefault()}
+          onInteractOutside={dismissible ? undefined : (e) => e.preventDefault()}
           {...(description ? {} : { 'aria-describedby': undefined })}
         >
           <div className={styles.header}>
@@ -102,7 +107,7 @@ export function Dialog({
                 </RadixDialog.Description>
               )}
             </div>
-            <CloseButton />
+            {dismissible && <CloseButton />}
           </div>
           <div className={styles.body}>{children}</div>
           <div className={styles.actions}>{actions}</div>

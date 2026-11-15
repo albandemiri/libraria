@@ -7,13 +7,22 @@ export class ApiError extends Error {
   code: string;
   /** Field-level problems of a `VALIDATION_FAILED` response. */
   details: ApiErrorDetail[];
+  /** The machine-readable reason of an object-shaped `details` (`INVITE_INVALID`), else null. */
+  reason: string | null;
 
-  constructor(status: number, code: string, message: string, details: ApiErrorDetail[] = []) {
+  constructor(
+    status: number,
+    code: string,
+    message: string,
+    details: ApiErrorDetail[] = [],
+    reason: string | null = null,
+  ) {
     super(message);
     this.name = 'ApiError';
     this.status = status;
     this.code = code;
     this.details = details;
+    this.reason = reason;
   }
 }
 
@@ -64,17 +73,24 @@ async function request(path: string, init: ApiInit): Promise<Response> {
     let code = 'UNKNOWN';
     let message = res.statusText;
     let details: ApiErrorDetail[] = [];
+    let reason: string | null = null;
     try {
       const body = (await res.json()) as {
-        error?: { code?: string; message?: string; details?: ApiErrorDetail[] };
+        error?: {
+          code?: string;
+          message?: string;
+          details?: ApiErrorDetail[] | { reason?: unknown };
+        };
       };
       code = body.error?.code ?? code;
       message = body.error?.message ?? message;
-      if (Array.isArray(body.error?.details)) details = body.error.details;
+      const raw = body.error?.details;
+      if (Array.isArray(raw)) details = raw;
+      else if (raw && typeof raw.reason === 'string') reason = raw.reason;
     } catch {
       // Non-JSON error body; keep the defaults.
     }
-    throw new ApiError(res.status, code, message, details);
+    throw new ApiError(res.status, code, message, details, reason);
   }
   return res;
 }

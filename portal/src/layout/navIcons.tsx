@@ -77,6 +77,32 @@ const settings = (
   </>
 );
 
+const platform = (
+  <>
+    <circle cx="8" cy="8" r="5.5" />
+    <path d="M2.5 8h11M8 2.5c1.7 1.6 2.5 3.4 2.5 5.5S9.7 11.9 8 13.5M8 2.5C6.3 4.1 5.5 5.9 5.5 8s.8 3.9 2.5 5.5" />
+  </>
+);
+const publishers = (
+  <>
+    <path d="M2.5 13.5h11M4 13.5V4.5L8 2.5l4 2v9" />
+    <path d="M6.5 6.5h3M6.5 9h3M7 13.5v-2h2v2" />
+  </>
+);
+
+const platformBooks = (
+  <>
+    <path d="M3 2.5h6a2 2 0 0 1 2 2v9H5a2 2 0 0 1-2-2z" />
+    <path d="M11 5.5h2v8" />
+  </>
+);
+const readers = (
+  <>
+    <circle cx="8" cy="5.5" r="2.5" />
+    <path d="M3 13.5c.5-2.6 2.5-4 5-4s4.5 1.4 5 4" />
+  </>
+);
+
 const ICONS = {
   overview,
   catalog,
@@ -88,6 +114,10 @@ const ICONS = {
   statements,
   contracts,
   settings,
+  platform,
+  publishers,
+  platformBooks,
+  readers,
 };
 export type NavIconName = keyof typeof ICONS;
 

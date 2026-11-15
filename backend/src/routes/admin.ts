@@ -9,11 +9,26 @@ import { retryAsset } from '../drm/asset-ingestion.service';
 import { listAllDevices, removeDevice, resetRemovals } from '../drm/device.service';
 import { audit } from '../drm/drm.audit';
 import { authContext, requireAuth, requireRole } from '../middleware/auth';
+import { escapeLike } from '../reports/base';
 import { AppError } from '../middleware/errors';
+import { adminPublishersRouter } from './admin-publishers';
+import { adminReadersRouter } from './admin-readers';
+import { adminReportsRouter } from './admin-reports';
+import {
+  BOOK_JOINS,
+  BOOK_SELECT_COLUMNS,
+  BOOK_STATUS_SQL,
+  formatPublisherBook,
+  type PublisherBookRow,
+} from './publisher-books';
+import { BOOK_SORTS, listPublisherBooksQuerySchema } from './publisher';
 
 /** Platform administration. Admin accounts only. */
 export const adminRouter = Router();
 adminRouter.use(requireAuth, requireRole('admin'));
+adminRouter.use(adminPublishersRouter);
+adminRouter.use('/reports', adminReportsRouter);
+adminRouter.use(adminReadersRouter);
 
 const publisherParamSchema = z.object({ id: z.string().uuid('Not a valid publisher id') });
 
@@ -33,14 +48,6 @@ async function requirePublisher(publisherId: string): Promise<void> {
   const { rowCount } = await pool.query('SELECT 1 FROM publishers WHERE id = $1', [publisherId]);
   if (rowCount === 0) throw new AppError(404, 'Publisher not found', 'NOT_FOUND');
 }
-
-/** Publishing houses, for the portal's admin picker. */
-adminRouter.get('/publishers', async (_req: Request, res: Response) => {
-  const { rows } = await pool.query<{ id: string; name: string }>(
-    'SELECT id, name FROM publishers ORDER BY name, id',
-  );
-  res.json({ publishers: rows });
-});
 
 /**
  * Adds a contract rate. Rates are never edited: a new contract, or a
@@ -266,5 +273,44 @@ adminRouter.post('/books/:bookId/reinstate', async (req: Request, res: Response)
   res.json({
     ...takedownBody(await setWithdrawn(bookId, authContext(req).userId, null)),
     note: 'The book is not republished automatically; its publisher must publish it again.',
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Books across publishers
+// ---------------------------------------------------------------------------
+
+const adminBooksQuerySchema = listPublisherBooksQuerySchema.omit({ search: true }).extend({
+  // An empty ?q= means no filter.
+  q: z.preprocess((v) => (v === '' ? undefined : v), z.string().trim().min(1).max(200).optional()),
+});
+
+/** The publisher book payload for every publisher, with the publisher's name. */
+adminRouter.get('/books', async (req: Request, res: Response) => {
+  const { status, q, page, limit, publisherId, ...query } = adminBooksQuerySchema.parse(req.query);
+  const sort = BOOK_SORTS[query.sort];
+  const direction = (query.order ?? sort.defaultOrder) === 'asc' ? 'ASC' : 'DESC';
+
+  const result = await pool.query<PublisherBookRow & { publisher_name: string }>(
+    `SELECT ${BOOK_SELECT_COLUMNS},
+            pub.name AS publisher_name,
+            COUNT(*) OVER() AS total_count
+       ${BOOK_JOINS}
+       JOIN publishers pub ON pub.id = b.publisher_id
+      WHERE ($1::uuid IS NULL OR b.publisher_id = $1)
+        AND (($2::text = 'all' AND ${BOOK_STATUS_SQL} <> 'archived') OR ${BOOK_STATUS_SQL} = $2)
+        AND ($3::text IS NULL OR b.title ILIKE $3 OR b.author ILIKE $3)
+      ORDER BY ${sort.sql} ${direction}, b.id ${direction}
+      LIMIT $4 OFFSET $5`,
+    [publisherId ?? null, status, q ? `%${escapeLike(q)}%` : null, limit, (page - 1) * limit],
+  );
+
+  const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
+  res.json({
+    books: result.rows.map((row) => ({
+      ...formatPublisherBook(row),
+      publisherName: row.publisher_name,
+    })),
+    pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
   });
 });

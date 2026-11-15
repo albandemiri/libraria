@@ -45,26 +45,18 @@ export const rangeQuerySchema = z
     }
   });
 
-const granularitySchema = z.object({
+export const granularitySchema = z.object({
   granularity: z.enum(['day', 'week', 'month']).default('day'),
 });
+
+type Granularity = z.infer<typeof granularitySchema>['granularity'];
 
 const summaryBookSchema = z.object({ bookId: z.string().uuid('Not a valid book id').optional() });
 
 const STEP = { day: '1 day', week: '1 week', month: '1 month' } as const;
 
-reportsRouter.get('/summary', async (req: Request, res: Response) => {
-  const query = rangeQuerySchema.parse(req.query);
-  const { granularity: g } = granularitySchema.parse(req.query); // enum-validated, safe to inline
-  const publisherId = resolvePublisherScope(req, query.publisherId);
-  const { bookId } = summaryBookSchema.parse(req.query);
-  const base = salesBase({
-    publisherId,
-    from: query.from,
-    to: query.to,
-    ...(bookId !== undefined ? { bookId } : {}),
-  });
-
+/** Totals and a per-period series for any salesBase scope. Shared with the platform reports. */
+export async function summaryReport(base: { sql: string; params: unknown[] }, g: Granularity) {
   const totals = await pool.query(
     `WITH s AS (${base.sql}) SELECT ${METRICS_SQL} FROM s`,
     base.params,
@@ -86,14 +78,27 @@ reportsRouter.get('/summary', async (req: Request, res: Response) => {
       ORDER BY p.period`,
     base.params,
   );
-
-  res.json({
+  return {
     totals: toMetrics(totals.rows[0]),
     series: series.rows.map((row) => ({
       periodStart: row.period_start as string,
       ...toMetrics(row),
     })),
+  };
+}
+
+reportsRouter.get('/summary', async (req: Request, res: Response) => {
+  const query = rangeQuerySchema.parse(req.query);
+  const { granularity: g } = granularitySchema.parse(req.query); // enum-validated, safe to inline
+  const publisherId = resolvePublisherScope(req, query.publisherId);
+  const { bookId } = summaryBookSchema.parse(req.query);
+  const base = salesBase({
+    publisherId,
+    from: query.from,
+    to: query.to,
+    ...(bookId !== undefined ? { bookId } : {}),
   });
+  res.json(await summaryReport(base, g));
 });
 
 const byGrossDesc = (a: Metrics, b: Metrics) => b.grossCents - a.grossCents;

@@ -66,7 +66,7 @@ interface LockedBook {
  * The keys are read under the lock, so each upload deletes exactly what the
  * previous winner stored.
  */
-async function replaceCover(
+export async function replaceCover(
   bookId: string,
   publisherId: string,
   keys: { objectKey: string | null; thumbKey: string | null },

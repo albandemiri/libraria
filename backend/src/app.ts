@@ -25,6 +25,9 @@ export const app = express();
 
 app.disable('x-powered-by');
 
+// Without trusted proxies X-Forwarded-For is ignored: a client cannot pick its own address.
+app.set('trust proxy', env.TRUST_PROXY === 0 ? false : env.TRUST_PROXY);
+
 // First, so every later log line and error body can carry the request ID.
 app.use(requestContext);
 

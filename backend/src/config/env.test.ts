@@ -32,9 +32,79 @@ describe('parseEnv', () => {
   it('does not start in production while only the local KMS exists', () => {
     // PAYMENTS_MODE would default to disabled, but KMS_PROVIDER=local is refused first.
     assert.throws(
-      () => parseEnv({ NODE_ENV: 'production', JWT_SECRET: STRONG_SECRET }),
+      () =>
+        parseEnv({
+          NODE_ENV: 'production',
+          JWT_SECRET: STRONG_SECRET,
+          PORTAL_ORIGIN: 'https://portal.example',
+        }),
       /development DRM_LOCAL_KEK/,
     );
+  });
+
+  it('defaults PORTAL_ORIGIN in development and requires it in production', () => {
+    assert.equal(parseEnv({ NODE_ENV: 'development' }).PORTAL_ORIGIN, 'http://localhost:5173');
+    assert.equal(parseEnv({ PORTAL_ORIGIN: '' }).PORTAL_ORIGIN, 'http://localhost:5173');
+    assert.equal(
+      parseEnv({ PORTAL_ORIGIN: 'https://portal.example/' }).PORTAL_ORIGIN,
+      'https://portal.example',
+    );
+    assert.throws(() => parseEnv({ PORTAL_ORIGIN: 'not a url' }), /PORTAL_ORIGIN/);
+    assert.throws(() => parseEnv({ PORTAL_ORIGIN: 'https://portal.example/app' }), /PORTAL_ORIGIN/);
+    assert.throws(
+      () => parseEnv({ NODE_ENV: 'production', JWT_SECRET: STRONG_SECRET }),
+      /PORTAL_ORIGIN is required/,
+    );
+  });
+
+  it('accepts only a plain http(s) origin for PORTAL_ORIGIN, normalised', () => {
+    assert.equal(
+      parseEnv({ PORTAL_ORIGIN: 'https://Portal.Example:8443/' }).PORTAL_ORIGIN,
+      'https://portal.example:8443',
+    );
+    assert.equal(
+      parseEnv({ PORTAL_ORIGIN: 'http://localhost:5173' }).PORTAL_ORIGIN,
+      'http://localhost:5173',
+    );
+    for (const bad of [
+      'https://portal.example/app',
+      'https://portal.example/?a=1',
+      'https://portal.example/?',
+      'https://portal.example/#x',
+      'https://portal.example#',
+      'https://user@portal.example',
+      'https://user:pw@portal.example',
+      'ftp://portal.example',
+      'javascript:alert(1)',
+      'portal.example',
+    ]) {
+      assert.throws(() => parseEnv({ PORTAL_ORIGIN: bad }), /PORTAL_ORIGIN/, bad);
+    }
+  });
+
+  it('requires an https PORTAL_ORIGIN in production', () => {
+    assert.throws(
+      () =>
+        parseEnv({
+          NODE_ENV: 'production',
+          JWT_SECRET: STRONG_SECRET,
+          PORTAL_ORIGIN: 'http://portal.example',
+        }),
+      /must be an https origin/,
+    );
+  });
+
+  it('reads TRUST_PROXY as off, a hop count or a list of trusted addresses', () => {
+    assert.equal(parseEnv({}).TRUST_PROXY, 0);
+    assert.equal(parseEnv({ TRUST_PROXY: '' }).TRUST_PROXY, 0);
+    assert.equal(parseEnv({ TRUST_PROXY: '1' }).TRUST_PROXY, 1);
+    assert.deepEqual(parseEnv({ TRUST_PROXY: '10.0.0.0/8, 172.16.0.0/12,loopback' }).TRUST_PROXY, [
+      '10.0.0.0/8',
+      '172.16.0.0/12',
+      'loopback',
+    ]);
+    assert.throws(() => parseEnv({ TRUST_PROXY: 'yes' }), /TRUST_PROXY/);
+    assert.throws(() => parseEnv({ TRUST_PROXY: '1,,2' }), /TRUST_PROXY/);
   });
 
   it('refuses simulated payments in production', () => {
@@ -98,7 +168,11 @@ describe('parseEnv: payments', () => {
 });
 
 describe('parseEnv: DRM', () => {
-  const prodBase = { NODE_ENV: 'production', JWT_SECRET: STRONG_SECRET } as const;
+  const prodBase = {
+    NODE_ENV: 'production',
+    JWT_SECRET: STRONG_SECRET,
+    PORTAL_ORIGIN: 'https://portal.example',
+  } as const;
   const realKek = Buffer.alloc(32, 7).toString('base64');
   const realSigningKey = generateKeyPairSync('ed25519')
     .privateKey.export({ type: 'pkcs8', format: 'pem' })

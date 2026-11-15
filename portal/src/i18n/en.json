@@ -41,7 +41,8 @@
     "groups": {
       "workspace": "Workspace",
       "financials": "Financials",
-      "organization": "Organization"
+      "organization": "Organization",
+      "platform": "Platform"
     },
     "overview": "Overview",
     "catalog": "Catalog",
@@ -56,7 +57,11 @@
     "collapse": "Collapse sidebar",
     "expand": "Expand sidebar",
     "openMenu": "Open menu",
-    "drawerTitle": "Navigation"
+    "drawerTitle": "Navigation",
+    "platform": "Platform overview",
+    "publishers": "Publishers",
+    "platformBooks": "All books",
+    "readers": "Readers"
   },
   "topbar": {
     "publisher": "Publisher",
@@ -617,5 +622,245 @@
   "bookLanguages": {
     "sq": "Albanian",
     "en": "English"
+  },
+  "notFound": {
+    "title": "Page not found",
+    "body": "This page does not exist, or your account cannot open it.",
+    "home": "Back to the overview"
+  },
+  "platform": {
+    "cancel": "Cancel",
+    "country": {
+      "other": "Other"
+    },
+    "overview": {
+      "title": "Platform overview",
+      "figures": "Platform figures",
+      "commission": "Libraria commission (net of refunds)",
+      "publisherEarnings": "Publisher earnings",
+      "chartTitle": "Gross sales over time",
+      "chartLabel": "Chart of gross sales over time",
+      "byPublisher": "By publisher",
+      "table": "Sales by publisher",
+      "publisher": "Publisher",
+      "rate": "Contract rate",
+      "noContract": "No contract yet",
+      "noRate_one": "{{count}} publisher has no contract rate yet, so its sales are not split between Libraria and the publisher.",
+      "noRate_other": "{{count}} publishers have no contract rate yet, so their sales are not split between Libraria and the publishers.",
+      "empty": "There are no publishers yet."
+    },
+    "publishers": {
+      "title": "Publishers",
+      "search": "Search publishers by name",
+      "new": "New publisher",
+      "newTitle": "New publisher",
+      "table": "Publishers",
+      "name": "Name",
+      "country": "Country",
+      "email": "Contact email",
+      "rate": "Contract rate",
+      "books": "Books",
+      "noContract": "No contract yet",
+      "emptySearch": "No publishers match your search."
+    },
+    "form": {
+      "name": "Name",
+      "email": "Contact email",
+      "country": "Country",
+      "chooseCountry": "Choose a country",
+      "create": "Create publisher",
+      "save": "Save changes",
+      "saved": "Changes saved",
+      "errors": {
+        "name": "Enter the publisher's name",
+        "email": "Enter a valid email address",
+        "country": "Choose a country"
+      },
+      "countryMissing": "This publisher has no country yet. Choose one to save it.",
+      "nothing": "Nothing to save"
+    },
+    "publisher": {
+      "notFoundTitle": "Publisher not found",
+      "notFoundBody": "This publisher does not exist.",
+      "all": "All publishers",
+      "tabsLabel": "Publisher sections",
+      "tabs": {
+        "details": "Details",
+        "team": "Team",
+        "contract": "Contract",
+        "books": "Books"
+      }
+    },
+    "team": {
+      "logins": "Logins",
+      "pending": "Pending invites",
+      "loginsTable": "Table of team logins",
+      "invitesTable": "Table of pending invites",
+      "invite": "Invite a person",
+      "email": "Email",
+      "name": "Name",
+      "created": "Created",
+      "expires": "Expires",
+      "actions": "Actions",
+      "status": {
+        "active": "Active",
+        "suspended": "Suspended"
+      },
+      "suspend": "Suspend",
+      "suspendLabel": "Suspend {{email}}",
+      "suspendTitle": "Suspend {{email}}?",
+      "suspendBody": "They are signed out on their next request and cannot sign in until you reactivate them.",
+      "reactivate": "Reactivate",
+      "reactivateLabel": "Reactivate {{email}}",
+      "reissue": "Re-issue link",
+      "reissueLabel": "Re-issue link for {{email}}",
+      "cancelInvite": "Cancel invite",
+      "cancelInviteLabel": "Cancel invite for {{email}}",
+      "noLogins": "No one has signed in with an invite yet.",
+      "noInvites": "There are no pending invites."
+    },
+    "invite": {
+      "title": "Invite a person",
+      "email": "Email",
+      "name": "Name (optional)",
+      "create": "Create invite link",
+      "linkTitle": "Invite link for {{email}}",
+      "linkLabel": "Invite link",
+      "note": "Copy this link now: it is shown only once. Send it to {{email}}. It works one time and expires on {{date}}.",
+      "copy": "Copy link",
+      "copied": "Link copied",
+      "copyFailed": "Could not copy automatically. Select the link and copy it yourself."
+    },
+    "contract": {
+      "title": "Commission rates",
+      "table": "Commission rate history",
+      "add": "Add rate",
+      "dialogTitle": "Add a commission rate",
+      "rate": "Rate (%)",
+      "from": "Effective from",
+      "fromHint": "Leave empty to start now.",
+      "reference": "Contract reference",
+      "empty": "No rate has been set yet. Until one is, this publisher's sales are not split.",
+      "errors": {
+        "rate": "Enter a rate between 0 and 100"
+      }
+    },
+    "books": {
+      "table": "Publisher books",
+      "title": "Title",
+      "price": "Price",
+      "copies": "Copies",
+      "gross": "Gross sales",
+      "open": "Open the catalog as this publisher",
+      "more": "Showing {{shown}} of {{total}} books. Open the catalog to see all of them.",
+      "none": "This publisher has no books yet."
+    },
+    "booksPage": {
+      "title": "All books",
+      "filters": "Book filters",
+      "publisher": "Publisher",
+      "publisherFilter": "Publisher",
+      "table": "Books across all publishers",
+      "empty": "There are no books yet.",
+      "pageOutOfRange": "That page does not exist any more. There are fewer pages now.",
+      "withdraw": "Withdraw",
+      "withdrawLabel": "Withdraw {{title}}",
+      "reinstate": "Reinstate",
+      "reinstateLabel": "Reinstate {{title}}",
+      "withdrawTitle": "Withdraw {{title}}?",
+      "withdrawBody": "The book is taken off sale and unpublished. People who already bought it lose access to it: it can no longer be downloaded or opened on new devices.",
+      "withdrawYes": "Withdraw book",
+      "reason": "Reason",
+      "reasonHint": "Required. Up to 500 characters.",
+      "reasonRequired": "Enter a reason for the withdrawal",
+      "withdrawn": "{{title}} was withdrawn.",
+      "reinstated": "{{title}} was reinstated. It stays unpublished until its publisher publishes it again.",
+      "earnings": "Publisher earnings"
+    },
+    "readers": {
+      "title": "Readers",
+      "search": "Search readers by email",
+      "hint": "Type at least {{min}} characters of an email address to search.",
+      "none": "No reader matches that email.",
+      "table": "Readers found",
+      "cap_one": "Showing the first {{count}} match. Type more of the email to narrow it.",
+      "cap_other": "Showing the first {{count}} matches. Type more of the email to narrow it."
+    },
+    "reader": {
+      "notFoundTitle": "Reader not found",
+      "notFoundBody": "This reader does not exist.",
+      "all": "All readers",
+      "booksOwned": "Books owned",
+      "removals": "Device removals in the last 12 months",
+      "devices": "Devices",
+      "devicesTable": "Reader devices",
+      "noDevices": "This reader has no devices.",
+      "device": "Device",
+      "platform": "Platform",
+      "registered": "Registered",
+      "lastSeen": "Last seen",
+      "deviceState": {
+        "inUse": "In use",
+        "inactive": "Inactive",
+        "removed": "Removed"
+      },
+      "remove": "Remove device",
+      "removeLabel": "Remove {{name}}",
+      "removeTitle": "Remove {{name}}?",
+      "removeBody": "The device is signed out of this reader's library and its books can no longer be opened on it. This does not count against the reader's yearly removal allowance.",
+      "removed": "{{name}} was removed.",
+      "reset": "Reset removals",
+      "resetTitle": "Reset the removal count?",
+      "resetBody": "The count of device removals in the last 12 months goes back to zero, so the reader can remove devices again. This is recorded in the audit log.",
+      "resetYes": "Reset count",
+      "resetDone": "The removal count was reset.",
+      "suspendTitle": "Suspend {{email}}?",
+      "suspendBody": "They are signed out on their next request and cannot sign in or read until you reactivate them.",
+      "suspended": "The reader was suspended.",
+      "reactivated": "The reader was reactivated.",
+      "refreshFailed": "Could not refresh this reader. What you see may be out of date."
+    }
+  },
+  "admin": {
+    "errors": {
+      "EMAIL_TAKEN": "That email already has an account. Use another email, for example a work address.",
+      "NOT_FOUND": "That item no longer exists. Refresh the page.",
+      "COMMISSION_RATE_EXISTS": "This publisher already has a rate starting at that time. Choose another start.",
+      "INVITE_ACCEPTED": "This invite was already accepted.",
+      "VALIDATION_FAILED": "Check the details and try again.",
+      "RATE_LIMITED": "Too many attempts. Wait a few minutes and try again.",
+      "generic": "Something went wrong. Please try again.",
+      "BAD_REQUEST": "That action is not allowed."
+    }
+  },
+  "invitePage": {
+    "heading": "Your invitation",
+    "title": "Join {{publisher}} on Libraria",
+    "intro": "Create your password to open the publisher portal.",
+    "email": "Email",
+    "name": "Your name",
+    "password": "New password",
+    "passwordHint": "At least 10 characters.",
+    "confirm": "Confirm password",
+    "submit": "Create account",
+    "submitting": "Creating your account…",
+    "taken": "{{email}} already has an account in Libraria. Ask for a new invite to another email, for example a work address.",
+    "signIn": "Go to sign in",
+    "invalid": {
+      "expired": "This invite link has expired. Ask for a new one.",
+      "used": "This invite link has already been used. If that was you, sign in instead.",
+      "revoked": "This invite was cancelled. Ask for a new one.",
+      "unknown": "This invite link is not valid. Check that you copied the whole link.",
+      "missing": "This invite link is incomplete or was not copied in full. Open the full link you were sent."
+    },
+    "errors": {
+      "nameRequired": "Enter your name",
+      "passwordShort": "Use at least 10 characters",
+      "passwordLong": "That password is too long (at most 72 bytes; long passwords with special letters reach this sooner)",
+      "mismatch": "The two passwords do not match",
+      "RATE_LIMITED": "Too many attempts. Wait a few minutes and try again.",
+      "VALIDATION_FAILED": "Check the details and try again.",
+      "generic": "Something went wrong. Please try again."
+    }
   }
 }

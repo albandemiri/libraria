@@ -112,7 +112,7 @@ export const updateBookSchema = z
  * Whitelisted ORDER BY expressions and their natural direction; user input
  * only ever selects a key, never reaches the SQL text.
  */
-const BOOK_SORTS = {
+export const BOOK_SORTS = {
   updated: { sql: 'b.updated_at', defaultOrder: 'desc' },
   title: { sql: 'LOWER(b.title)', defaultOrder: 'asc' },
   copies: { sql: 'COALESCE(s.sales_count, 0)', defaultOrder: 'desc' },

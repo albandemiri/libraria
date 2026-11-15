@@ -1,0 +1,92 @@
+.form {
+  display: grid;
+  gap: var(--s-4);
+  max-width: 520px;
+}
+.dialogForm {
+  display: grid;
+  gap: var(--s-4);
+}
+.formActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+}
+.rowActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.cellLink {
+  color: inherit;
+  font-weight: 500;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  overflow-wrap: anywhere;
+}
+.cellLink:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.copyRow {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.copyRow > :first-child {
+  flex: 1;
+  min-width: 220px;
+}
+.head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--s-3);
+}
+.back {
+  font-size: var(--fs-13);
+}
+.num {
+  font-variant-numeric: tabular-nums;
+}
+.wrapCell {
+  overflow-wrap: anywhere;
+}
+.focusable:focus {
+  outline: none;
+}
+.focusable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.reason {
+  min-height: 96px;
+}
+.facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--s-4);
+  margin: 0;
+}
+.facts dt {
+  font-size: var(--fs-13);
+  opacity: 0.75;
+}
+.facts dd {
+  margin: 0;
+  font-weight: 500;
+  overflow-wrap: anywhere;
+}
+.errorBlock {
+  display: grid;
+  gap: var(--s-3);
+  justify-items: start;
+}
+.pager {
+  display: flex;
+  gap: var(--s-3);
+}

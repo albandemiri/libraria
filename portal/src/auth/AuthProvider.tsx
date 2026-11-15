@@ -6,9 +6,15 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from 'react';
-import { fetchMe, portalLogin, portalLogout } from '../api/auth';
+import {
+  acceptInvite as acceptInviteRequest,
+  fetchMe,
+  portalLogin,
+  portalLogout,
+} from '../api/auth';
 import { UNAUTHORIZED_EVENT } from '../api/client';
 import type { PortalUser } from '../api/types';
 
@@ -21,6 +27,8 @@ type AuthState = {
   expired: boolean;
   login(email: string, password: string, rememberMe: boolean): Promise<void>;
   logout(): Promise<void>;
+  /** Accepts a publisher invite; the API's cookie signs the new account in. */
+  acceptInvite(token: string, password: string, displayName: string): Promise<void>;
 };
 
 const AuthContext = createContext<AuthState | null>(null);
@@ -41,6 +49,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     expired: false,
   });
 
+  const statusRef = useRef<AuthState['status']>('loading');
+  statusRef.current = session.status;
+
   useEffect(() => {
     let cancelled = false;
     fetchMe()
@@ -60,12 +71,15 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const onUnauthorized = () => {
       // Only a session that was signed in can "expire"; a 401 on the first
       // /auth/me or on a failed login is just "not signed in".
+      const wasSignedIn = statusRef.current === 'authenticated';
       setSession((prev) =>
         prev.status === 'authenticated'
           ? { status: 'anonymous', user: null, accessDenied: false, expired: true }
           : { ...prev, status: 'anonymous', user: null },
       );
-      queryClient.clear();
+      // An anonymous visitor's 401 (first /auth/me, a failed login) has nothing to clear, and
+      // clearing would cancel queries other pages have in flight.
+      if (wasSignedIn) queryClient.clear();
     };
     window.addEventListener(UNAUTHORIZED_EVENT, onUnauthorized);
     return () => {
@@ -79,6 +93,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setSession({ status: 'authenticated', user, accessDenied: false, expired: false });
   }, []);
 
+  const acceptInvite = useCallback(
+    async (token: string, password: string, displayName: string) => {
+      const user = await acceptInviteRequest(token, password, displayName);
+      // Anything cached belongs to whoever was here before.
+      queryClient.clear();
+      setSession({ status: 'authenticated', user, accessDenied: false, expired: false });
+    },
+    [queryClient],
+  );
+
   const logout = useCallback(async () => {
     try {
       await portalLogout();
@@ -88,7 +112,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   }, [queryClient]);
 
-  const value = useMemo<AuthState>(() => ({ ...session, login, logout }), [session, login, logout]);
+  const value = useMemo<AuthState>(
+    () => ({ ...session, login, logout, acceptInvite }),
+    [session, login, logout, acceptInvite],
+  );
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 

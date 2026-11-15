@@ -11,6 +11,7 @@
     "dev": "tsx watch src/index.ts",
     "migrate": "tsx src/db/migrate.ts",
     "seed": "tsx src/db/seed.ts",
+    "seed:demo": "tsx src/db/seed-demo.ts",
     "typecheck": "tsc --noEmit",
     "lint": "biome check",
     "lint:fix": "biome check --write",
@@ -33,11 +34,14 @@
   },
   "devDependencies": {
     "@biomejs/biome": "2.6.4",
+    "@fontsource/instrument-serif": "5.3.0",
+    "@fontsource/inter": "5.3.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^26.2.0",
     "@types/pg": "^8.23.1",
     "@types/yauzl": "^3.4.0",
+    "opentype.js": "2.0.0",
     "tsx": "^4.23.12",
     "typescript": "^7.0.2"
   }
