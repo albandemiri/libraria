@@ -1,0 +1,109 @@
+.cover {
+  position: relative;
+  display: inline-block;
+  flex: none;
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 4px;
+  background: var(--active);
+  box-shadow:
+    0 0 0 1px var(--cover-edge),
+    inset 2px 0 0 var(--cover-spine);
+}
+.sm {
+  width: 32px;
+}
+.md {
+  width: 72px;
+}
+.lg {
+  width: 160px;
+}
+.img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.fallback {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
+  background: var(--cover-tint);
+  color: var(--accent-2);
+  font-family: var(--font-serif);
+  line-height: 1;
+}
+.sm .fallback {
+  font-size: 18px;
+}
+.md .fallback {
+  font-size: 40px;
+}
+.lg .fallback {
+  font-size: 88px;
+}
+
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--s-3);
+  padding: var(--s-3);
+  text-align: start;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+button.card {
+  cursor: pointer;
+}
+button.card:hover {
+  border-color: var(--border-strong);
+  background: var(--surface);
+}
+.cardCover {
+  display: flex;
+  justify-content: center;
+  padding: var(--s-4) 0;
+  background: var(--bg);
+  border-radius: var(--radius);
+}
+.cardBody {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.title {
+  font-weight: 600;
+  font-size: var(--fs-16);
+  line-height: 1.25;
+  margin: 0;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  overflow-wrap: anywhere;
+}
+.author {
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin-top: var(--s-1);
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+  font-variant-numeric: tabular-nums;
+}

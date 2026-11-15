@@ -1,0 +1,118 @@
+.overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 40;
+  background: var(--scrim);
+  animation: fade var(--dur) var(--ease);
+}
+.panel,
+.dialog {
+  position: fixed;
+  z-index: 41;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  box-shadow: var(--shadow-float);
+}
+.panel {
+  inset-block: 0;
+  inset-inline-end: 0;
+  width: min(480px, 100vw);
+  border-inline-start: 1px solid var(--border);
+  animation: slide 180ms var(--ease);
+}
+.dialog {
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
+  width: min(440px, calc(100vw - 32px));
+  max-height: calc(100vh - 32px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  animation: pop 180ms var(--ease);
+}
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--s-3);
+  padding: var(--s-4) var(--s-5);
+  border-bottom: 1px solid var(--border);
+}
+.title {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--fs-20);
+  line-height: 1.2;
+}
+.description {
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+}
+.body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--s-4) var(--s-5);
+}
+.actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--s-2);
+  padding: var(--s-3) var(--s-5);
+  border-top: 1px solid var(--border);
+}
+.tabList {
+  display: flex;
+  gap: var(--s-5);
+  border-bottom: 1px solid var(--border);
+  margin-bottom: var(--s-5);
+  overflow-x: auto;
+}
+.tab {
+  position: relative;
+  height: 40px;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-2-strong);
+  font: 500 var(--fs-13) / 1.25 var(--font-ui);
+  white-space: nowrap;
+  cursor: pointer;
+  transition: color var(--dur) var(--ease);
+}
+.tab:hover {
+  color: var(--text);
+}
+.tab[data-state="active"] {
+  color: var(--text);
+}
+.tab[data-state="active"]::after {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  bottom: -1px;
+  height: 2px;
+  background: var(--accent);
+}
+.tab:focus-visible {
+  outline-offset: -2px;
+  border-radius: var(--radius);
+}
+@keyframes fade {
+  from {
+    opacity: 0;
+  }
+}
+@keyframes slide {
+  from {
+    transform: translateX(24px);
+    opacity: 0;
+  }
+}
+@keyframes pop {
+  from {
+    opacity: 0;
+    scale: 0.98;
+  }
+}

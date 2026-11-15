@@ -1,0 +1,123 @@
+.bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  margin: 0 0 var(--s-4);
+}
+.grow {
+  flex: 1 1 220px;
+}
+.search {
+  position: relative;
+  display: flex;
+  align-items: center;
+  min-width: 200px;
+}
+.searchIcon {
+  position: absolute;
+  inset-inline-start: var(--s-3);
+  color: var(--text-2-strong);
+  pointer-events: none;
+}
+.control {
+  height: var(--control-h);
+  width: 100%;
+  padding: 0 var(--s-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: 400 var(--fs-13) / normal var(--font-ui);
+  transition: border-color var(--dur) var(--ease);
+}
+.control:hover {
+  border-color: var(--text-2);
+}
+.control:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.searchInput {
+  composes: control;
+  padding-inline-start: 32px;
+  padding-inline-end: 32px;
+  appearance: none;
+}
+.searchInput::-webkit-search-cancel-button {
+  display: none;
+}
+.clear {
+  position: absolute;
+  inset-inline-end: 2px;
+}
+.select {
+  composes: control;
+  width: auto;
+  min-width: 120px;
+  padding-inline-end: var(--s-6);
+  appearance: none;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' fill='none' stroke='%2366655d' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m1 1 4 4 4-4'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 10px center;
+  cursor: pointer;
+}
+.selectWrap {
+  display: inline-flex;
+}
+.segmented {
+  display: inline-flex;
+  padding: 2px;
+  gap: 2px;
+  background: var(--active);
+  border-radius: var(--radius);
+}
+.segment {
+  height: 28px;
+  padding: 0 var(--s-3);
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: var(--text-2-strong);
+  font: 500 var(--fs-13) / 1.25 var(--font-ui);
+  cursor: pointer;
+  transition:
+    background-color var(--dur) var(--ease),
+    color var(--dur) var(--ease);
+}
+.segment:hover {
+  color: var(--text);
+}
+.segment[data-state="on"] {
+  background: var(--surface);
+  color: var(--text);
+  box-shadow: 0 0 0 1px var(--border);
+}
+.range {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+.popover {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-float);
+  z-index: 50;
+}
+.dateField {
+  display: grid;
+  gap: var(--s-1);
+  font-size: var(--fs-12);
+  font-weight: 500;
+  color: var(--text-2-strong);
+}
+
+.dateInput {
+  composes: control;
+  font-variant-numeric: tabular-nums;
+}

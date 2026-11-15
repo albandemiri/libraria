@@ -23,7 +23,12 @@ docker compose up --build
 
 On start the backend container installs dependencies if `package-lock.json`
 changed, applies database migrations, then runs the API with hot reload on
-<http://localhost:3000>. Check it with `curl http://localhost:3000/health`.
+<http://localhost:3000>. Check it with `curl http://localhost:3000/health`. File watching uses polling, so edits made on
+a Windows or macOS bind mount reload the API.
+
+After pulling changes that add migrations or touch the worker, run
+`docker compose restart backend worker`: migrations run at container start and
+the worker does not hot-reload.
 
 Load demo data (publisher, users, encrypted sample books):
 
@@ -215,10 +220,10 @@ transaction or anything the app says.
 
 ## Portal
 
-The publisher portal (`portal/`) is a React single-page app: sales and
-earnings reports, the book catalogue and the publisher's contract. It is in
-Albanian and English; **the Albanian text needs a native-speaker review before
-launch.**
+The publisher portal (`portal/`) is a React single-page app for publishers
+(and admins acting for one): sales and earnings reporting, the book catalogue,
+EPUB and cover uploads, statements and the commission contract. It is in
+Albanian and English; the Albanian text has been reviewed by the project owner.
 
 ```sh
 cd portal
@@ -229,6 +234,46 @@ npm run dev
 The API must be running on `:3000`. The dev server proxies `/api` to it, so
 the portal and API share an origin and `CORS_ORIGINS` stays empty in dev.
 
+- **Navigation.** A sidebar with three groups. *Workspace*: Overview, Catalog
+  (grid or table, search, status filter, a book page with Details, Sales,
+  Analytics, Distribution and Files & DRM tabs, and the add/edit form),
+  Sales & Orders and Analytics. *Financials*: Earnings, Transactions, Payouts
+  and Statements. *Organization*: Contracts and Settings. One date range in
+  the top bar (`?from&to` in the URL) applies to Overview, Sales & Orders,
+  Transactions, Analytics and Earnings; Catalog, Contracts and Settings do
+  not use it. On narrow screens the sidebar becomes a drawer. Old `/books`
+  and `/contract` links redirect to `/catalog` and `/contracts`.
+- **Covers.** The book form and page upload a cover straight from the
+  browser (JPEG, PNG or WebP; see **Covers** below). Grids and tables show the
+  480 px thumbnail, and a typographic placeholder when a book has no cover.
+  The old Cover URL field is gone.
+- **Book language.** Libraria is an Albanian ebook marketplace: the book form
+  offers Albanian (`sq`, the default) or English (`en`), and the API accepts
+  only those two codes for now (`BOOK_LANGUAGES` in
+  `backend/src/routes/publisher.ts`, mirrored in `portal/src/lib/bookLanguages.ts`).
+- **Contracts and Settings.** Contracts shows the current commission rate,
+  start date, reference and a status (active, scheduled or superseded, taken
+  from the server) plus the full history. Settings is read only: account
+  email and name (there is no update endpoint), the live language switch and
+  sign out, a link to the contract, and a "coming later" list (team and
+  roles, payment settings, profile and storefront) that has no controls.
+- **Design system.** Tokens live in `portal/src/ui/tokens.css` and the
+  components in `portal/src/ui/`, styled with CSS modules: no Tailwind and no
+  component kit (Radix primitives for dialogs, popovers and tabs). Inter is
+  the interface font; Instrument Serif is used only for the brand and page
+  titles. Both are self-hosted through `@fontsource`, so there is no font
+  CDN. The palette is warm neutrals with a deep green accent and a burgundy
+  second colour; no blue. Charts of daily data are bars, never smoothed
+  curves.
+- **Accessibility.** Keyboard navigation with a 2 px accent focus ring,
+  status never shown by colour alone, reduced motion respected, and an axe
+  check on the main pages in the test suite. Every data view handles loading,
+  empty, error and stale data (a "Last updated" stamp and refetch on focus),
+  and an admin without a selected publisher is asked to pick one.
+- **Not set up yet.** Payouts and the pending, available and paid balances
+  are not built: those screens say so and show **no figures**. Statements are
+  CSV only (PDF is marked "coming soon"). Team and roles, payment settings and
+  profile editing are listed in Settings as coming later.
 - **Login** uses an HttpOnly cookie (`libraria_portal`, `SameSite=Lax`,
   `Path=/api`, `Secure` in production) set by `POST /api/v1/auth/portal/login`.
   Only publisher and admin accounts may sign in. **In production the portal
@@ -251,7 +296,9 @@ the portal and API share an origin and `CORS_ORIGINS` stays empty in dev.
   `partially_refunded`, else `disputed`, else `paid`. Sales whose provider fee
   is not yet known show "Fee pending" and are not counted in earnings until
   split.
-- **CSV export.** The Sales page exports the current filters from
+- **CSV export.** Sales & Orders and Transactions export the current filters,
+  and Statements exports whole months or whole years (and, when an export is
+  too large, weekly or monthly parts), from
   `GET /api/v1/publisher/reports/sales.csv`, in the portal's language.
   Cells starting with `=`, `+`, `-` or `@` are neutralised so spreadsheets
   do not run them.
@@ -342,6 +389,41 @@ alert, not silently clean.
 The production image runs the API with `npm run start` (`node dist/index.js`) and
 the worker with `npm run start:worker` (`node dist/worker.js`): run both from the
 same image, with the worker as its own service.
+
+### Covers
+
+Uploading is the way covers get into Libraria; there is no cover URL field any
+more (`coverImageUrl` is rejected by the create and update endpoints).
+
+- `PUT /api/v1/publisher/books/:bookId/cover` takes the raw image as the body
+  (`image/jpeg`, `image/png`, `image/webp` or `application/octet-stream`; admins
+  add `?publisherId=`) and answers `200 { book }`. `DELETE` on the same path
+  removes the uploaded cover. Uploading to a withdrawn book is `403`. Both
+  share a limit of 60 changes per hour per publisher.
+- Input: JPEG, PNG or WebP up to 10 MB, at least 400 px wide, at most 40
+  megapixels, and no more than 3 times longer than wide (or the reverse). The
+  type comes from the file's magic bytes and the image decoder, not from the
+  Content-Type or the file name; other image loaders are disabled in `sharp`.
+- Refusals: `COVER_TOO_LARGE` (413), `COVER_UNSUPPORTED_TYPE` (415),
+  `COVER_TOO_SMALL` (422), `COVER_BAD_SHAPE` (422), `COVER_INVALID` (422:
+  undecodable, truncated or over the pixel limit) and `COVER_BUSY` (503 with
+  `Retry-After`: 2 images are processed at once, 8 may wait). The 413 comes
+  before any body is read only when the client declares a `Content-Length`; a
+  chunked body is cut off once it passes 10 MB.
+- The server re-encodes with `sharp` (pinned): upright, all metadata stripped,
+  sRGB JPEG at quality 85, long side at most 2400 px, transparency flattened on
+  white, plus a thumbnail that fits within 480 x 720 and is never enlarged.
+  Objects are stored as `covers/{bookId}/u-{uuid}.jpg` and `...-thumb.jpg`;
+  replaced objects are deleted after the database update commits. If that
+  deletion fails (or the process stops before it), the orphaned
+  `covers/*/u-*` objects stay: they are not swept yet.
+- An uploaded cover wins over the cover extracted from the EPUB, which shows
+  only without one (and after `DELETE`).
+- `coverImageUrl` is `/api/v1/books/{id}/cover?v={n}` and `coverThumbUrl` is
+  `/api/v1/books/{id}/cover?size=thumb&v={n}` (null without an uploaded cover).
+  `n` increases on every upload, removal, activation of another asset and
+  first appearance of an EPUB cover, so the one-day public cache never shows a
+  stale cover for a URL taken from the API.
 
 ### Devices, licences and downloads
 
@@ -504,7 +586,12 @@ from another user's, by design:
 | `POST /api/v1/licences/status` | reader | Which licences are still valid |
 | `GET /api/v1/drm/licence-signing-key` | public | Ed25519 public key for licence signatures |
 | `DELETE /api/v1/library/:bookId/device-access` | reader | Drop this device's access to a book |
-| `GET /api/v1/books/:bookId/cover` | public | Cover extracted from the live EPUB |
+| `PUT /api/v1/publisher/books/:bookId/cover` | publisher, admin | Upload a cover image (raw body) |
+| `POST /api/v1/publisher/books/:bookId/archive` | publisher, admin | Take a title off sale for good; buyers keep access. `409 BOOK_ARCHIVED` if already archived, `403` if withdrawn |
+| `POST /api/v1/publisher/books/:bookId/restore` | publisher, admin | Un-archive; the title stays unpublished |
+| `DELETE /api/v1/publisher/books/:bookId` | publisher, admin | Permanently delete a never-sold title and its files; `204`. `403 FORBIDDEN` withdrawn, `409 BOOK_PUBLISHED`, `ASSET_PROCESSING`, `BOOK_HAS_SALES` |
+| `DELETE /api/v1/publisher/books/:bookId/cover` | publisher, admin | Remove the uploaded cover |
+| `GET /api/v1/books/:bookId/cover` | public | Uploaded cover, else the EPUB's; `?size=thumb` |
 | `PATCH /api/v1/admin/users/:id/status` | admin | Suspend or reactivate an account |
 | `GET /api/v1/admin/users/:id/devices` | admin | A user's devices |
 | `DELETE /api/v1/admin/devices/:deviceId` | admin | Revoke a device |
@@ -533,3 +620,26 @@ npm start
 The app expects the API at `http://localhost:3000/api/v1`
 (`http://10.0.2.2:3000/api/v1` on the Android emulator); see
 `mobile/src/config/api.ts`.
+
+## Book lifecycle: archive, restore, delete
+
+- Every publisher book payload carries `canDelete: boolean`, computed by the
+  server with the same rules the delete route enforces.
+- `status` can be `archived`. `GET /api/v1/publisher/books` hides archived
+  books by default (`status=all`); `status=archived` returns only them.
+  `GET /api/v1/publisher/stats` excludes archived books from `totalTitles` and
+  `draftTitles` (sales totals are unchanged).
+- `POST .../books/:id/archive` takes a title off sale for good while buyers keep
+  reading it. `POST .../books/:id/restore` brings it back unpublished. Publishing
+  an archived book is `409 BOOK_ARCHIVED`.
+- `DELETE .../books/:id` (`204`) is only for a book that was never sold. Any
+  sale, entitlement, library row or checkout history (including an abandoned
+  checkout) blocks it with `409 BOOK_HAS_SALES`; archive instead. The other
+  refusals are `403 FORBIDDEN` (withdrawn), `409 BOOK_PUBLISHED` and
+  `409 ASSET_PROCESSING`. Stored files are removed after the commit, best
+  effort.
+- An archived book is read-only: `PATCH` on the book, cover `PUT`/`DELETE`, EPUB upload
+  and asset activation all return `409 BOOK_ARCHIVED`. Restore is allowed.
+- A checkout opened before a book was archived still completes if it is paid
+  afterwards, and the buyer gets access (money was taken). A new checkout of an
+  archived book is refused.

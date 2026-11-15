@@ -10,13 +10,40 @@ export class InvalidObjectKeyError extends Error {
   }
 }
 
+/** Windows briefly locks files that an antivirus or indexer is touching. */
+const TRANSIENT_FS_CODES = new Set(['EPERM', 'EBUSY', 'EACCES']);
+const RETRY_DELAYS_MS = [20, 40, 80, 160];
+
+export interface FsOps {
+  rename(from: string, to: string): Promise<void>;
+  unlink(file: string): Promise<void>;
+}
+
+const realFs: FsOps = { rename, unlink };
+
+/** Runs an fs call, retrying transient lock errors: 5 attempts, backing off 20/40/80/160 ms. */
+async function withRetry(operation: () => Promise<void>): Promise<void> {
+  for (let attempt = 0; ; attempt++) {
+    try {
+      return await operation();
+    } catch (err) {
+      const code = (err as NodeJS.ErrnoException).code;
+      if (attempt >= RETRY_DELAYS_MS.length || !code || !TRANSIENT_FS_CODES.has(code)) throw err;
+      await new Promise((resolve) => setTimeout(resolve, RETRY_DELAYS_MS[attempt]));
+    }
+  }
+}
+
 const KEY_PATTERN = /^(quarantine|assets|covers)\/[A-Za-z0-9._/-]+$/;
 
 /** Filesystem-backed object storage for development and single-node deployments. */
 export class LocalObjectStorage {
   private readonly root: string;
 
-  constructor(dir: string) {
+  constructor(
+    dir: string,
+    private readonly fs: FsOps = realFs,
+  ) {
     this.root = path.resolve(dir);
   }
 
@@ -45,7 +72,7 @@ export class LocalObjectStorage {
       } finally {
         await handle.close();
       }
-      await rename(temp, target);
+      await withRetry(() => this.fs.rename(temp, target));
     } catch (err) {
       await rm(temp, { force: true });
       throw err;
@@ -120,7 +147,8 @@ export class LocalObjectStorage {
 
   async delete(key: string): Promise<void> {
     try {
-      await unlink(this.resolveKey(key));
+      const target = this.resolveKey(key);
+      await withRetry(() => this.fs.unlink(target));
     } catch (err) {
       if ((err as NodeJS.ErrnoException).code !== 'ENOENT') throw err;
     }

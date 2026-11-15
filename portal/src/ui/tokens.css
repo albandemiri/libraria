@@ -1,0 +1,112 @@
+@import "@fontsource/inter/400.css";
+@import "@fontsource/inter/500.css";
+@import "@fontsource/inter/600.css";
+@import "@fontsource/instrument-serif/400.css";
+
+:root {
+  /* Palette */
+  --bg: #f5f2ea;
+  --surface: #fffefa;
+  --text: #25251f;
+  --text-2: #85847c; /* 3.4:1 on --bg: large text, icons and borders only */
+  --text-2-strong: #66655d; /* 5.2:1 on --bg, 5.8:1 on --surface: all small secondary text */
+  --border: #dedad0;
+  --border-strong: #c9c4b6;
+  --accent: #263d32;
+  --accent-hover: #1b2d24;
+  --accent-2: #793e43;
+  --accent-2-hover: #61313a;
+
+  /* Derived tints */
+  --hover: rgb(37 37 31 / 4%);
+  --active: rgb(37 37 31 / 8%);
+  --selected: rgb(38 61 50 / 8%);
+  --positive-bg: #e2eadf;
+  --positive-fg: #263d32;
+  --pending-bg: #f6e9c9;
+  --pending-fg: #664508;
+  --negative-bg: #f3e2e0;
+  --negative-fg: #793e43;
+  --neutral-bg: rgb(37 37 31 / 7%);
+  --neutral-fg: #4a4a42;
+
+  /* Type */
+  --font-ui: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-serif: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --fs-12: 0.75rem;
+  --fs-13: 0.8125rem;
+  --fs-14: 0.875rem;
+  --fs-16: 1rem;
+  --fs-20: 1.25rem;
+  --fs-28: 1.75rem;
+
+  /* Space, shape, elevation */
+  --s-1: 4px;
+  --s-2: 8px;
+  --s-3: 12px;
+  --s-4: 16px;
+  --s-5: 24px;
+  --s-6: 32px;
+  --s-7: 48px;
+  --radius: 6px;
+  --radius-lg: 8px;
+  --control-h: 32px;
+  --row-h: 40px;
+  --shadow-float: 0 8px 24px rgb(37 37 31 / 12%), 0 1px 3px rgb(37 37 31 / 10%);
+
+  --cover-tint: #e6dfcf;
+  --cover-edge: rgb(37 37 31 / 12%);
+  --cover-spine: rgb(37 37 31 / 8%);
+  --scrim: rgb(37 37 31 / 38%);
+
+  /* Motion */
+  --ease: cubic-bezier(0.2, 0, 0, 1);
+  --dur: 140ms;
+
+  font-family: var(--font-ui);
+  line-height: 1.45;
+  color: var(--text);
+  background: var(--bg);
+  font-feature-settings: "cv11", "ss03";
+  -webkit-font-smoothing: antialiased;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-size: var(--fs-14);
+  background: var(--bg);
+  color: var(--text);
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+
+.ui-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component rules */
+    animation-duration: 0.01ms !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component rules */
+    animation-iteration-count: 1 !important;
+    /* biome-ignore lint/complexity/noImportantStyles: reduced motion must beat component rules */
+    transition-duration: 0.01ms !important;
+  }
+}

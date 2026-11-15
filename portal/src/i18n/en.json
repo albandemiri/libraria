@@ -14,8 +14,8 @@
     "next": "Next",
     "book": "Book",
     "country": "Country",
-    "copies": "Copies",
-    "pickPublisher": "Choose a publisher above to see its data."
+    "pickPublisher": "Choose a publisher in the sidebar to see its data.",
+    "pickPublisherTitle": "No publisher selected"
   },
   "language": {
     "label": "Language",
@@ -39,29 +39,35 @@
   "nav": {
     "label": "Main navigation",
     "groups": {
-      "money": "Money",
-      "catalogue": "Catalogue",
-      "account": "Account"
+      "workspace": "Workspace",
+      "financials": "Financials",
+      "organization": "Organization"
     },
     "overview": "Overview",
-    "sales": "Sales",
+    "catalog": "Catalog",
+    "sales": "Sales & Orders",
+    "analytics": "Analytics",
     "earnings": "Earnings",
-    "books": "Books",
-    "newBook": "New book",
-    "contract": "Contract"
+    "transactions": "Transactions",
+    "payouts": "Payouts",
+    "statements": "Statements",
+    "contracts": "Contracts",
+    "settings": "Settings",
+    "collapse": "Collapse sidebar",
+    "expand": "Expand sidebar",
+    "openMenu": "Open menu",
+    "drawerTitle": "Navigation"
   },
   "topbar": {
     "publisher": "Publisher",
     "pickPublisher": "Choose a publisher",
-    "logout": "Log out"
+    "signOut": "Sign out",
+    "signedInAs": "Signed in as"
   },
   "pages": {
     "overview": "Overview",
-    "sales": "Sales",
     "earnings": "Earnings",
-    "books": "Books",
-    "newBook": "New book",
-    "contract": "Contract"
+    "newBook": "New book"
   },
   "period": {
     "label": "Period",
@@ -88,18 +94,62 @@
     "fees": "Payment fees",
     "commission": "Commission",
     "earnings": "Earnings",
-    "copies": "Copies"
+    "copies": "Copies",
+    "commissionAtSale": "Commission at sale",
+    "commissionReversed": "Commission reversed on refunds",
+    "commissionNet": "Commission after reversals",
+    "unsplit": "Not yet split",
+    "earningsReversed": "Refund reversals"
   },
   "overview": {
-    "vsPrevious": "vs previous period",
-    "chartTitle": "Gross sales over time",
-    "chartLabel": "Chart of gross sales over time",
-    "topBooks": "Top 5 books"
+    "topBooks": "Top 5 books",
+    "heroLabel": "Net earnings",
+    "heroCaption": "Net publisher earnings, after VAT, fees, commission and refunds",
+    "period": "{{from}} – {{to}}",
+    "figures": "Key figures",
+    "change": "{{change}} vs previous period",
+    "noPrevious": "No sales in the previous period",
+    "payouts": "Payouts",
+    "payoutsTitle": "Pending and available balance",
+    "payoutsBody": "Payouts are not set up yet. Your earnings are recorded and safe in the meantime.",
+    "chartMetric": "Chart measure",
+    "showValues": "Show exact values",
+    "hideValues": "Hide exact values",
+    "activity": "Activity in this period",
+    "activityEmpty": "No recent activity.",
+    "partial": "Some activity could not be loaded.",
+    "sale": "Sale",
+    "refund": "Refund",
+    "bookUpdated": "Book updated",
+    "actions": "Needs your attention",
+    "actionsEmpty": "Nothing needs your attention.",
+    "action": {
+      "rejected": "The latest upload was rejected",
+      "ready": "Ready, but not published yet",
+      "draft": "Needs an EPUB file before it can be published"
+    },
+    "actionBadge": {
+      "rejected": "Rejected",
+      "ready": "Ready",
+      "draft": "Draft"
+    },
+    "chartTitle": "Sales over time",
+    "chartLabel": "Chart of {{metric}} over time",
+    "valuesTable": "Exact values",
+    "noneBefore": "None in the previous period",
+    "copiesSold_one": "{{count}} copy sold",
+    "copiesSold_other": "{{count}} copies sold",
+    "moreDraft_one": "and {{count}} more draft",
+    "moreDraft_other": "and {{count}} more drafts",
+    "moreReady_one": "and {{count}} more ready to publish",
+    "moreReady_other": "and {{count}} more ready to publish",
+    "weekly": "Weekly totals",
+    "monthly": "Monthly totals",
+    "unsplitNote": "Excludes {{amount}} not yet split (no contract rate, or payment fee pending)"
   },
   "sales": {
     "allBooks": "All books",
     "allCountries": "All countries",
-    "unknownCountry": "Unknown",
     "date": "Date",
     "price": "Price",
     "vat": "VAT",
@@ -109,17 +159,38 @@
     "earnings": "Earnings",
     "refunded": "Refunded",
     "feePending": "Fee pending",
-    "notSplit": "Not split (sold before your contract)",
+    "notSplit": "Not split yet (no contract rate on the sale)",
     "exportErrors": {
       "EXPORT_TOO_LARGE": "Too many rows to export. Choose a shorter period or add filters.",
       "generic": "We could not export the CSV. Please try again."
     },
     "exportCsv": "Export CSV",
-    "page": "Page {{page}} of {{total}}",
-    "empty": "No sales match these filters."
+    "empty": "No sales match these filters.",
+    "search": "Search by book or order reference",
+    "filters": "Sales filters",
+    "reference": "Reference",
+    "books": "Books",
+    "gross": "Gross",
+    "orderTitle": "Order {{ref}}",
+    "lineTitle": "Sale {{ref}}",
+    "transaction": "Transaction",
+    "paidAt": "Paid at",
+    "refundedAt": "Refunded at",
+    "paymentFee": "Payment fee",
+    "earningsAtSale": "Earnings at sale",
+    "splitState": "Split",
+    "split": {
+      "done": "Calculated"
+    },
+    "emptyPeriod": "No sales in this period.",
+    "pageOutOfRange": "That page does not exist any more. There are fewer pages.",
+    "lastPage": "Go to the last page",
+    "viewOrder": "View order {{ref}}",
+    "viewSale": "View sale {{ref}}",
+    "exportHint": "The export lists the matching sale lines.",
+    "unknownBook": "Unknown book"
   },
   "earnings": {
-    "view": "View",
     "month": "By month",
     "book": "By book",
     "country": "By country",
@@ -135,19 +206,40 @@
     "reversals": "− Refund reversals",
     "earnings": "= Earnings",
     "refundedInfo": "Refunded to readers (information only, not deducted above)",
-    "note": "VAT and payment fees are shown as at the time of sale; refunds do not reduce them. Refunds reduce your earnings through the refund reversals line."
-  },
-  "books": {
-    "title": "Title",
-    "search": "Search",
-    "statusFilter": "Status",
-    "price": "Price",
-    "empty": "No books yet.",
-    "filter": {
-      "all": "All",
-      "published": "Published",
-      "draft": "Draft"
-    }
+    "note": "VAT and payment fees are shown as at the time of sale; refunds do not reduce them. Refunds reduce your earnings through the refund reversals line.",
+    "summary": "Financial summary",
+    "summaryTable": "Financial summary statement",
+    "summaryIntro": "From gross sales down to your earnings, for the selected period.",
+    "explanation": "What it is",
+    "amount": "Amount",
+    "viewTransactions": "View transactions for this period",
+    "explain": {
+      "gross": "What readers paid, VAT included, before refunds.",
+      "vat": "VAT collected on those sales, as at the time of sale.",
+      "fees": "Payment processor fees, as at the time of sale.",
+      "net": "Sales after VAT and payment fees.",
+      "commission": "Libraria's share of the net, at the rate in force on each sale.",
+      "unsplit": "Net from sales whose split is not final yet: no contract rate on the sale, or the payment fee is still pending.",
+      "atSale": "Your share of the net as at the time of sale.",
+      "reversals": "Earnings taken back when sales were refunded.",
+      "earnings": "Your earnings for the period, after refund reversals."
+    },
+    "refundedShort": "Refunded to readers",
+    "refundedShortHint": "Information only, not deducted above.",
+    "waterfall": "Earnings waterfall",
+    "waterfallView": "Break down by",
+    "tableMonth": "Earnings by month",
+    "tableBook": "Earnings by book",
+    "tableCountry": "Earnings by country",
+    "balances": "Balances",
+    "pendingTitle": "Pending balance",
+    "pendingBody": "Earnings waiting to be paid out will appear here once payouts are set up.",
+    "availableTitle": "Available balance",
+    "availableBody": "Earnings ready to be paid out will appear here once payouts are set up.",
+    "paidTitle": "Paid out",
+    "paidBody": "Payouts already sent to you will appear here once payouts are set up.",
+    "statements": "Statements",
+    "statementsBody": "Download a statement for each whole month or year."
   },
   "bookForm": {
     "editTitle": "Edit book",
@@ -155,46 +247,48 @@
     "isbn13": "ISBN-13 (13 digits, no hyphens)",
     "description": "Description",
     "genre": "Genre",
-    "language": "Language (2 letters, e.g. sq)",
+    "language": "Language",
     "price": "Price in euros (VAT included)",
     "priceInvalid": "Enter a price like 9,99 or 9.99.",
-    "coverImageUrl": "Cover image URL",
     "mediaType": "Format",
     "ebook": "E-book",
     "audiobook": "Audiobook",
-    "create": "Create book",
-    "save": "Save",
     "publish": "Publish",
     "unpublish": "Unpublish",
     "saved": "Saved.",
-    "published": "The book is now published.",
-    "unpublished": "The book is now unpublished.",
     "fieldErrors": {
       "title": "Enter a title.",
       "author": "Enter the author.",
       "isbn13": "ISBN-13 must be 13 digits, with no hyphens.",
       "description": "Check the description.",
       "genre": "Enter a genre.",
-      "language": "Use a 2-letter language code, e.g. sq.",
+      "language": "Choose a language.",
       "priceCents": "Enter a valid price.",
-      "coverImageUrl": "Enter a valid image link.",
       "mediaType": "Choose a format.",
       "generic": "Check this field."
     },
     "fixFields": "Please fix the highlighted fields.",
     "errors": {
-      "ASSET_REQUIRED": "A book needs a ready, live EPUB file before it can be published. Upload one below.",
       "NOT_FOUND": "This book could not be found.",
       "generic": "We could not save your changes. Please try again."
-    }
+    },
+    "title": "Title"
   },
   "contract": {
     "rate": "Libraria commission",
     "since": "In force since",
     "reference": "Reference",
     "history": "Contract history",
-    "inForce": "In force now",
-    "none": "No active contract. Contact Libraria."
+    "none": "No active contract. Contact Libraria.",
+    "current": "Current contract",
+    "effectiveFrom": "Effective from",
+    "noneTitle": "No contract yet",
+    "status": {
+      "active": "Active",
+      "scheduled": "Scheduled",
+      "superseded": "Superseded"
+    },
+    "historyTable": "Contract history table"
   },
   "assets": {
     "title": "EPUB file",
@@ -243,6 +337,285 @@
       "ASSET_PROCESSING": "Another upload for this book is still being processed. Wait for it to finish.",
       "RATE_LIMITED": "Too many uploads. Please try again later.",
       "NOT_FOUND": "This book or version could not be found."
+    },
+    "versionColumn": "Version",
+    "size": "Size",
+    "uploadedOn": "Uploaded on",
+    "actions": "Actions"
+  },
+  "ui": {
+    "close": "Close",
+    "done": "Done",
+    "clearSearch": "Clear search",
+    "pageOf": "Page {{page}} of {{count}}",
+    "emptyTitle": "Nothing here yet",
+    "errorTitle": "We could not load this",
+    "lastUpdated": "Last updated {{time}}",
+    "refreshing": "Updating…",
+    "refresh": "Refresh",
+    "stepLabel": "Step {{current}} of {{count}}",
+    "stepDone": "(completed)",
+    "chartEmpty": "{{label}}: no data for this period.",
+    "legend": "Legend",
+    "chartSummary_one": "{{label}}: {{count}} data point from {{first}} to {{last}}. Exact values are in the table.",
+    "chartSummary_other": "{{label}}: {{count}} data points from {{first}} to {{last}}. Exact values are in the table."
+  },
+  "analytics": {
+    "tabsLabel": "Analytics views",
+    "period": "Period",
+    "amount": "Amount",
+    "granularity": "Group by",
+    "day": "Day",
+    "week": "Week",
+    "month": "Month",
+    "tabs": {
+      "trends": "Trends",
+      "books": "Books",
+      "countries": "Countries",
+      "financial": "Financial"
+    },
+    "trendsChart": "Gross sales and earnings over time",
+    "trendsTable": "Sales and earnings by period",
+    "booksChart": "Gross sales by book",
+    "booksTable": "Figures by book",
+    "countriesChart": "Gross sales by country",
+    "countriesTable": "Figures by country",
+    "financialTotals": "Commission, fees, refunds and reversals for the period",
+    "financialChart": "Commission, fees, refunds and reversals over time",
+    "financialByPeriod": "Commission, fees, refunds and reversals by period",
+    "weekOf": "Week of {{date}}",
+    "top10": "Top 10 by gross sales"
+  },
+  "catalog": {
+    "search": "Search books",
+    "filters": "Catalog filters",
+    "view": "View",
+    "grid": "Grid",
+    "table": "Table",
+    "statusFilter": "Status",
+    "sort": "Sort by",
+    "order": "Order",
+    "asc": "Ascending",
+    "desc": "Descending",
+    "sorts": {
+      "updated": "Last updated",
+      "title": "Title",
+      "copies": "Copies sold",
+      "earnings": "Earnings",
+      "price": "Price"
+    },
+    "status": {
+      "all": "All except archived",
+      "draft": "Draft",
+      "processing": "Processing",
+      "ready": "Ready to publish",
+      "published": "Published",
+      "withdrawn": "Withdrawn",
+      "archived": "Archived"
+    },
+    "columns": {
+      "cover": "Cover",
+      "title": "Title",
+      "author": "Author",
+      "isbn": "ISBN",
+      "status": "Status",
+      "price": "Price",
+      "copies": "Copies",
+      "earnings": "Earnings",
+      "updated": "Last updated",
+      "actions": "Actions"
+    },
+    "copies_one": "{{count}} copy",
+    "copies_other": "{{count}} copies",
+    "earned": "Earnings",
+    "empty": "No books yet.",
+    "emptyFiltered": "No books match these filters.",
+    "addFirst": "Add your first book",
+    "pageOutOfRange": "That page does not exist any more. The catalog has fewer pages.",
+    "lastPage": "Go to the last page"
+  },
+  "bookPage": {
+    "tabs": "Book sections",
+    "tab": {
+      "details": "Details",
+      "sales": "Sales",
+      "analytics": "Analytics",
+      "distribution": "Distribution",
+      "files": "Files & DRM"
+    },
+    "edit": "Edit",
+    "back": "Back to catalog",
+    "notFound": "This book could not be found.",
+    "author": "Author",
+    "isbn": "ISBN-13",
+    "genre": "Genre",
+    "language": "Language",
+    "format": "Format",
+    "price": "Price (VAT included)",
+    "published": "Published on",
+    "updated": "Last updated",
+    "copies": "Copies sold",
+    "earnings": "Earnings (all time)",
+    "description": "Description",
+    "salesTitle": "Sales of this book",
+    "analyticsTitle": "Trend for this book",
+    "analyticsTable": "Figures by period",
+    "distributionTitle": "Distribution",
+    "filesTitle": "EPUB file and protection",
+    "salesTable": "Sales lines"
+  },
+  "editor": {
+    "steps": {
+      "info": "Book information",
+      "classification": "Classification",
+      "commercial": "Commercial",
+      "files": "Publication files",
+      "distribution": "Distribution & protection"
+    },
+    "infoHelp": "Title, author and a short description.",
+    "classificationHelp": "Helps readers find the book.",
+    "commercialHelp": "The price readers pay, VAT included.",
+    "filesHelp": "The cover image and the EPUB file. Upload a cover here; without one, the cover from the EPUB is used.",
+    "distributionHelp": "Whether the book is on sale.",
+    "preview": "Preview",
+    "previewNote": "How the book will look in the Libraria app. It updates as you type.",
+    "untitled": "Untitled book",
+    "saveDraft": "Save draft",
+    "saveChanges": "Save changes",
+    "created": "Draft saved. You can now upload the EPUB file.",
+    "saveFirst": "Save the draft first, then you can upload the EPUB file.",
+    "publishLater": "Publishing becomes available once the draft is saved.",
+    "viewBook": "View book page",
+    "required": "Required fields are marked *"
+  },
+  "distribution": {
+    "statusLabel": "Status",
+    "published": "The book is now published.",
+    "unpublished": "The book is now unpublished.",
+    "withdrawn": "This title has been withdrawn and cannot be published.",
+    "explain": {
+      "draft": "This book is not on sale yet. It needs a ready EPUB file before it can be published.",
+      "processing": "A file is being processed. You can publish once it is ready.",
+      "ready": "The file is ready. Publish to put the book on sale in the Libraria app.",
+      "published": "This book is live in the Libraria app. Unpublish to make it unavailable.",
+      "archived": "Archived books are off sale and read-only. Restore the book to work on it again."
+    },
+    "drmTitle": "Copy protection (DRM)",
+    "drm": "DRM is applied automatically. Your EPUB is encrypted when it is processed, and readers open it on their registered devices with a licence. You do not need to prepare a protected file."
+  },
+  "payouts": {
+    "title": "What payouts will show",
+    "body": "Once payouts are set up, this page will list each payout and your pending and available balance. Until then your earnings are recorded and safe, and you can follow them under Earnings and Statements."
+  },
+  "statements": {
+    "intro": "Statements cover whole calendar months and years.",
+    "year": "Year",
+    "mode": "Statement period",
+    "monthly": "Monthly",
+    "annual": "Annual",
+    "monthlyTable": "Monthly statements",
+    "annualTable": "Annual statements",
+    "period": "Period",
+    "gross": "Gross sales",
+    "earnings": "Earnings",
+    "download": "Download CSV",
+    "downloadFor": "Download CSV for {{period}}",
+    "downloadPart": "Download CSV: {{part}}",
+    "inProgress": "In progress",
+    "loadError": "Could not load the statements.",
+    "tooLargeMonth": "Too many rows to export this month in one file. Download it in weekly parts instead.",
+    "tooLargeYear": "Too many rows to export this year in one file. Download it month by month instead.",
+    "pdf": "PDF statements are coming later. For now, download the CSV."
+  },
+  "cover": {
+    "upload": "Upload cover",
+    "replace": "Replace cover",
+    "remove": "Remove cover",
+    "hint": "Recommended: 2:3 ratio, 1600 × 2400 px. JPEG, PNG or WebP, up to 10 MB.",
+    "lowRes": "This image is under 1400 px wide and may look soft on large screens. 1600 × 2400 px is recommended.",
+    "removeTitle": "Remove the cover?",
+    "removeBody": "Readers will see the cover from the EPUB file if it has one, otherwise a placeholder.",
+    "removeYes": "Yes, remove it",
+    "cancel": "Cancel",
+    "errors": {
+      "generic": "The cover could not be saved. Please try again.",
+      "COVER_TOO_LARGE": "The image is larger than the 10 MB limit.",
+      "COVER_UNSUPPORTED_TYPE": "Use a JPEG, PNG or WebP image.",
+      "COVER_TOO_SMALL": "The image is too small. It must be at least 400 px wide.",
+      "COVER_INVALID": "This image could not be read. It may be damaged or not a real image.",
+      "COVER_BAD_SHAPE": "The image is too long or too wide. Use a shape close to a book cover (2:3).",
+      "COVER_BUSY": "The server is busy. Try again in a few seconds.",
+      "PUBLISHER_ID_REQUIRED": "Choose a publisher first.",
+      "RATE_LIMITED": "Too many uploads. Please try again later.",
+      "NOT_FOUND": "This book could not be found.",
+      "FORBIDDEN": "This title has been withdrawn and cannot be changed.",
+      "FORBIDDEN_OTHER": "You don't have permission to change this cover."
+    },
+    "withdrawn": "This title has been withdrawn, so its cover can no longer be changed."
+  },
+  "settings": {
+    "account": "Account",
+    "email": "Email",
+    "displayName": "Display name",
+    "accountNote": "Your account details are managed by Libraria. Contact us to change them.",
+    "language": "Language",
+    "session": "Session",
+    "sessionBody": "Sign out of the publisher portal on this device.",
+    "organization": "Organization",
+    "orgContract": "Commission contract",
+    "orgContractBody": "The commission rate Libraria applies to your sales, and its history.",
+    "later": "Coming later",
+    "laterItems": {
+      "team": {
+        "title": "Team and roles",
+        "body": "Invite colleagues and choose what each person can do."
+      },
+      "payment": {
+        "title": "Payment settings",
+        "body": "Bank details and payout preferences."
+      },
+      "profile": {
+        "title": "Profile and storefront",
+        "body": "Your publisher profile and how it appears to readers."
+      }
     }
+  },
+  "lifecycle": {
+    "archive": "Archive",
+    "restore": "Restore",
+    "delete": "Delete",
+    "cancel": "Cancel",
+    "cannotDelete": "This book can't be deleted right now (it is on sale, has sales or checkout history, or a file is processing). Archive it instead.",
+    "archivedNotice": "This book is archived. It is off sale and read-only. Restore it to edit or publish it.",
+    "unpublishTitle": "Unpublish this book?",
+    "unpublishBody": "The book goes off sale right away. Readers who already bought it keep reading it.",
+    "unpublishYes": "Unpublish",
+    "archiveTitle": "Archive this book?",
+    "archiveBody": "The book goes off sale until you restore it. Readers who bought it keep their copies, and your reports are kept.",
+    "archiveYes": "Archive",
+    "deleteTitle": "Delete this book permanently?",
+    "deleteBody": "This cannot be undone. The book, its cover and its files are removed for good.",
+    "deleteLabel": "Book title",
+    "deleteHint": "Type the title exactly as shown to confirm: {{title}}",
+    "deleteYes": "Delete permanently",
+    "deleted": "“{{title}}” was deleted.",
+    "errorTitle": "That did not work",
+    "dismiss": "Got it",
+    "errors": {
+      "ASSET_REQUIRED": "A book needs a ready, live EPUB file before it can be published. Upload one in the files section.",
+      "BOOK_ARCHIVED": "This book is archived. Restore it first.",
+      "BOOK_PUBLISHED": "Unpublish this book before deleting it.",
+      "ASSET_PROCESSING": "A file for this book is still being processed. Wait for it to finish.",
+      "BOOK_HAS_SALES": "This book has been sold, so it cannot be deleted. Archive it instead.",
+      "FORBIDDEN": "This title has been withdrawn and cannot be published, archived or deleted.",
+      "NOT_FOUND": "This book could not be found. It may have been deleted.",
+      "generic": "We could not complete that. Please try again."
+    },
+    "moreFor": "More actions for {{title}}",
+    "publishNeedsFile": "Upload an EPUB file to enable publishing."
+  },
+  "bookLanguages": {
+    "sq": "Albanian",
+    "en": "English"
   }
 }

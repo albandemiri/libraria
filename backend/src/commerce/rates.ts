@@ -27,6 +27,8 @@ export interface CommissionRate {
   contractReference: string | null;
   /** True on exactly one row: the latest one that has already started. */
   inForce: boolean;
+  /** active = in force, scheduled = not started yet, superseded = replaced. */
+  status: 'active' | 'scheduled' | 'superseded';
 }
 
 interface RateRow {
@@ -35,13 +37,15 @@ interface RateRow {
   effective_from: Date;
   contract_reference: string | null;
   in_force: boolean;
+  is_future: boolean;
 }
 
 /** All rates for a publisher, newest start date first. */
 export async function listRates(publisherId: string): Promise<CommissionRate[]> {
   const { rows } = await pool.query<RateRow>(
     `SELECT id, rate_bps, effective_from, contract_reference,
-            (id = ${rateInForceSql('$1', 'id')}) IS TRUE AS in_force
+            (id = ${rateInForceSql('$1', 'id')}) IS TRUE AS in_force,
+            (effective_from > CURRENT_TIMESTAMP) AS is_future
        FROM publisher_commission_rates
       WHERE publisher_id = $1
       ORDER BY effective_from DESC`,
@@ -53,5 +57,6 @@ export async function listRates(publisherId: string): Promise<CommissionRate[]> 
     effectiveFrom: row.effective_from.toISOString(),
     contractReference: row.contract_reference,
     inForce: row.in_force,
+    status: row.in_force ? 'active' : row.is_future ? 'scheduled' : 'superseded',
   }));
 }

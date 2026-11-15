@@ -65,6 +65,7 @@ const CAP_OPF = 5 * 1024 * 1024;
 const CAP_NAV = 5 * 1024 * 1024;
 const CAP_CONTENT = 20 * 1024 * 1024; // one XHTML/SVG document scanned for policy
 const CAP_COVER = 10 * 1024 * 1024;
+const CAP_FONT = 20 * 1024 * 1024;
 /** Total bytes we are willing to inflate for the content scan across all documents. */
 const SCAN_BUDGET = 200 * 1024 * 1024;
 
@@ -91,7 +92,10 @@ const FONT_TYPES = new Set([
   'application/vnd.ms-opentype',
   'application/x-font-ttf',
   'application/x-font-opentype',
+  'application/x-font-type1',
 ]);
+const PAGE_MAP_TYPE = 'application/oebps-page-map+xml';
+const PAGE_TEMPLATE_TYPE = 'application/vnd.adobe-page-template+xml';
 const COVER_TYPES = new Set<string>(['image/jpeg', 'image/png', 'image/gif', 'image/webp']);
 const SCRIPT_TYPES = new Set([
   'text/javascript',
@@ -122,11 +126,71 @@ const ALLOWED_MEDIA_TYPES = new Set([
   'application/vnd.ms-opentype',
   'application/x-font-ttf',
   'application/x-font-opentype',
+  'application/x-font-type1',
+  PAGE_MAP_TYPE,
+  PAGE_TEMPLATE_TYPE,
   'audio/mpeg',
   'audio/mp4',
   'audio/ogg',
   'video/mp4',
 ]);
+
+/** Collapses the doubled prefix some conversion tools write (application/application/x-font-ttf). */
+function normaliseMediaType(mediaType: string): string {
+  if (!mediaType.startsWith('application/application/')) return mediaType;
+  const collapsed = mediaType.slice('application/'.length);
+  return FONT_TYPES.has(collapsed) ? collapsed : mediaType;
+}
+
+function isFontLike(mediaType: string): boolean {
+  return mediaType.includes('font') || mediaType === 'application/vnd.ms-opentype';
+}
+
+/** Known font signatures: TrueType/sfnt, OpenType, TTC, WOFF, WOFF2 and Type 1 (PFB/PFA). */
+function hasKnownFontSignature(b: Buffer): boolean {
+  if (b.length < 4) return false;
+  if (b.subarray(0, 4).equals(Buffer.from([0x00, 0x01, 0x00, 0x00]))) return true;
+  const tag = b.subarray(0, 4).toString('latin1');
+  if (['true', 'OTTO', 'ttcf', 'wOFF', 'wOF2'].includes(tag)) return true;
+  if (b[0] === 0x80 && b[1] === 0x01) return true; // PFB
+  const text = b.subarray(0, 32).toString('latin1');
+  return text.startsWith('%!PS-AdobeFont') || text.startsWith('%!FontType1');
+}
+
+/** True when the leading bytes look like markup, a script, a PDF or plain text. */
+function looksLikeTextOrMarkup(b: Buffer): boolean {
+  if (b.length === 0) return true;
+  let start = 0;
+  if (b[0] === 0xef && b[1] === 0xbb && b[2] === 0xbf) start = 3;
+  while (start < b.length && [0x20, 0x09, 0x0a, 0x0d].includes(b[start] as number)) start++;
+  if (b[start] === 0x3c) return true; // '<': HTML, SVG, XML
+  const head = b.toString('latin1', 0, 4);
+  if (head === '%PDF' || head.startsWith('#!')) return true;
+  const sample = b.subarray(0, 1024);
+  for (const byte of sample) {
+    if (byte === 0 || (byte < 0x20 && byte !== 0x09 && byte !== 0x0a && byte !== 0x0d))
+      return false;
+  }
+  // valid UTF-8 (a multi-byte character may be cut at the sample boundary)
+  for (let cut = 0; cut <= 3 && cut < sample.length; cut++) {
+    try {
+      new TextDecoder('utf-8', { fatal: true }).decode(sample.subarray(0, sample.length - cut));
+      return true;
+    } catch {
+      // try again with fewer trailing bytes
+    }
+  }
+  return false;
+}
+
+/**
+ * A font-labelled file is accepted unless it is evidently not binary font
+ * data. Unrecognised binary is allowed: some publishers scramble fonts
+ * without declaring it in encryption.xml.
+ */
+function looksLikeFont(b: Buffer): boolean {
+  return hasKnownFontSignature(b) || !looksLikeTextOrMarkup(b);
+}
 
 /** A deliberate, publisher-facing rejection. */
 class Reject extends Error {
@@ -612,6 +676,32 @@ function scanXmlTree(root: XmlNode): Violation | null {
   return remote ? 'REMOTE_RESOURCES' : null;
 }
 
+/**
+ * Adobe auxiliary XML (page map, XPGT) has no known "remote" elements, so any
+ * attribute value or text that is itself a remote URL counts. xmlns
+ * declarations are namespace names, not fetches, and are ignored.
+ */
+function auxXmlHasRemote(root: XmlNode): boolean {
+  const stack: unknown[] = [root];
+  while (stack.length > 0) {
+    const node = stack.pop();
+    if (typeof node === 'string') {
+      if (REMOTE_URL.test(decodeEntities(node))) return true;
+      continue;
+    }
+    if (Array.isArray(node)) {
+      stack.push(...node);
+      continue;
+    }
+    if (!isNode(node)) continue;
+    for (const [key, value] of Object.entries(node)) {
+      if (key.startsWith('@_xmlns') || key.startsWith('?')) continue;
+      stack.push(value);
+    }
+  }
+  return false;
+}
+
 // ---------------------------------------------------------------------------
 // Package parsing
 // ---------------------------------------------------------------------------
@@ -790,7 +880,8 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
   for (const raw of toArray(manifestNode.item)) {
     const id = attr(raw, 'id');
     const href = attr(raw, 'href');
-    const mediaType = attr(raw, 'media-type')?.trim().toLowerCase();
+    const rawMediaType = attr(raw, 'media-type')?.trim().toLowerCase();
+    const mediaType = rawMediaType === undefined ? undefined : normaliseMediaType(rawMediaType);
     if (!id || !href || !mediaType)
       throw invalidPackage('A manifest item is missing id, href or media-type.');
     if (manifest.has(id)) throw invalidPackage('The manifest contains duplicate item ids.');
@@ -835,6 +926,7 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
   }
 
   // META-INF/encryption.xml: only font obfuscation, and only of declared font items
+  const obfuscatedPaths = new Set<string>();
   const encryptionEntry = byName.get('META-INF/encryption.xml');
   if (encryptionEntry) {
     const unsupported = (detail: string) => new Reject('UNSUPPORTED_ENCRYPTION', detail);
@@ -857,9 +949,28 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
       const reference = isNode(cipherData) ? cipherData.CipherReference : undefined;
       const uri = attr(Array.isArray(reference) ? reference[0] : reference, 'URI');
       if (!uri) throw bad;
-      if (!fontPaths.has(resolveInArchive('', uri, bad))) {
+      const target = resolveInArchive('', uri, bad);
+      if (!fontPaths.has(target)) {
         throw unsupported('Only font files declared in the manifest may be obfuscated.');
       }
+      obfuscatedPaths.add(target);
+    }
+  }
+
+  // fonts are judged by content, not label (obfuscated fonts cannot be byte-checked)
+  for (const item of items) {
+    if (!isFontLike(item.mediaType) || obfuscatedPaths.has(item.path)) continue;
+    const entry = byName.get(item.path);
+    if (!entry) continue;
+    const bad = invalidPackage('A font file is too large to process.');
+    archive.scanned.bytes += Math.min(entry.uncompressedSize, CAP_FONT);
+    if (archive.scanned.bytes > SCAN_BUDGET) throw bad;
+    const data = await readEntry(archive, entry, CAP_FONT, bad);
+    if (!looksLikeFont(data)) {
+      throw new Reject(
+        'UNSUPPORTED_MEDIA',
+        `A file declared as a font (${item.mediaType.slice(0, 80)}) is not a font.`,
+      );
     }
   }
 
@@ -875,7 +986,7 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
   }
 
   // scan every XHTML/SVG document and stylesheet; each declared one must exist under that exact name
-  const scanTypes = new Set([XHTML_TYPE, SVG_TYPE, 'text/css']);
+  const scanTypes = new Set([XHTML_TYPE, SVG_TYPE, 'text/css', PAGE_MAP_TYPE, PAGE_TEMPLATE_TYPE]);
   for (const item of items) {
     if (!scanTypes.has(item.mediaType)) continue;
     const entry = byName.get(item.path);
@@ -889,13 +1000,18 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
       assertUtf8Compatible(content);
       violation = cssHasRemote(content.toString('utf8')) ? 'REMOTE_RESOURCES' : null;
     } else {
-      violation = scanXmlTree(
-        parseXml(
-          content,
-          invalidPackage('A content document is malformed or not UTF-8.'),
-          contentParser,
-        ),
+      const tree = parseXml(
+        content,
+        invalidPackage('A content document is malformed or not UTF-8.'),
+        contentParser,
       );
+      violation = scanXmlTree(tree);
+      if (
+        !violation &&
+        (item.mediaType === PAGE_MAP_TYPE || item.mediaType === PAGE_TEMPLATE_TYPE)
+      ) {
+        violation = auxXmlHasRemote(tree) ? 'REMOTE_RESOURCES' : null;
+      }
     }
     if (violation === 'SCRIPTED_CONTENT') {
       throw new Reject(violation, 'Scripted content is not allowed.');

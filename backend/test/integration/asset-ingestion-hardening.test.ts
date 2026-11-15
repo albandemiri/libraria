@@ -370,12 +370,16 @@ describe('early 413 (finding 2)', () => {
     const url = new URL(`${server.baseUrl}/publisher/books/${bookId}/assets`);
     return http.request({
       method: 'POST',
+      agent: false,
       hostname: url.hostname,
       port: url.port,
       path: url.pathname,
       headers: {
         Authorization: `Bearer ${staff.token}`,
         'Content-Type': 'application/epub+zip',
+        // `agent: false` alone sends `Connection: close`, which resets a socket that is still
+        // streaming before the early 413 can be read.
+        Connection: 'keep-alive',
         ...headers,
       },
     });

@@ -1,6 +1,8 @@
 import type { ItemStatus } from './base';
 
 export interface SalesLine {
+  itemId: string;
+  refundedAt: string | null;
   paidAt: string;
   transactionId: string;
   book: { id: string; title: string };
@@ -11,7 +13,11 @@ export interface SalesLine {
   feeCents: number | null;
   commissionRateBps: number | null;
   commissionCents: number;
+  commissionAtSaleCents: number;
+  commissionReversedCents: number;
   earningsCents: number;
+  earningsAtSaleCents: number;
+  earningsReversedCents: number;
   refundedCents: number;
   split: 'done' | 'pending' | 'no_rate';
 }

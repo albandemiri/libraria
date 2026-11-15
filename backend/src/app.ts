@@ -8,6 +8,7 @@ import { requestContext } from './middleware/request-context';
 import { adminRouter } from './routes/admin';
 import { assetsRouter, downloadsRouter } from './routes/assets';
 import { uploadAssetHandlers } from './routes/assets-publisher';
+import { uploadCoverHandlers } from './routes/covers-publisher';
 import { authRouter } from './routes/auth';
 import { booksRouter } from './routes/books';
 import { devicesRouter } from './routes/devices';
@@ -36,6 +37,9 @@ app.use(`${API_PREFIX}/webhooks`, webhooksRouter);
 // Also before express.json(): an EPUB upload is a raw body with its own, much
 // larger, hard limit, and nothing may buffer it as JSON first.
 app.post(`${API_PREFIX}/publisher/books/:bookId/assets`, ...uploadAssetHandlers);
+
+// Same for a cover image: raw body, 10 MB limit, this route only.
+app.put(`${API_PREFIX}/publisher/books/:bookId/cover`, ...uploadCoverHandlers);
 
 app.use(express.json({ limit: '1mb' }));
 

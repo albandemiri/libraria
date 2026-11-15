@@ -1,0 +1,83 @@
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--s-2);
+  padding: var(--s-7) var(--s-5);
+  text-align: center;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.dashed {
+  background: transparent;
+  border-style: dashed;
+  border-color: var(--border-strong);
+}
+.heading {
+  margin: 0;
+  font-weight: 600;
+  font-size: var(--fs-16);
+  line-height: 1.3;
+}
+.body {
+  margin: 0;
+  max-width: 46ch;
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+}
+.action {
+  margin-top: var(--s-2);
+}
+.error .heading {
+  font-family: var(--font-ui);
+  font-size: var(--fs-14);
+  font-weight: 600;
+  color: var(--negative-fg);
+}
+.mark {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  margin-bottom: var(--s-1);
+  border-radius: 50%;
+  background: var(--active);
+  color: var(--text-2-strong);
+}
+.error .mark {
+  background: var(--negative-bg);
+  color: var(--negative-fg);
+}
+.skeleton {
+  display: grid;
+  gap: var(--s-3);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.line {
+  height: 12px;
+  border-radius: 4px;
+  background: var(--active);
+  animation: pulse 1.4s ease-in-out infinite;
+}
+.line:nth-child(2) {
+  width: 80%;
+}
+.line:nth-child(3) {
+  width: 60%;
+}
+@keyframes pulse {
+  50% {
+    opacity: 0.45;
+  }
+}
+.updated {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+  font-variant-numeric: tabular-nums;
+}

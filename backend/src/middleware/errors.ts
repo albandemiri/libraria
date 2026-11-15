@@ -45,12 +45,22 @@ export const errorCodes = [
   'ASSET_PROCESSING',
   'ASSET_ACCESS_DENIED',
   'ASSET_SUPERSEDED',
+  'BOOK_ARCHIVED',
+  'BOOK_PUBLISHED',
+  'BOOK_HAS_SALES',
   // Devices and accounts
   'ACCOUNT_SUSPENDED',
   'DEVICE_LIMIT_REACHED',
   'DEVICE_REMOVAL_LIMIT',
   // Rate limiting
   'RATE_LIMITED',
+  // Covers
+  'COVER_TOO_LARGE',
+  'COVER_UNSUPPORTED_TYPE',
+  'COVER_TOO_SMALL',
+  'COVER_BAD_SHAPE',
+  'COVER_BUSY',
+  'COVER_INVALID',
   // Reports
   'EXPORT_TOO_LARGE',
 ] as const;

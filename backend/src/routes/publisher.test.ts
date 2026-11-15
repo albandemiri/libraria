@@ -23,7 +23,7 @@ describe('Publisher Validation Schemas', () => {
     });
 
     it('rejects invalid status', () => {
-      assert.throws(() => listPublisherBooksQuerySchema.parse({ status: 'archived' }));
+      assert.throws(() => listPublisherBooksQuerySchema.parse({ status: 'deleted' }));
     });
   });
 
@@ -61,6 +61,15 @@ describe('Publisher Validation Schemas', () => {
     it('accepts only launch currencies (EUR)', () => {
       assert.equal(createBookSchema.parse({ ...validEbook, currency: undefined }).currency, 'EUR');
       assert.throws(() => createBookSchema.parse({ ...validEbook, currency: 'USD' }));
+    });
+
+    it('accepts only the launch book languages and defaults to Albanian', () => {
+      assert.equal(createBookSchema.parse({ ...validEbook, language: undefined }).language, 'sq');
+      assert.equal(createBookSchema.parse({ ...validEbook, language: 'sq' }).language, 'sq');
+      assert.equal(createBookSchema.parse({ ...validEbook, language: 'en' }).language, 'en');
+      assert.throws(() => createBookSchema.parse({ ...validEbook, language: 'de' }));
+      assert.throws(() => updateBookSchema.parse({ language: 'fr' }));
+      assert.equal(updateBookSchema.parse({ language: 'sq' }).language, 'sq');
     });
 
     it('rejects durationSeconds on ebook', () => {

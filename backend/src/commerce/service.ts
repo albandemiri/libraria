@@ -104,6 +104,15 @@ export async function createCheckout(
   let created: { transactionId: string; items: Array<{ id: string; book_id: string }> };
   try {
     created = await withTransaction(async (client) => {
+      // Re-check under a share lock: an unpublish, archive or delete that landed after
+      // the pre-check above must not sell the book, and one that follows waits for us.
+      const stillOnSale = await client.query(
+        `SELECT id FROM books WHERE id = ANY($1::uuid[]) AND is_available FOR SHARE`,
+        [bookIds],
+      );
+      if (stillOnSale.rows.length !== bookIds.length) {
+        throw new AppError(404, 'One or more books are not available for purchase', 'NOT_FOUND');
+      }
       const txn = await client.query<{ id: string }>(
         `INSERT INTO transactions (user_id, total_cents, currency, status, provider, idempotency_key)
          VALUES ($1, $2, $3, 'pending', $4, $5)

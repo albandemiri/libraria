@@ -1,0 +1,26 @@
+.panel {
+  display: grid;
+  gap: var(--s-4);
+}
+.hint {
+  margin: 0;
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+}
+.badges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-1);
+}
+.reason {
+  margin: var(--s-1) 0 0;
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+}
+.confirm {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-12);
+}

@@ -1,0 +1,35 @@
+.notice {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-2);
+  padding: var(--s-2) var(--s-3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  font-size: var(--fs-13);
+  line-height: 1.45;
+  overflow-wrap: anywhere;
+}
+.icon {
+  flex: none;
+  display: grid;
+  place-items: center;
+  height: 1.45em;
+}
+.icon svg {
+  width: 14px;
+  height: 14px;
+}
+.error {
+  background: var(--negative-bg);
+  color: var(--negative-fg);
+  border-color: var(--negative-fg);
+}
+.info {
+  background: var(--positive-bg);
+  color: var(--positive-fg);
+  border-color: var(--positive-fg);
+}
+.plain {
+  background: var(--neutral-bg);
+  color: var(--neutral-fg);
+}

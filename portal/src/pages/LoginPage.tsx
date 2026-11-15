@@ -4,6 +4,8 @@ import { Navigate, useLocation } from 'react-router-dom';
 import { ApiError } from '../api/client';
 import { useAuth } from '../auth/AuthProvider';
 import LanguageSwitcher from '../layout/LanguageSwitcher';
+import { Button, Field, Input } from '../ui';
+import styles from './LoginPage.module.css';
 
 export default function LoginPage() {
   const { t } = useTranslation();
@@ -36,55 +38,62 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="login-page">
-      <div className="login-lang">
+    <div className={styles.page}>
+      <div className={styles.lang}>
         <LanguageSwitcher />
       </div>
-      <form className="card login-card" onSubmit={onSubmit}>
-        <h1>{t('app.name')}</h1>
-        <p className="muted">{t('login.title')}</p>
-        {expired && !shownCode && (
-          <p role="alert" className="alert">
-            {t('login.sessionExpired')}
-          </p>
-        )}
-        {shownCode && (
-          <p role="alert" className="alert">
-            {t(`login.errors.${shownCode}`, { defaultValue: t('login.errors.generic') })}
-          </p>
-        )}
-        <label className="field">
-          <span>{t('login.email')}</span>
-          <input
-            type="email"
-            autoComplete="username"
-            required
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-        </label>
-        <label className="field">
-          <span>{t('login.password')}</span>
-          <input
-            type="password"
-            autoComplete="current-password"
-            required
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
-        <label className="checkbox">
-          <input
-            type="checkbox"
-            checked={rememberMe}
-            onChange={(e) => setRememberMe(e.target.checked)}
-          />
-          <span>{t('login.remember')}</span>
-        </label>
-        <button type="submit" className="btn btn-primary" disabled={submitting}>
-          {submitting ? t('login.submitting') : t('login.submit')}
-        </button>
-      </form>
+      <main className={styles.card}>
+        <p className={styles.wordmark}>{t('app.name')}</p>
+        <h1 className={styles.title}>{t('login.title')}</h1>
+        <form className={styles.form} onSubmit={onSubmit}>
+          {expired && !shownCode && (
+            <p role="alert" className={styles.alert}>
+              {t('login.sessionExpired')}
+            </p>
+          )}
+          {shownCode && (
+            <p role="alert" className={styles.alert}>
+              {t(`login.errors.${shownCode}`, { defaultValue: t('login.errors.generic') })}
+            </p>
+          )}
+          <Field label={t('login.email')}>
+            {(props) => (
+              <Input
+                {...props}
+                type="email"
+                autoComplete="username"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+              />
+            )}
+          </Field>
+          <Field label={t('login.password')}>
+            {(props) => (
+              <Input
+                {...props}
+                type="password"
+                autoComplete="current-password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+              />
+            )}
+          </Field>
+          <label className={styles.remember}>
+            <input
+              type="checkbox"
+              checked={rememberMe}
+              onChange={(e) => setRememberMe(e.target.checked)}
+            />
+            <span>{t('login.remember')}</span>
+          </label>
+          <Button type="submit" variant="primary" className={styles.submit} disabled={submitting}>
+            {submitting ? t('login.submitting') : t('login.submit')}
+          </Button>
+        </form>
+      </main>
+      <p className={styles.tagline}>{t('app.tagline')}</p>
     </div>
   );
 }

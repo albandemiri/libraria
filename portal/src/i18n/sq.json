@@ -14,8 +14,8 @@
     "next": "Tjetra",
     "book": "Libri",
     "country": "Shteti",
-    "copies": "Kopje",
-    "pickPublisher": "Zgjidhni një botues më sipër për të parë të dhënat e tij."
+    "pickPublisher": "Zgjidhni një botues në shiritin anësor për të parë të dhënat e tij.",
+    "pickPublisherTitle": "Nuk është zgjedhur botues"
   },
   "language": {
     "label": "Gjuha",
@@ -39,29 +39,35 @@
   "nav": {
     "label": "Navigimi kryesor",
     "groups": {
-      "money": "Paratë",
-      "catalogue": "Katalogu",
-      "account": "Llogaria"
+      "workspace": "Hapësira e punës",
+      "financials": "Financat",
+      "organization": "Organizata"
     },
     "overview": "Përmbledhje",
-    "sales": "Shitjet",
+    "catalog": "Katalogu",
+    "sales": "Shitjet dhe porositë",
+    "analytics": "Analitika",
     "earnings": "Të ardhurat",
-    "books": "Librat",
-    "newBook": "Libër i ri",
-    "contract": "Kontrata"
+    "transactions": "Transaksionet",
+    "payouts": "Pagesat",
+    "statements": "Pasqyrat",
+    "contracts": "Kontratat",
+    "settings": "Cilësimet",
+    "collapse": "Palos shiritin anësor",
+    "expand": "Zgjero shiritin anësor",
+    "openMenu": "Hap menunë",
+    "drawerTitle": "Navigimi"
   },
   "topbar": {
     "publisher": "Botuesi",
     "pickPublisher": "Zgjidhni një botues",
-    "logout": "Dil"
+    "signOut": "Dil",
+    "signedInAs": "I identifikuar si"
   },
   "pages": {
     "overview": "Përmbledhje",
-    "sales": "Shitjet",
     "earnings": "Të ardhurat",
-    "books": "Librat",
-    "newBook": "Libër i ri",
-    "contract": "Kontrata"
+    "newBook": "Libër i ri"
   },
   "period": {
     "label": "Periudha",
@@ -88,18 +94,62 @@
     "fees": "Tarifat e pagesës",
     "commission": "Komisioni",
     "earnings": "Të ardhurat",
-    "copies": "Kopje"
+    "copies": "Kopje",
+    "commissionAtSale": "Komisioni në momentin e shitjes",
+    "commissionReversed": "Komisioni i kthyer nga rimbursimet",
+    "commissionNet": "Komisioni pas kthimeve",
+    "unsplit": "Ende pa ndarë",
+    "earningsReversed": "Kthimet e rimbursimeve"
   },
   "overview": {
-    "vsPrevious": "kundrejt periudhës së kaluar",
-    "chartTitle": "Shitjet bruto me kalimin e kohës",
-    "chartLabel": "Grafik i shitjeve bruto me kalimin e kohës",
-    "topBooks": "5 librat kryesorë"
+    "topBooks": "5 librat kryesorë",
+    "heroLabel": "Të ardhurat neto",
+    "heroCaption": "Të ardhurat neto të botuesit, pas TVSH-së, tarifave, komisionit dhe rimbursimeve",
+    "period": "{{from}} – {{to}}",
+    "figures": "Shifrat kryesore",
+    "change": "{{change}} kundrejt periudhës së kaluar",
+    "noPrevious": "Asnjë shitje në periudhën e kaluar",
+    "payouts": "Pagesat",
+    "payoutsTitle": "Bilanci në pritje dhe i disponueshëm",
+    "payoutsBody": "Pagesat ende nuk janë vendosur. Të ardhurat tuaja regjistrohen dhe ruhen të sigurta ndërkohë.",
+    "chartMetric": "Madhësia në grafik",
+    "showValues": "Shfaq vlerat e sakta",
+    "hideValues": "Fshih vlerat e sakta",
+    "activity": "Aktiviteti në këtë periudhë",
+    "activityEmpty": "Nuk ka aktivitet të fundit.",
+    "partial": "Një pjesë e aktivitetit nuk u ngarkua.",
+    "sale": "Shitje",
+    "refund": "Rimbursim",
+    "bookUpdated": "Libri u përditësua",
+    "actions": "Kërkon vëmendjen tuaj",
+    "actionsEmpty": "Asgjë nuk kërkon vëmendjen tuaj.",
+    "action": {
+      "rejected": "Ngarkimi i fundit u refuzua",
+      "ready": "Gati, por ende i papublikuar",
+      "draft": "Ka nevojë për një skedar EPUB para se të publikohet"
+    },
+    "actionBadge": {
+      "rejected": "Refuzuar",
+      "ready": "Gati për publikim",
+      "draft": "Draft"
+    },
+    "chartTitle": "Shitjet me kalimin e kohës",
+    "chartLabel": "Grafik i {{metric}} me kalimin e kohës",
+    "valuesTable": "Vlerat e sakta",
+    "noneBefore": "Asnjë në periudhën e kaluar",
+    "copiesSold_one": "{{count}} kopje e shitur",
+    "copiesSold_other": "{{count}} kopje të shitura",
+    "moreDraft_one": "dhe edhe {{count}} draft tjetër",
+    "moreDraft_other": "dhe edhe {{count}} draft të tjerë",
+    "moreReady_one": "dhe edhe {{count}} libër tjetër gati për publikim",
+    "moreReady_other": "dhe edhe {{count}} libra të tjerë gati për publikim",
+    "weekly": "Totale javore",
+    "monthly": "Totale mujore",
+    "unsplitNote": "Nuk përfshin {{amount}} që nuk janë ndarë ende (pa përqindje kontrate, ose tarifa e pagesës në pritje)"
   },
   "sales": {
     "allBooks": "Të gjithë librat",
     "allCountries": "Të gjitha shtetet",
-    "unknownCountry": "E panjohur",
     "date": "Data",
     "price": "Çmimi",
     "vat": "TVSH",
@@ -109,17 +159,38 @@
     "earnings": "Të ardhurat",
     "refunded": "Rimbursuar",
     "feePending": "Tarifa në pritje",
-    "notSplit": "Pa ndarje (shitur para kontratës suaj)",
+    "notSplit": "Ende pa ndarë (pa përqindje kontrate në momentin e shitjes)",
     "exportErrors": {
       "EXPORT_TOO_LARGE": "Ka shumë rreshta për t'u eksportuar. Zgjidhni një periudhë më të shkurtër ose shtoni filtra.",
       "generic": "Nuk e eksportuam dot CSV-në. Ju lutemi provoni përsëri."
     },
     "exportCsv": "Eksporto CSV",
-    "page": "Faqja {{page}} nga {{total}}",
-    "empty": "Asnjë shitje nuk përputhet me këto filtra."
+    "empty": "Asnjë shitje nuk përputhet me këto filtra.",
+    "search": "Kërko sipas librit ose referencës së porosisë",
+    "filters": "Filtrat e shitjeve",
+    "reference": "Referenca",
+    "books": "Librat",
+    "gross": "Bruto",
+    "orderTitle": "Porosia {{ref}}",
+    "lineTitle": "Shitja {{ref}}",
+    "transaction": "Transaksioni",
+    "paidAt": "Paguar më",
+    "refundedAt": "Rimbursuar më",
+    "paymentFee": "Tarifa e pagesës",
+    "earningsAtSale": "Të ardhurat në momentin e shitjes",
+    "splitState": "Gjendja e ndarjes",
+    "split": {
+      "done": "E llogaritur"
+    },
+    "emptyPeriod": "Asnjë shitje në këtë periudhë.",
+    "pageOutOfRange": "Kjo faqe nuk ekziston më. Ka më pak faqe.",
+    "lastPage": "Shko te faqja e fundit",
+    "viewOrder": "Shiko porosinë {{ref}}",
+    "viewSale": "Shiko shitjen {{ref}}",
+    "exportHint": "Eksporti përmban rreshtat e shitjeve që përputhen.",
+    "unknownBook": "Libër i panjohur"
   },
   "earnings": {
-    "view": "Pamja",
     "month": "Sipas muajit",
     "book": "Sipas librit",
     "country": "Sipas shtetit",
@@ -131,23 +202,44 @@
     "net": "= Neto",
     "commission": "− Komisioni i Libraria-s",
     "unsplit": "− Ende pa ndarë",
-    "atSale": "= Të ardhurat në shitje",
+    "atSale": "= Të ardhurat në momentin e shitjes",
     "reversals": "− Kthimet nga rimbursimet",
     "earnings": "= Të ardhurat",
     "refundedInfo": "Rimbursuar lexuesve (vetëm informim, nuk zbritet më sipër)",
-    "note": "TVSH-ja dhe tarifat e pagesës shfaqen siç ishin në momentin e shitjes; rimbursimet nuk i ulin ato. Rimbursimet ulin të ardhurat tuaja përmes rreshtit të kthimeve nga rimbursimet."
-  },
-  "books": {
-    "title": "Titulli",
-    "search": "Kërko",
-    "statusFilter": "Statusi",
-    "price": "Çmimi",
-    "empty": "Ende nuk ka libra.",
-    "filter": {
-      "all": "Të gjithë",
-      "published": "Të publikuar",
-      "draft": "Draft"
-    }
+    "note": "TVSH-ja dhe tarifat e pagesës shfaqen siç ishin në momentin e shitjes; rimbursimet nuk i ulin ato. Rimbursimet ulin të ardhurat tuaja përmes rreshtit të kthimeve nga rimbursimet.",
+    "summary": "Përmbledhja financiare",
+    "summaryTable": "Pasqyra e përmbledhjes financiare",
+    "summaryIntro": "Nga shitjet bruto deri te të ardhurat tuaja, për periudhën e zgjedhur.",
+    "explanation": "Çfarë është",
+    "amount": "Shuma",
+    "viewTransactions": "Shiko transaksionet e kësaj periudhe",
+    "explain": {
+      "gross": "Sa kanë paguar lexuesit, me TVSH, para rimbursimeve.",
+      "vat": "TVSH-ja e mbledhur në ato shitje, siç ishte në momentin e shitjes.",
+      "fees": "Tarifat e përpunuesit të pagesave, siç ishin në momentin e shitjes.",
+      "net": "Shitjet pas TVSH-së dhe tarifave të pagesës.",
+      "commission": "Pjesa e Libraria-s nga neto, me përqindjen në fuqi në çdo shitje.",
+      "unsplit": "Neto nga shitjet me ndarje ende jo përfundimtare: pa përqindje kontrate në momentin e shitjes, ose tarifa e pagesës është ende në pritje.",
+      "atSale": "Pjesa juaj nga neto në momentin e shitjes.",
+      "reversals": "Të ardhura të marra mbrapsht kur shitjet u rimbursuan.",
+      "earnings": "Të ardhurat tuaja për periudhën, pas kthimeve nga rimbursimet."
+    },
+    "refundedShort": "Rimbursuar lexuesve",
+    "refundedShortHint": "Vetëm informim, nuk zbritet më sipër.",
+    "waterfall": "Zbërthimi i të ardhurave",
+    "waterfallView": "Zbërthe sipas",
+    "tableMonth": "Të ardhurat sipas muajit",
+    "tableBook": "Të ardhurat sipas librit",
+    "tableCountry": "Të ardhurat sipas shtetit",
+    "balances": "Bilancet",
+    "pendingTitle": "Bilanci në pritje",
+    "pendingBody": "Të ardhurat që presin të paguhen do të shfaqen këtu sapo të vendosen pagesat.",
+    "availableTitle": "Bilanci i disponueshëm",
+    "availableBody": "Të ardhurat gati për t'u paguar do të shfaqen këtu sapo të vendosen pagesat.",
+    "paidTitle": "Paguar",
+    "paidBody": "Pagesat që ju janë dërguar do të shfaqen këtu sapo të vendosen pagesat.",
+    "statements": "Pasqyrat",
+    "statementsBody": "Eksportoni një pasqyrë për çdo muaj ose vit të plotë."
   },
   "bookForm": {
     "editTitle": "Ndrysho librin",
@@ -155,46 +247,48 @@
     "isbn13": "ISBN-13 (13 shifra, pa viza)",
     "description": "Përshkrimi",
     "genre": "Zhanri",
-    "language": "Gjuha (2 shkronja, p.sh. sq)",
+    "language": "Gjuha",
     "price": "Çmimi në euro (me TVSH)",
     "priceInvalid": "Shkruani një çmim si 9,99 ose 9.99.",
-    "coverImageUrl": "Lidhja e kopertinës",
     "mediaType": "Formati",
     "ebook": "E-libër",
     "audiobook": "Audiolibër",
-    "create": "Krijo librin",
-    "save": "Ruaj",
     "publish": "Publiko",
     "unpublish": "Çpubliko",
     "saved": "U ruajt.",
-    "published": "Libri tani është i publikuar.",
-    "unpublished": "Libri tani nuk është më i publikuar.",
     "fieldErrors": {
       "title": "Shkruani një titull.",
       "author": "Shkruani autorin.",
       "isbn13": "ISBN-13 duhet të ketë 13 shifra, pa viza.",
       "description": "Kontrolloni përshkrimin.",
       "genre": "Shkruani zhanrin.",
-      "language": "Përdorni një kod gjuhe me 2 shkronja, p.sh. sq.",
+      "language": "Zgjidhni gjuhën.",
       "priceCents": "Shkruani një çmim të vlefshëm.",
-      "coverImageUrl": "Shkruani një lidhje të vlefshme për imazhin.",
       "mediaType": "Zgjidhni formatin.",
       "generic": "Kontrolloni këtë fushë."
     },
     "fixFields": "Ju lutemi korrigjoni fushat e shënuara.",
     "errors": {
-      "ASSET_REQUIRED": "Libri ka nevojë për një skedar EPUB gati dhe aktiv para se të publikohet. Ngarkoni një më poshtë.",
       "NOT_FOUND": "Ky libër nuk u gjet.",
       "generic": "Nuk i ruajtëm dot ndryshimet. Ju lutemi provoni përsëri."
-    }
+    },
+    "title": "Titulli"
   },
   "contract": {
     "rate": "Komisioni i Libraria-s",
     "since": "E vlefshme që nga",
     "reference": "Referenca",
     "history": "Historiku i kontratës",
-    "inForce": "E vlefshme tani",
-    "none": "Nuk ka kontratë aktive. Kontaktoni Libraria-n."
+    "none": "Nuk ka kontratë aktive. Kontaktoni Libraria-n.",
+    "current": "Kontrata aktuale",
+    "effectiveFrom": "E vlefshme nga",
+    "noneTitle": "Ende pa kontratë",
+    "status": {
+      "active": "Aktive",
+      "scheduled": "E planifikuar",
+      "superseded": "E zëvendësuar"
+    },
+    "historyTable": "Tabela e historikut të kontratës"
   },
   "assets": {
     "title": "Skedari EPUB",
@@ -243,6 +337,285 @@
       "ASSET_PROCESSING": "Një ngarkim tjetër për këtë libër po përpunohet ende. Prisni të mbarojë.",
       "RATE_LIMITED": "Shumë ngarkime. Ju lutemi provoni përsëri më vonë.",
       "NOT_FOUND": "Ky libër ose version nuk u gjet."
+    },
+    "versionColumn": "Versioni",
+    "size": "Madhësia",
+    "uploadedOn": "Ngarkuar më",
+    "actions": "Veprimet"
+  },
+  "ui": {
+    "close": "Mbyll",
+    "done": "Gati",
+    "clearSearch": "Pastro kërkimin",
+    "pageOf": "Faqja {{page}} nga {{count}}",
+    "emptyTitle": "Ende nuk ka asgjë këtu",
+    "errorTitle": "Nuk mundëm ta ngarkonim këtë",
+    "lastUpdated": "Përditësuar së fundi {{time}}",
+    "refreshing": "Po përditësohet…",
+    "refresh": "Rifresko",
+    "stepLabel": "Hapi {{current}} nga {{count}}",
+    "stepDone": "(përfunduar)",
+    "chartEmpty": "{{label}}: nuk ka të dhëna për këtë periudhë.",
+    "legend": "Legjenda",
+    "chartSummary_one": "{{label}}: {{count}} pikë të dhënash nga {{first}} deri në {{last}}. Vlerat e sakta janë në tabelë.",
+    "chartSummary_other": "{{label}}: {{count}} pika të dhënash nga {{first}} deri në {{last}}. Vlerat e sakta janë në tabelë."
+  },
+  "analytics": {
+    "tabsLabel": "Pamjet e analizës",
+    "period": "Periudha",
+    "amount": "Shuma",
+    "granularity": "Grupo sipas",
+    "day": "Ditë",
+    "week": "Javë",
+    "month": "Muaj",
+    "tabs": {
+      "trends": "Tendencat",
+      "books": "Librat",
+      "countries": "Shtetet",
+      "financial": "Financat"
+    },
+    "trendsChart": "Shitjet bruto dhe të ardhurat me kalimin e kohës",
+    "trendsTable": "Shitjet dhe të ardhurat sipas periudhës",
+    "booksChart": "Shitjet bruto sipas librit",
+    "booksTable": "Shifrat sipas librit",
+    "countriesChart": "Shitjet bruto sipas shtetit",
+    "countriesTable": "Shifrat sipas shtetit",
+    "financialTotals": "Komisioni, tarifat, rimbursimet dhe kthimet për periudhën",
+    "financialChart": "Komisioni, tarifat, rimbursimet dhe kthimet me kalimin e kohës",
+    "financialByPeriod": "Komisioni, tarifat, rimbursimet dhe kthimet sipas periudhës",
+    "weekOf": "Java e {{date}}",
+    "top10": "10 më të mirët sipas shitjeve bruto"
+  },
+  "catalog": {
+    "search": "Kërko libra",
+    "filters": "Filtrat e katalogut",
+    "view": "Pamja",
+    "grid": "Rrjetë",
+    "table": "Tabelë",
+    "statusFilter": "Statusi",
+    "sort": "Rendit sipas",
+    "order": "Radha",
+    "asc": "Në rritje",
+    "desc": "Në zbritje",
+    "sorts": {
+      "updated": "Përditësuar së fundi",
+      "title": "Titulli",
+      "copies": "Kopje të shitura",
+      "earnings": "Të ardhurat",
+      "price": "Çmimi"
+    },
+    "status": {
+      "all": "Të gjithë, pa të arkivuarit",
+      "draft": "Draft",
+      "processing": "Në përpunim",
+      "ready": "Gati për publikim",
+      "published": "Publikuar",
+      "withdrawn": "Tërhequr",
+      "archived": "Arkivuar"
+    },
+    "columns": {
+      "cover": "Kopertina",
+      "title": "Titulli",
+      "author": "Autori",
+      "isbn": "ISBN",
+      "status": "Statusi",
+      "price": "Çmimi",
+      "copies": "Kopje",
+      "earnings": "Të ardhurat",
+      "updated": "Përditësuar së fundi",
+      "actions": "Veprimet"
+    },
+    "copies_one": "{{count}} kopje",
+    "copies_other": "{{count}} kopje",
+    "earned": "Të ardhurat",
+    "empty": "Ende nuk ka libra.",
+    "emptyFiltered": "Asnjë libër nuk përputhet me këto filtra.",
+    "addFirst": "Shtoni librin e parë",
+    "pageOutOfRange": "Kjo faqe nuk ekziston më. Katalogu ka më pak faqe.",
+    "lastPage": "Shko te faqja e fundit"
+  },
+  "bookPage": {
+    "tabs": "Pjesët e librit",
+    "tab": {
+      "details": "Detajet",
+      "sales": "Shitjet",
+      "analytics": "Analiza",
+      "distribution": "Shpërndarja",
+      "files": "Skedarët dhe DRM"
+    },
+    "edit": "Ndrysho",
+    "back": "Kthehu te katalogu",
+    "notFound": "Ky libër nuk u gjet.",
+    "author": "Autori",
+    "isbn": "ISBN-13",
+    "genre": "Zhanri",
+    "language": "Gjuha",
+    "format": "Formati",
+    "price": "Çmimi (me TVSH)",
+    "published": "Publikuar më",
+    "updated": "Përditësuar së fundi",
+    "copies": "Kopje të shitura",
+    "earnings": "Të ardhurat (gjithsej)",
+    "description": "Përshkrimi",
+    "salesTitle": "Shitjet e këtij libri",
+    "analyticsTitle": "Trendi i këtij libri",
+    "analyticsTable": "Shifrat sipas periudhës",
+    "distributionTitle": "Shpërndarja",
+    "filesTitle": "Skedari EPUB dhe mbrojtja",
+    "salesTable": "Rreshtat e shitjeve"
+  },
+  "editor": {
+    "steps": {
+      "info": "Të dhënat e librit",
+      "classification": "Klasifikimi",
+      "commercial": "Çmimi dhe shitja",
+      "files": "Skedarët e publikimit",
+      "distribution": "Shpërndarja dhe mbrojtja"
+    },
+    "infoHelp": "Titulli, autori dhe një përshkrim i shkurtër.",
+    "classificationHelp": "Ndihmon lexuesit ta gjejnë librin.",
+    "commercialHelp": "Çmimi që paguajnë lexuesit, me TVSH.",
+    "filesHelp": "Imazhi i kopertinës dhe skedari EPUB. Ngarkoni kopertinën këtu; pa të përdoret kopertina e EPUB-it.",
+    "distributionHelp": "A është libri në shitje.",
+    "preview": "Pamja paraprake",
+    "previewNote": "Si do të duket libri në aplikacionin Libraria. Përditësohet ndërkohë që shkruani.",
+    "untitled": "Libër pa titull",
+    "saveDraft": "Ruaj draftin",
+    "saveChanges": "Ruaj ndryshimet",
+    "created": "Drafti u ruajt. Tani mund të ngarkoni skedarin EPUB.",
+    "saveFirst": "Ruajeni fillimisht draftin, pastaj mund të ngarkoni skedarin EPUB.",
+    "publishLater": "Publikimi bëhet i disponueshëm pasi të ruhet drafti.",
+    "viewBook": "Hap faqen e librit",
+    "required": "Fushat e detyrueshme janë shënuar me *"
+  },
+  "distribution": {
+    "statusLabel": "Statusi",
+    "published": "Libri tani është i publikuar.",
+    "unpublished": "Libri tani nuk është më i publikuar.",
+    "withdrawn": "Ky titull është tërhequr dhe nuk mund të publikohet.",
+    "explain": {
+      "draft": "Ky libër nuk është ende në shitje. Ka nevojë për një skedar EPUB gati para se të publikohet.",
+      "processing": "Një skedar po përpunohet. Mund ta publikoni sapo të jetë gati.",
+      "ready": "Skedari është gati. Publikoni për ta vënë librin në shitje në aplikacionin Libraria.",
+      "published": "Ky libër është aktiv në aplikacionin Libraria. Çpublikojeni për ta bërë të padisponueshëm.",
+      "archived": "Librat e arkivuar janë jashtë shitjes dhe vetëm për lexim. Riktheni librin për të punuar sërish me të."
+    },
+    "drmTitle": "Mbrojtja nga kopjimi (DRM)",
+    "drm": "DRM zbatohet automatikisht. EPUB-i juaj enkriptohet kur përpunohet, dhe lexuesit e hapin në pajisjet e tyre të regjistruara me një licencë. Nuk keni nevojë të përgatisni skedar të mbrojtur."
+  },
+  "payouts": {
+    "title": "Çfarë do të shfaqin pagesat",
+    "body": "Sapo të vendosen pagesat, kjo faqe do të listojë çdo pagesë dhe bilancin tuaj në pritje dhe të disponueshëm. Deri atëherë të ardhurat tuaja regjistrohen dhe ruhen të sigurta, dhe mund t'i ndiqni te Të ardhurat dhe Pasqyrat."
+  },
+  "statements": {
+    "intro": "Pasqyrat mbulojnë muaj dhe vite kalendarike të plota.",
+    "year": "Viti",
+    "mode": "Periudha e pasqyrës",
+    "monthly": "Mujore",
+    "annual": "Vjetore",
+    "monthlyTable": "Pasqyrat mujore",
+    "annualTable": "Pasqyrat vjetore",
+    "period": "Periudha",
+    "gross": "Shitjet bruto",
+    "earnings": "Të ardhurat",
+    "download": "Eksporto CSV",
+    "downloadFor": "Eksporto CSV për {{period}}",
+    "downloadPart": "Eksporto CSV: {{part}}",
+    "inProgress": "Në vazhdim",
+    "loadError": "Nuk i ngarkuam dot pasqyrat.",
+    "tooLargeMonth": "Ka shumë rreshta për t'i eksportuar këtë muaj në një skedar. Eksportojeni në pjesë javore.",
+    "tooLargeYear": "Ka shumë rreshta për t'i eksportuar këtë vit në një skedar. Eksportojeni muaj pas muaji.",
+    "pdf": "Pasqyrat në PDF vijnë më vonë. Tani për tani, eksportoni CSV-në."
+  },
+  "cover": {
+    "upload": "Ngarko kopertinën",
+    "replace": "Ndrysho kopertinën",
+    "remove": "Hiq kopertinën",
+    "hint": "E rekomanduar: raport 2:3, 1600 × 2400 px. JPEG, PNG ose WebP, deri në 10 MB.",
+    "lowRes": "Ky imazh është më pak se 1400 px i gjerë dhe mund të duket i paqartë në ekrane të mëdha. Rekomandohet 1600 × 2400 px.",
+    "removeTitle": "Të hiqet kopertina?",
+    "removeBody": "Lexuesit do të shohin kopertinën nga skedari EPUB nëse e ka, përndryshe një zëvendësues.",
+    "removeYes": "Po, hiqe",
+    "cancel": "Anulo",
+    "errors": {
+      "generic": "Nuk e ruajtëm dot kopertinën. Ju lutemi provoni përsëri.",
+      "COVER_TOO_LARGE": "Imazhi e kalon kufirin prej 10 MB.",
+      "COVER_UNSUPPORTED_TYPE": "Përdorni një imazh JPEG, PNG ose WebP.",
+      "COVER_TOO_SMALL": "Imazhi është shumë i vogël. Duhet të jetë të paktën 400 px i gjerë.",
+      "COVER_INVALID": "Ky imazh nuk u lexua dot. Mund të jetë i dëmtuar ose jo imazh i vërtetë.",
+      "COVER_BAD_SHAPE": "Imazhi është shumë i gjatë ose shumë i gjerë. Përdorni një formë afër kopertinës së librit (2:3).",
+      "COVER_BUSY": "Serveri është i zënë. Provoni përsëri pas disa sekondash.",
+      "PUBLISHER_ID_REQUIRED": "Zgjidhni fillimisht një botues.",
+      "RATE_LIMITED": "Shumë ngarkime. Ju lutemi provoni përsëri më vonë.",
+      "NOT_FOUND": "Ky libër nuk u gjet.",
+      "FORBIDDEN": "Ky titull është tërhequr dhe nuk mund të ndryshohet.",
+      "FORBIDDEN_OTHER": "Nuk keni leje ta ndryshoni këtë kopertinë."
+    },
+    "withdrawn": "Ky titull është tërhequr, prandaj kopertina e tij nuk mund të ndryshohet më."
+  },
+  "settings": {
+    "account": "Llogaria",
+    "email": "Email",
+    "displayName": "Emri i shfaqur",
+    "accountNote": "Të dhënat e llogarisë suaj menaxhohen nga Libraria. Na kontaktoni për t'i ndryshuar.",
+    "language": "Gjuha",
+    "session": "Sesioni",
+    "sessionBody": "Dilni nga portali i botuesit në këtë pajisje.",
+    "organization": "Organizata",
+    "orgContract": "Kontrata e komisionit",
+    "orgContractBody": "Komisioni që Libraria zbaton mbi shitjet tuaja, dhe historiku i tij.",
+    "later": "Së shpejti",
+    "laterItems": {
+      "team": {
+        "title": "Ekipi dhe rolet",
+        "body": "Ftoni kolegët dhe zgjidhni çfarë mund të bëjë secili."
+      },
+      "payment": {
+        "title": "Cilësimet e pagesave",
+        "body": "Të dhënat bankare dhe preferencat e pagesave."
+      },
+      "profile": {
+        "title": "Profili dhe vitrina",
+        "body": "Profili juaj si botues dhe si shfaqet te lexuesit."
+      }
     }
+  },
+  "lifecycle": {
+    "archive": "Arkivo",
+    "restore": "Rikthe",
+    "delete": "Fshi",
+    "cancel": "Anulo",
+    "cannotDelete": "Ky libër nuk mund të fshihet tani (është në shitje, ka shitje ose histori pagese, ose një skedar po përpunohet). Arkivojeni në vend të kësaj.",
+    "archivedNotice": "Ky libër është i arkivuar. Është jashtë shitjes dhe vetëm për lexim. Riktheni që ta ndryshoni ose ta publikoni.",
+    "unpublishTitle": "Ta çpublikoni librin?",
+    "unpublishBody": "Libri hiqet menjëherë nga shitja. Lexuesit që e kanë blerë tashmë vazhdojnë ta lexojnë.",
+    "unpublishYes": "Çpubliko",
+    "archiveTitle": "Ta arkivoni librin?",
+    "archiveBody": "Libri del nga shitja derisa ta riktheni. Lexuesit që e kanë blerë i mbajnë kopjet e tyre, dhe raportet tuaja ruhen.",
+    "archiveYes": "Arkivo",
+    "deleteTitle": "Ta fshini librin përfundimisht?",
+    "deleteBody": "Ky veprim nuk mund të zhbëhet. Libri, kopertina dhe skedarët e tij hiqen përgjithmonë.",
+    "deleteLabel": "Titulli i librit",
+    "deleteHint": "Shkruani titullin saktësisht siç shfaqet për ta konfirmuar: {{title}}",
+    "deleteYes": "Fshi përfundimisht",
+    "deleted": "“{{title}}” u fshi.",
+    "errorTitle": "Nuk funksionoi",
+    "dismiss": "E kuptova",
+    "errors": {
+      "ASSET_REQUIRED": "Libri ka nevojë për një skedar EPUB gati dhe aktiv para se të publikohet. Ngarkoni një te pjesa e skedarëve.",
+      "BOOK_ARCHIVED": "Ky libër është i arkivuar. Riktheni së pari.",
+      "BOOK_PUBLISHED": "Çpublikojeni librin para se ta fshini.",
+      "ASSET_PROCESSING": "Një skedar i këtij libri po përpunohet ende. Prisni të mbarojë.",
+      "BOOK_HAS_SALES": "Ky libër është shitur, prandaj nuk mund të fshihet. Arkivojeni në vend të kësaj.",
+      "FORBIDDEN": "Ky titull është tërhequr dhe nuk mund të publikohet, arkivohet ose fshihet.",
+      "NOT_FOUND": "Ky libër nuk u gjet. Mund të jetë fshirë.",
+      "generic": "Nuk e përfunduam dot. Ju lutemi provoni përsëri."
+    },
+    "moreFor": "Më shumë veprime për {{title}}",
+    "publishNeedsFile": "Ngarkoni një skedar EPUB për të mundësuar publikimin."
+  },
+  "bookLanguages": {
+    "sq": "Shqip",
+    "en": "Anglisht"
   }
 }
