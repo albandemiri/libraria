@@ -41,7 +41,8 @@
     "groups": {
       "workspace": "Hapësira e punës",
       "financials": "Financat",
-      "organization": "Organizata"
+      "organization": "Organizata",
+      "platform": "Platforma"
     },
     "overview": "Përmbledhje",
     "catalog": "Katalogu",
@@ -56,7 +57,11 @@
     "collapse": "Palos shiritin anësor",
     "expand": "Zgjero shiritin anësor",
     "openMenu": "Hap menunë",
-    "drawerTitle": "Navigimi"
+    "drawerTitle": "Navigimi",
+    "platform": "Përmbledhja e platformës",
+    "publishers": "Botuesit",
+    "platformBooks": "Të gjithë librat",
+    "readers": "Lexuesit"
   },
   "topbar": {
     "publisher": "Botuesi",
@@ -617,5 +622,245 @@
   "bookLanguages": {
     "sq": "Shqip",
     "en": "Anglisht"
+  },
+  "notFound": {
+    "title": "Faqja nuk u gjet",
+    "body": "Kjo faqe nuk ekziston ose llogaria juaj nuk mund ta hapë.",
+    "home": "Kthehu te përmbledhja"
+  },
+  "platform": {
+    "cancel": "Anulo",
+    "country": {
+      "other": "Tjetër"
+    },
+    "overview": {
+      "title": "Përmbledhja e platformës",
+      "figures": "Shifrat e platformës",
+      "commission": "Komisioni i Libraria-s (pas rimbursimeve)",
+      "publisherEarnings": "Të ardhurat e botuesve",
+      "chartTitle": "Shitjet bruto me kalimin e kohës",
+      "chartLabel": "Grafik i shitjeve bruto me kalimin e kohës",
+      "byPublisher": "Sipas botuesit",
+      "table": "Shitjet sipas botuesit",
+      "publisher": "Botuesi",
+      "rate": "Përqindja e kontratës",
+      "noContract": "Ende pa kontratë",
+      "noRate_one": "{{count}} botues nuk ka ende përqindje kontrate, ndaj shitjet e tij nuk ndahen mes Libraria-s dhe botuesit.",
+      "noRate_other": "{{count}} botues nuk kanë ende përqindje kontrate, ndaj shitjet e tyre nuk ndahen mes Libraria-s dhe botuesve.",
+      "empty": "Ende nuk ka botues."
+    },
+    "publishers": {
+      "title": "Botuesit",
+      "search": "Kërko botues sipas emrit",
+      "new": "Botues i ri",
+      "newTitle": "Botues i ri",
+      "table": "Botuesit",
+      "name": "Emri",
+      "country": "Shteti",
+      "email": "Email-i i kontaktit",
+      "rate": "Përqindja e kontratës",
+      "books": "Libra",
+      "noContract": "Ende pa kontratë",
+      "emptySearch": "Asnjë botues nuk përputhet me kërkimin."
+    },
+    "form": {
+      "name": "Emri",
+      "email": "Email-i i kontaktit",
+      "country": "Shteti",
+      "chooseCountry": "Zgjidhni një shtet",
+      "create": "Krijo botuesin",
+      "save": "Ruaj ndryshimet",
+      "saved": "Ndryshimet u ruajtën",
+      "errors": {
+        "name": "Shkruani emrin e botuesit",
+        "email": "Shkruani një email të vlefshëm",
+        "country": "Zgjidhni një shtet"
+      },
+      "countryMissing": "Ky botues nuk ka ende shtet. Zgjidhni një për ta ruajtur.",
+      "nothing": "Nuk ka asgjë për të ruajtur"
+    },
+    "publisher": {
+      "notFoundTitle": "Botuesi nuk u gjet",
+      "notFoundBody": "Ky botues nuk ekziston.",
+      "all": "Të gjithë botuesit",
+      "tabsLabel": "Pjesët e faqes së botuesit",
+      "tabs": {
+        "details": "Detajet",
+        "team": "Ekipi",
+        "contract": "Kontrata",
+        "books": "Librat"
+      }
+    },
+    "team": {
+      "logins": "Llogaritë",
+      "pending": "Ftesat në pritje",
+      "loginsTable": "Tabela e llogarive të ekipit",
+      "invitesTable": "Tabela e ftesave në pritje",
+      "invite": "Fto një person",
+      "email": "Email-i",
+      "name": "Emri",
+      "created": "Krijuar më",
+      "expires": "Skadon më",
+      "actions": "Veprimet",
+      "status": {
+        "active": "Aktive",
+        "suspended": "E pezulluar"
+      },
+      "suspend": "Pezullo",
+      "suspendLabel": "Pezullo {{email}}",
+      "suspendTitle": "Të pezullohet {{email}}?",
+      "suspendBody": "Do të dalë nga llogaria në kërkesën e ardhshme dhe nuk mund të hyjë derisa ta riaktivizoni.",
+      "reactivate": "Riaktivizo",
+      "reactivateLabel": "Riaktivizo {{email}}",
+      "reissue": "Lësho lidhjen përsëri",
+      "reissueLabel": "Lësho lidhjen përsëri për {{email}}",
+      "cancelInvite": "Anulo ftesën",
+      "cancelInviteLabel": "Anulo ftesën për {{email}}",
+      "noLogins": "Ende askush nuk ka hyrë me një ftesë.",
+      "noInvites": "Nuk ka ftesa në pritje."
+    },
+    "invite": {
+      "title": "Fto një person",
+      "email": "Email-i",
+      "name": "Emri (opsional)",
+      "create": "Krijo lidhjen e ftesës",
+      "linkTitle": "Lidhja e ftesës për {{email}}",
+      "linkLabel": "Lidhja e ftesës",
+      "note": "Kopjojeni tani: shfaqet vetëm një herë. Dërgojani {{email}}. Funksionon një herë dhe skadon më {{date}}.",
+      "copy": "Kopjo lidhjen",
+      "copied": "Lidhja u kopjua",
+      "copyFailed": "Nuk u kopjua automatikisht. Zgjidhni lidhjen dhe kopjojeni vetë."
+    },
+    "contract": {
+      "title": "Përqindjet e komisionit",
+      "table": "Historiku i përqindjeve të komisionit",
+      "add": "Shto përqindje",
+      "dialogTitle": "Shto një përqindje komisioni",
+      "rate": "Përqindja (%)",
+      "from": "E vlefshme nga",
+      "fromHint": "Lëreni bosh që të fillojë tani.",
+      "reference": "Referenca e kontratës",
+      "empty": "Ende nuk është vendosur asnjë përqindje. Derisa të vendoset, shitjet e këtij botuesi nuk ndahen.",
+      "errors": {
+        "rate": "Shkruani një përqindje mes 0 dhe 100"
+      }
+    },
+    "books": {
+      "table": "Librat e botuesit",
+      "title": "Titulli",
+      "price": "Çmimi",
+      "copies": "Kopje",
+      "gross": "Shitjet bruto",
+      "open": "Hap katalogun si ky botues",
+      "more": "Po shfaqen {{shown}} nga {{total}} libra. Hapni katalogun për t'i parë të gjithë.",
+      "none": "Ky botues nuk ka ende libra."
+    },
+    "booksPage": {
+      "title": "Të gjithë librat",
+      "filters": "Filtrat e librave",
+      "publisher": "Botuesi",
+      "publisherFilter": "Botuesi",
+      "table": "Librat e të gjithë botuesve",
+      "empty": "Ende nuk ka libra.",
+      "pageOutOfRange": "Kjo faqe nuk ekziston më. Tani ka më pak faqe.",
+      "withdraw": "Tërhiq",
+      "withdrawLabel": "Tërhiq {{title}}",
+      "reinstate": "Rivendos",
+      "reinstateLabel": "Rivendos {{title}}",
+      "withdrawTitle": "Të tërhiqet {{title}}?",
+      "withdrawBody": "Libri hiqet nga shitja dhe nga publikimi. Ata që e kanë blerë tashmë humbasin qasjen: nuk mund të shkarkohet më dhe nuk hapet në pajisje të reja.",
+      "withdrawYes": "Tërhiq librin",
+      "reason": "Arsyeja",
+      "reasonHint": "E detyrueshme. Deri në 500 karaktere.",
+      "reasonRequired": "Shkruani një arsye për tërheqjen",
+      "withdrawn": "{{title}} u tërhoq.",
+      "reinstated": "{{title}} u rivendos. Mbetet i papublikuar derisa botuesi ta publikojë përsëri.",
+      "earnings": "Të ardhurat e botuesit"
+    },
+    "readers": {
+      "title": "Lexuesit",
+      "search": "Kërko lexues sipas emailit",
+      "hint": "Shkruani të paktën {{min}} shkronja të një adrese email për të kërkuar.",
+      "none": "Asnjë lexues nuk përputhet me këtë email.",
+      "table": "Lexuesit e gjetur",
+      "cap_one": "Po shfaqet përputhja e parë {{count}}. Shkruani më shumë nga emaili për ta ngushtuar.",
+      "cap_other": "Po shfaqen {{count}} përputhjet e para. Shkruani më shumë nga emaili për t'i ngushtuar."
+    },
+    "reader": {
+      "notFoundTitle": "Lexuesi nuk u gjet",
+      "notFoundBody": "Ky lexues nuk ekziston.",
+      "all": "Të gjithë lexuesit",
+      "booksOwned": "Libra në pronësi",
+      "removals": "Heqje pajisjesh në 12 muajt e fundit",
+      "devices": "Pajisjet",
+      "devicesTable": "Pajisjet e lexuesit",
+      "noDevices": "Ky lexues nuk ka pajisje.",
+      "device": "Pajisja",
+      "platform": "Platforma",
+      "registered": "Regjistruar",
+      "lastSeen": "Parë së fundi",
+      "deviceState": {
+        "inUse": "Në përdorim",
+        "inactive": "Joaktive",
+        "removed": "E hequr"
+      },
+      "remove": "Hiq pajisjen",
+      "removeLabel": "Hiq {{name}}",
+      "removeTitle": "Të hiqet {{name}}?",
+      "removeBody": "Pajisja shkëputet nga biblioteka e këtij lexuesi dhe librat nuk mund të hapen më në të. Kjo nuk llogaritet në kuotën vjetore të heqjeve të lexuesit.",
+      "removed": "{{name}} u hoq.",
+      "reset": "Rivendos heqjet",
+      "resetTitle": "Të rivendoset numri i heqjeve?",
+      "resetBody": "Numri i heqjeve të pajisjeve në 12 muajt e fundit kthehet në zero, kështu që lexuesi mund të heqë përsëri pajisje. Veprimi regjistrohet në ditarin e auditimit.",
+      "resetYes": "Rivendos numrin",
+      "resetDone": "Numri i heqjeve u rivendos.",
+      "suspendTitle": "Të pezullohet {{email}}?",
+      "suspendBody": "Del nga llogaria në kërkesën e tij të radhës dhe nuk mund të hyjë ose të lexojë derisa ta riaktivizoni.",
+      "suspended": "Lexuesi u pezullua.",
+      "reactivated": "Lexuesi u riaktivizua.",
+      "refreshFailed": "Nuk u rifreskua ky lexues. Çfarë shihni mund të jetë e vjetëruar."
+    }
+  },
+  "admin": {
+    "errors": {
+      "EMAIL_TAKEN": "Ky email ka tashmë një llogari. Përdorni një email tjetër, për shembull një adresë pune.",
+      "NOT_FOUND": "Ky artikull nuk ekziston më. Rifreskoni faqen.",
+      "COMMISSION_RATE_EXISTS": "Ky botues ka tashmë një përqindje që fillon në atë kohë. Zgjidhni një fillim tjetër.",
+      "INVITE_ACCEPTED": "Kjo ftesë është pranuar tashmë.",
+      "VALIDATION_FAILED": "Kontrolloni të dhënat dhe provoni përsëri.",
+      "RATE_LIMITED": "Shumë përpjekje. Prisni disa minuta dhe provoni përsëri.",
+      "generic": "Diçka shkoi keq. Ju lutemi provoni përsëri.",
+      "BAD_REQUEST": "Ky veprim nuk lejohet."
+    }
+  },
+  "invitePage": {
+    "heading": "Ftesa juaj",
+    "title": "Bashkohuni me {{publisher}} në Libraria",
+    "intro": "Krijoni fjalëkalimin për të hapur portalin e botuesit.",
+    "email": "Email-i",
+    "name": "Emri juaj",
+    "password": "Fjalëkalimi i ri",
+    "passwordHint": "Të paktën 10 karaktere.",
+    "confirm": "Konfirmoni fjalëkalimin",
+    "submit": "Krijo llogarinë",
+    "submitting": "Po krijohet llogaria…",
+    "taken": "{{email}} ka tashmë një llogari në Libraria. Kërkoni një ftesë të re për një email tjetër, për shembull një adresë pune.",
+    "signIn": "Shko te hyrja",
+    "invalid": {
+      "expired": "Kjo lidhje ftese ka skaduar. Kërkoni një të re.",
+      "used": "Kjo lidhje ftese është përdorur tashmë. Nëse ishit ju, hyni në llogari.",
+      "revoked": "Kjo ftesë u anulua. Kërkoni një të re.",
+      "unknown": "Kjo lidhje ftese nuk është e vlefshme. Sigurohuni që e keni kopjuar të plotë.",
+      "missing": "Kjo lidhje ftese është e paplotë ose nuk u kopjua e plotë. Hapni lidhjen e plotë që ju është dërguar."
+    },
+    "errors": {
+      "nameRequired": "Shkruani emrin tuaj",
+      "passwordShort": "Përdorni të paktën 10 karaktere",
+      "passwordLong": "Fjalëkalimi është shumë i gjatë (më së shumti 72 bajtë; fjalëkalimet e gjata me shkronja të veçanta e arrijnë këtë më shpejt)",
+      "mismatch": "Dy fjalëkalimet nuk përputhen",
+      "RATE_LIMITED": "Shumë përpjekje. Prisni disa minuta dhe provoni përsëri.",
+      "VALIDATION_FAILED": "Kontrolloni të dhënat dhe provoni përsëri.",
+      "generic": "Diçka shkoi keq. Ju lutemi provoni përsëri."
+    }
   }
 }

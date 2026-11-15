@@ -36,6 +36,19 @@ Load demo data (publisher, users, encrypted sample books):
 docker compose exec backend npm run seed
 ```
 
+Load the invented Albanian demo marketplace (4 publishers, 62 books with covers, 40 readers and
+six months of sales and refunds, all made through the real commerce, cover and asset code; about
+20 seconds):
+
+```sh
+docker compose exec backend npm run seed:demo
+```
+
+It prints the logins (password `Password123!` for all). It refuses to run when
+`NODE_ENV=production`, and if the demo is already loaded it stops and changes nothing. To
+reset it, start from an empty database (below) and run it again. It can share a database with
+`npm run seed`.
+
 Start from an empty database at any time (this deletes local data):
 
 ```sh
@@ -71,6 +84,7 @@ npm run worker
 | `npm run worker`           | Asset-ingestion worker (uploads stay `uploaded` without it) |
 | `npm run migrate`          | Apply pending migrations                                   |
 | `npm run seed`             | Insert demo data                                           |
+| `npm run seed:demo`        | Load the full demo marketplace (dev only, see Quick start) |
 | `npm run lint`             | Biome lint and format check (`lint:fix` to apply)          |
 | `npm run typecheck`        | TypeScript, including tests                                |
 | `npm test`                 | Unit tests (no database needed)                            |
@@ -283,7 +297,15 @@ the portal and API share an origin and `CORS_ORIGINS` stays empty in dev.
 - Settings (`backend/.env.example`): `CORS_ORIGINS` is a comma-separated list
   of portal origins allowed to call the API with credentials (empty by
   default); `PORTAL_SESSION_HOURS` (12) is the lifetime of a session login;
-  `PORTAL_REMEMBER_DAYS` (30) is the lifetime with "Remember me".
+  `PORTAL_REMEMBER_DAYS` (30) is the lifetime with "Remember me";
+  `PORTAL_ORIGIN` is the portal's public origin, used to build invite links
+  (`http://localhost:5173` by default outside production, **required in
+  production** and then `https`; an origin only: no path, query, fragment or
+  credentials); `TRUST_PROXY` (0, off) is the number of reverse proxies in
+  front of the API, or a comma-separated list of trusted proxy addresses or
+  subnets. Leave it at 0 unless a load balancer sets `X-Forwarded-For`: with it
+  off the header is ignored, with it on the rate limits see the real client
+  address.
 - **Reporting rules.** A sale is an item whose transaction is `paid`,
   `partially_refunded`, `disputed` or `refunded`. Periods use
   `transactions.paid_at` in **UTC** (`from` inclusive, `to` exclusive, weeks
@@ -312,6 +334,27 @@ the portal and API share an origin and `CORS_ORIGINS` stays empty in dev.
   **Upload EPUB** panel that lists versions, shows processing progress and
   makes a ready version live (see **Books and DRM**). Failure reasons are shown
   in the portal's language, never as backend text.
+
+### Admin console API and invites
+
+Admins create publishers and their first logins without an email service. `POST
+/admin/publishers/:id/invites` returns a one-time link, `{PORTAL_ORIGIN}/invite#token=…`, that the
+admin sends by any channel. The token is 32 random bytes in the URL **fragment**, so it never
+reaches a server, a log or a referrer; it is shown once and stored only as a SHA-256 hash. An
+invite is valid for 7 days and works once: accepting it locks the invite row, creates the
+`publisher` login with a password the invitee chose, and signs them in. Creating an invite for an email that already has an account is refused with
+`409 EMAIL_TAKEN`, and inspect returns `emailTaken` so the page can warn before the password
+form. Cancelling an already accepted invite is `409 INVITE_ACCEPTED`. Accept rate limits
+are keyed on the token and the address. Wrong, expired, used and
+cancelled tokens all answer `410 INVITE_INVALID` with a `details.reason`. One email has one
+account, either a reader or a publisher login, so accepting for an email that already has an
+account is `409 EMAIL_TAKEN` (open item: revisit one account with both roles). Platform figures use
+the same `salesBase` and `METRICS_SQL` as the publisher reports without the publisher filter.
+Audit entries: `invite.created`, `invite.revoked`, `invite.accepted`, `publisher.created`,
+`publisher.updated`, `reader.viewed`. A publisher's `country` is a two-letter code (the portal
+offers AL, XK, MK, ME, IT, DE, CH, GR and other).
+
+Browser history may still hold the invite URL in some browsers (the portal clears the fragment from the address bar as soon as it reads it, and sends no referrer). This is acceptable because the token is single-use and expires after 7 days.
 
 ## Books and DRM
 
@@ -592,6 +635,19 @@ from another user's, by design:
 | `DELETE /api/v1/publisher/books/:bookId` | publisher, admin | Permanently delete a never-sold title and its files; `204`. `403 FORBIDDEN` withdrawn, `409 BOOK_PUBLISHED`, `ASSET_PROCESSING`, `BOOK_HAS_SALES` |
 | `DELETE /api/v1/publisher/books/:bookId/cover` | publisher, admin | Remove the uploaded cover |
 | `GET /api/v1/books/:bookId/cover` | public | Uploaded cover, else the EPUB's; `?size=thumb` |
+| `GET /api/v1/admin/publishers` | admin | Publishers (`?q` name search): id, name, country, contact email, current rate, book count |
+| `POST /api/v1/admin/publishers` | admin | Create a publisher (`name`, `contactEmail`, `country`); `201` |
+| `PATCH /api/v1/admin/publishers/:id` | admin | Edit those fields |
+| `GET /api/v1/admin/publishers/:id` | admin | Publisher, its logins and its open invites |
+| `POST /api/v1/admin/publishers/:id/invites` | admin | Invite a person (`email`, optional `displayName`); `201` with the one-time `link`. Re-issuing revokes the open invite for the same email |
+| `DELETE /api/v1/admin/invites/:id` | admin | Cancel an invite; `204` |
+| `POST /api/v1/auth/invites/inspect` | public, rate limited | Publisher, email and name for an invite token; `410 INVITE_INVALID` with `details.reason` `expired`, `used`, `revoked` or `unknown` |
+| `POST /api/v1/auth/invites/accept` | public, rate limited | Set a password and display name, create the publisher login and sign in with the portal cookie; `409 EMAIL_TAKEN` if the email has an account (re-checked under the lock) |
+| `GET /api/v1/admin/reports/summary` | admin | Platform-wide totals and series (`?from&to&granularity`) |
+| `GET /api/v1/admin/reports/by-publisher` | admin | One row of metrics per publisher; the rows sum to the summary totals |
+| `GET /api/v1/admin/books` | admin | Books of every publisher (`?q&publisherId&status&sort&order&page&limit`) with `publisherName` |
+| `GET /api/v1/admin/readers` | admin | Reader lookup (`?q`): an exact email, or a prefix of at least 3 characters; 20 results at most |
+| `GET /api/v1/admin/readers/:id` | admin | A reader's account, books owned, devices and `removalsThisYear` (a rolling 12 months, the window the device-removal cap uses); audited as `reader.viewed` |
 | `PATCH /api/v1/admin/users/:id/status` | admin | Suspend or reactivate an account |
 | `GET /api/v1/admin/users/:id/devices` | admin | A user's devices |
 | `DELETE /api/v1/admin/devices/:deviceId` | admin | Revoke a device |

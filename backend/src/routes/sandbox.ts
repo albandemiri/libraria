@@ -9,7 +9,8 @@ import {
   simulatedPaymentTotals,
 } from '../commerce/providers/simulated';
 import { getReceipt } from '../commerce/queries';
-import { processWebhook } from '../commerce/service';
+import type { PaymentProvider } from '../commerce/providers/types';
+import { processWebhook, type WebhookResult } from '../commerce/service';
 import { signWebhook } from '../commerce/signature';
 import { pool } from '../db/pool';
 import { authContext, requireAuth } from '../middleware/auth';
@@ -49,27 +50,22 @@ export const sandboxEventSchema = z.object({
   countryCode: z.string().nullable().optional(),
 });
 
+export type SandboxEventInput = z.infer<typeof sandboxEventSchema>;
+
 const idParamSchema = z.object({ id: z.string().uuid('Not a valid transaction id') });
 
-sandboxRouter.post('/transactions/:id/events', async (req: Request, res: Response) => {
-  const provider = activeProvider();
-  if (env.PAYMENTS_MODE !== 'simulated' || provider?.name !== 'simulated') {
-    throw new AppError(404, 'Route not found', 'ROUTE_NOT_FOUND');
-  }
-
-  const auth = authContext(req);
-  const { id } = idParamSchema.parse(req.params);
-  const input = sandboxEventSchema.parse(req.body);
-
-  const { rows } = await pool.query<{ user_id: string; provider_transaction_id: string | null }>(
-    `SELECT user_id, provider_transaction_id FROM transactions WHERE id = $1 AND provider = 'simulated'`,
-    [id],
-  );
-  const txn = rows[0];
-  if (!txn || (txn.user_id !== auth.userId && auth.role !== 'admin')) {
-    throw new AppError(404, 'Transaction not found', 'NOT_FOUND');
-  }
-
+/**
+ * Plays the provider's part for one transaction: builds the event for `input`, signs it and
+ * hands it to processWebhook(), exactly as a real provider webhook would. `occurredAt` is the
+ * time the provider reports; the demo seed backdates it, everything else leaves it as now.
+ */
+export async function applySandboxEvent(
+  provider: PaymentProvider,
+  id: string,
+  providerTransactionId: string | null,
+  input: SandboxEventInput,
+  occurredAt: Date = new Date(),
+): Promise<WebhookResult> {
   const { rows: items } = await pool.query<{
     book_id: string;
     unit_price_cents: string;
@@ -130,8 +126,8 @@ sandboxRouter.post('/transactions/:id/events', async (req: Request, res: Respons
   const body: SimulatedWebhookBody = {
     providerEventId: `sim_evt_${randomUUID()}`,
     eventType: `simulated.${input.kind}`,
-    occurredAt: new Date().toISOString(),
-    providerTransactionId: txn.provider_transaction_id,
+    occurredAt: occurredAt.toISOString(),
+    providerTransactionId,
     internalTransactionId: id,
     event,
   };
@@ -139,9 +135,31 @@ sandboxRouter.post('/transactions/:id/events', async (req: Request, res: Respons
   const rawBody = Buffer.from(JSON.stringify(body));
   const signature = signWebhook(rawBody, env.SIMULATED_WEBHOOK_SECRET);
 
-  const result = await processWebhook(provider, rawBody, (name) =>
+  return processWebhook(provider, rawBody, (name) =>
     name.toLowerCase() === SIMULATED_SIGNATURE_HEADER ? signature : undefined,
   );
+}
+
+sandboxRouter.post('/transactions/:id/events', async (req: Request, res: Response) => {
+  const provider = activeProvider();
+  if (env.PAYMENTS_MODE !== 'simulated' || provider?.name !== 'simulated') {
+    throw new AppError(404, 'Route not found', 'ROUTE_NOT_FOUND');
+  }
+
+  const auth = authContext(req);
+  const { id } = idParamSchema.parse(req.params);
+  const input = sandboxEventSchema.parse(req.body);
+
+  const { rows } = await pool.query<{ user_id: string; provider_transaction_id: string | null }>(
+    `SELECT user_id, provider_transaction_id FROM transactions WHERE id = $1 AND provider = 'simulated'`,
+    [id],
+  );
+  const txn = rows[0];
+  if (!txn || (txn.user_id !== auth.userId && auth.role !== 'admin')) {
+    throw new AppError(404, 'Transaction not found', 'NOT_FOUND');
+  }
+
+  const result = await applySandboxEvent(provider, id, txn.provider_transaction_id, input);
 
   res.json({ result, transaction: await getReceipt(txn.user_id, id) });
 });

@@ -44,6 +44,23 @@ const DEV_SIGNING_KEY_DER = createPrivateKey(DEV_LICENCE_SIGNING_PRIVATE_KEY).ex
   format: 'der',
 });
 
+/** An http(s) origin and nothing else, normalised; null when it is anything more or less. */
+export function parseOrigin(value: string): string | null {
+  let url: URL;
+  try {
+    url = new URL(value);
+  } catch {
+    return null;
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') return null;
+  if (url.pathname !== '/' || url.search || url.hash || url.username || url.password) return null;
+  // new URL() drops an empty "?" or "#"; a configured value with one is still a mistake.
+  if (/[?#]/.test(value)) return null;
+  return url.origin;
+}
+
+const TRUST_ENTRY = /^([0-9a-fA-F:.]+(\/\d{1,3})?|loopback|linklocal|uniquelocal)$/;
+
 const optionalSecret = z.preprocess(
   (value) => (value === '' ? undefined : value),
   z.string().min(1).optional(),
@@ -76,6 +93,50 @@ const schema = z.object({
   PORTAL_SESSION_HOURS: z.coerce.number().int().min(1).max(168).default(12),
   /** Lifetime of a portal login with "Remember me". */
   PORTAL_REMEMBER_DAYS: z.coerce.number().int().min(1).max(365).default(30),
+  /**
+   * The portal's public origin, used to build invite links. Defaults to the Vite dev
+   * server outside production; required in production.
+   */
+  PORTAL_ORIGIN: z.preprocess(
+    (v) => (v === '' ? undefined : v),
+    z
+      .string()
+      .transform((value, ctx) => {
+        const origin = parseOrigin(value);
+        if (origin === null) {
+          ctx.addIssue({
+            code: 'custom',
+            message:
+              'PORTAL_ORIGIN must be an http(s) origin: no path, query, fragment or credentials',
+          });
+          return z.NEVER;
+        }
+        return origin;
+      })
+      .optional(),
+  ),
+  /**
+   * How many reverse proxies sit in front of the API (a hop count), or a comma-separated
+   * list of trusted proxy addresses or subnets. 0 (default) trusts none, so X-Forwarded-For
+   * is ignored and rate limits key on the socket address. Set it behind a load balancer.
+   */
+  TRUST_PROXY: z
+    .preprocess((v) => (v === '' ? undefined : v), z.string().optional())
+    .transform((value, ctx): number | string[] => {
+      if (value === undefined) return 0;
+      const trimmed = value.trim();
+      if (/^\d+$/.test(trimmed)) return Math.min(Number(trimmed), 32);
+      const entries = trimmed.split(',').map((entry) => entry.trim());
+      if (!entries.every((entry) => TRUST_ENTRY.test(entry))) {
+        ctx.addIssue({
+          code: 'custom',
+          message:
+            'TRUST_PROXY must be a hop count or a comma-separated list of addresses or subnets',
+        });
+        return z.NEVER;
+      }
+      return entries;
+    }),
 
   /** Key management backend for asset DEKs. Only `local` exists; it is refused in production. */
   KMS_PROVIDER: z.enum(['local']).default('local'),
@@ -185,6 +246,7 @@ export function parseEnv(source: NodeJS.ProcessEnv) {
 
   const env = {
     ...raw,
+    PORTAL_ORIGIN: raw.PORTAL_ORIGIN ?? 'http://localhost:5173',
     LOG_LEVEL: raw.LOG_LEVEL ?? (raw.NODE_ENV === 'test' ? 'warn' : 'info'),
     PAYMENTS_MODE: raw.PAYMENTS_MODE ?? (isProd ? 'disabled' : 'simulated'),
   } as const;
@@ -203,6 +265,15 @@ export function parseEnv(source: NodeJS.ProcessEnv) {
     // Simulated checkout grants books without taking payment (spec 2.1, 14.1).
     if (env.PAYMENTS_MODE === 'simulated') {
       throw new Error('PAYMENTS_MODE=simulated is not allowed in production.');
+    }
+    // Invite links are built from it; a localhost link would be useless to an invitee.
+    if (raw.PORTAL_ORIGIN === undefined) {
+      throw new Error(
+        'PORTAL_ORIGIN is required in production (for example https://portal.example).',
+      );
+    }
+    if (!raw.PORTAL_ORIGIN.startsWith('https:')) {
+      throw new Error('PORTAL_ORIGIN must be an https origin in production.');
     }
 
     if (Buffer.from(env.DRM_LOCAL_KEK, 'base64').equals(DEV_KEK_BYTES)) {

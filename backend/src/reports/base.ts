@@ -6,8 +6,16 @@
 
 export type ItemStatus = 'paid' | 'partially_refunded' | 'refunded' | 'disputed';
 
+/**
+ * The explicit scope of the platform-wide admin reports. A missing, null or empty publisher
+ * id can never mean "all publishers": salesBase throws for anything but a uuid or this.
+ */
+export const PLATFORM_SCOPE: unique symbol = Symbol('platform-scope');
+
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
 export interface ReportFilters {
-  publisherId: string;
+  publisherId: string | typeof PLATFORM_SCOPE;
   /** Inclusive UTC date, YYYY-MM-DD. */
   from: string;
   /** Exclusive UTC date, YYYY-MM-DD. */
@@ -26,7 +34,11 @@ export function escapeLike(value: string): string {
 }
 
 export function salesBase(filters: ReportFilters): { sql: string; params: unknown[] } {
-  const params: unknown[] = [filters.publisherId, filters.from, filters.to];
+  const platform = filters.publisherId === PLATFORM_SCOPE;
+  if (!platform && !(typeof filters.publisherId === 'string' && UUID.test(filters.publisherId))) {
+    throw new Error('salesBase needs a publisher id or PLATFORM_SCOPE');
+  }
+  const params: unknown[] = [platform ? null : filters.publisherId, filters.from, filters.to];
   const outer: string[] = [];
   if (filters.bookId !== undefined) {
     params.push(filters.bookId);
@@ -50,6 +62,7 @@ export function salesBase(filters: ReportFilters): { sql: string; params: unknow
 
   const sql = `SELECT * FROM (
     SELECT ti.id AS item_id,
+           ti.publisher_id,
            t.id AS transaction_id,
            t.paid_at,
            ti.refunded_at,
@@ -77,7 +90,7 @@ export function salesBase(filters: ReportFilters): { sql: string; params: unknow
            COALESCE(ti.publisher_earnings_reversed_cents, 0)::bigint AS earnings_reversed_cents
       FROM transaction_items ti
       JOIN transactions t ON t.id = ti.transaction_id
-     WHERE ti.publisher_id = $1
+     WHERE ${platform ? '$1::uuid IS NULL' : 'ti.publisher_id = $1'}
        AND t.status IN ('paid', 'partially_refunded', 'disputed', 'refunded')
        AND t.paid_at >= ($2::date)::timestamp AT TIME ZONE 'UTC'
        AND t.paid_at < ($3::date)::timestamp AT TIME ZONE 'UTC'

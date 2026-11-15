@@ -17,6 +17,10 @@ x-backend-env: &backend-env
   PADDLE_API_KEY: ${PADDLE_API_KEY:-}
   PADDLE_WEBHOOK_SECRET: ${PADDLE_WEBHOOK_SECRET:-}
   LOG_LEVEL: ${LOG_LEVEL:-info}
+  # Portal origin for invite links, and how many reverse proxies to trust for
+  # client IPs (0 = none; set it to match the hosting when deployed).
+  PORTAL_ORIGIN: ${PORTAL_ORIGIN:-http://localhost:5173}
+  TRUST_PROXY: ${TRUST_PROXY:-0}
   # Book assets. Unset/empty values fall back to the development defaults in
   # env.ts, which the app refuses in production.
   KMS_PROVIDER: ${KMS_PROVIDER:-local}

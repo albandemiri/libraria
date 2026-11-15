@@ -38,12 +38,14 @@ describe('GET /admin/publishers', () => {
 
     const res = await api('GET', '/admin/publishers', { token: admin.token });
     assert.equal(res.status, 200);
-    assert.deepEqual(res.body, {
-      publishers: [
+    // The portal's picker needs id and name; the Platform list adds more fields.
+    assert.deepEqual(
+      res.body.publishers.map((p: { id: string; name: string }) => ({ id: p.id, name: p.name })),
+      [
         { id: alpha, name: 'Alpha Press' },
         { id: zed, name: 'Zed Books' },
       ],
-    });
+    );
 
     assert.equal((await api('GET', '/admin/publishers', { token: staff.token })).status, 403);
     assert.equal((await api('GET', '/admin/publishers', { token: reader.token })).status, 403);

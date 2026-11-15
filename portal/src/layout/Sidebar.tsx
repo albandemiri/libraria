@@ -2,6 +2,7 @@ import * as RadixDialog from '@radix-ui/react-dialog';
 import type { RefObject } from 'react';
 import { useTranslation } from 'react-i18next';
 import { NavLink, useSearchParams } from 'react-router-dom';
+import { useAuth } from '../auth/AuthProvider';
 import { IconButton } from '../ui';
 import { CrossIcon } from '../ui/icons';
 import styles from './Shell.module.css';
@@ -22,13 +23,15 @@ function Brand() {
 function NavGroups({ collapsed }: { collapsed: boolean }) {
   const { t } = useTranslation();
   const [params] = useSearchParams();
+  const { user } = useAuth();
+  const groups = NAV_GROUPS.filter((group) => !group.adminOnly || user?.role === 'admin');
   // The shared range rides along to range pages so it survives navigation.
   const from = params.get('from');
   const to = params.get('to');
   const rangeSearch = from && to ? `?${new URLSearchParams({ from, to })}` : '';
   return (
     <nav aria-label={t('nav.label')} className={styles.nav}>
-      {NAV_GROUPS.map((group) => (
+      {groups.map((group) => (
         <div key={group.key} className={styles.group}>
           <h2 className={collapsed ? `${styles.groupLabel} ui-sr-only` : styles.groupLabel}>
             {t(`nav.groups.${group.key}`)}

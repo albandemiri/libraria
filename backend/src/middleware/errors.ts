@@ -22,6 +22,8 @@ export const errorCodes = [
   // Identity
   'EMAIL_TAKEN',
   'INVALID_CREDENTIALS',
+  'INVITE_INVALID',
+  'INVITE_ACCEPTED',
   'PORTAL_ACCESS_DENIED',
   'CSRF_CHECK_FAILED',
   // Commerce

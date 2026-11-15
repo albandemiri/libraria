@@ -2,14 +2,22 @@ import { useEffect, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useBooks } from '../api/books';
-import type { Book, BookSort, BookStatusFilter } from '../api/types';
+import type { Book, BookSort } from '../api/types';
 import BookActions from '../components/BookActions';
 import BookStatusBadge from '../components/BookStatusBadge';
 import Notice from '../components/Notice';
 import ScopeGate from '../components/ScopeGate';
 import { currentLanguage } from '../i18n';
 import { formatDate, formatMoney } from '../lib/format';
-import { useDebouncedUrlSearch, useUrlParams } from '../lib/useUrlParams';
+import {
+  BOOK_SORTS,
+  BOOK_STATUSES,
+  MAX_SEARCH,
+  type Order,
+  defaultOrder,
+  useBookListParams,
+} from '../lib/useBookListParams';
+import { useDebouncedUrlSearch } from '../lib/useUrlParams';
 import {
   BookCard,
   BookCover,
@@ -27,25 +35,9 @@ import styles from './Catalog.module.css';
 import page from './Page.module.css';
 import QueryView from './QueryView';
 
-const STATUSES: BookStatusFilter[] = [
-  'all',
-  'draft',
-  'processing',
-  'ready',
-  'published',
-  'archived',
-  'withdrawn',
-];
-const SORTS: BookSort[] = ['updated', 'title', 'copies', 'earnings', 'price'];
 const VIEW_KEY = 'libraria.portal.catalog.view';
-const MAX_PAGE = 10_000;
-const MAX_SEARCH = 200;
 
 type View = 'grid' | 'table';
-type Order = 'asc' | 'desc';
-
-/** Title reads A to Z first; every number and date reads biggest or newest first. */
-const defaultOrder = (sort: BookSort): Order => (sort === 'title' ? 'asc' : 'desc');
 
 function readView(): View {
   try {
@@ -63,22 +55,6 @@ function writeView(view: View): void {
   }
 }
 
-/** Status, search, sort and page live in the URL, so links and the back button keep working. */
-function useCatalogParams() {
-  const { params, update } = useUrlParams();
-  const status = STATUSES.find((s) => s === params.get('status')) ?? 'all';
-  const q = params.get('q') ?? '';
-  const sort = SORTS.find((s) => s === params.get('sort')) ?? 'updated';
-  const order: Order =
-    params.get('order') === 'asc' || params.get('order') === 'desc'
-      ? (params.get('order') as Order)
-      : defaultOrder(sort);
-  const rawPage = Number(params.get('page'));
-  const pageNo = Number.isInteger(rawPage) && rawPage >= 1 ? Math.min(rawPage, MAX_PAGE) : 1;
-
-  return { status, q, sort, order, page: pageNo, update };
-}
-
 function CatalogContent() {
   const { t } = useTranslation();
   const lang = currentLanguage();
@@ -93,7 +69,7 @@ function CatalogContent() {
     if (deleted !== undefined) noticeRef.current?.focus();
   }, [deleted]);
   const focusHeading = () => headingRef.current?.focus();
-  const { status, q, sort, order, page: pageNo, update } = useCatalogParams();
+  const { status, q, sort, order, page: pageNo, update } = useBookListParams();
   const [view, setView] = useState<View>(readView);
   const { text, setText } = useDebouncedUrlSearch(q, update);
 
@@ -204,13 +180,13 @@ function CatalogContent() {
           label={t('catalog.statusFilter')}
           value={status}
           onChange={(v) => update({ status: v === 'all' ? undefined : v, page: undefined })}
-          options={STATUSES.map((s) => ({ value: s, label: t(`catalog.status.${s}`) }))}
+          options={BOOK_STATUSES.map((s) => ({ value: s, label: t(`catalog.status.${s}`) }))}
         />
         <Select
           label={t('catalog.sort')}
           value={sort}
           onChange={(v) => changeSort(v as BookSort)}
-          options={SORTS.map((s) => ({ value: s, label: t(`catalog.sorts.${s}`) }))}
+          options={BOOK_SORTS.map((s) => ({ value: s, label: t(`catalog.sorts.${s}`) }))}
         />
         <Select
           label={t('catalog.order')}

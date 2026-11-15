@@ -1,7 +1,12 @@
 import type { NavIconName } from './navIcons';
 
 export type NavItem = { to: string; key: NavIconName; end?: boolean };
-export type NavGroup = { key: 'workspace' | 'financials' | 'organization'; items: NavItem[] };
+export type NavGroup = {
+  key: 'workspace' | 'financials' | 'organization' | 'platform';
+  items: NavItem[];
+  /** Shown to admin accounts only. The routes are guarded separately. */
+  adminOnly?: boolean;
+};
 
 export const NAV_GROUPS: NavGroup[] = [
   {
@@ -29,6 +34,16 @@ export const NAV_GROUPS: NavGroup[] = [
       { to: '/settings', key: 'settings' },
     ],
   },
+  {
+    key: 'platform',
+    adminOnly: true,
+    items: [
+      { to: '/platform', key: 'platform', end: true },
+      { to: '/platform/publishers', key: 'publishers' },
+      { to: '/platform/books', key: 'platformBooks' },
+      { to: '/platform/readers', key: 'readers' },
+    ],
+  },
 ];
 
 /** Pages driven by the shared `?from&to` date range (the Catalog list and Contracts are not). */
@@ -39,5 +54,10 @@ const firstSegment = (pathname: string) => pathname.split('/')[1] ?? '';
 /** A book's Sales and Analytics tabs follow the range too: /catalog/:id/sales|analytics. */
 const BOOK_RANGE_TAB = /^\/catalog\/[^/]+\/(sales|analytics)\/?$/;
 
+/** Only the Platform overview follows the range; the other Platform pages do not. */
+const PLATFORM_OVERVIEW = /^\/platform\/?$/;
+
 export const usesDateRange = (pathname: string) =>
-  RANGE_PAGES.has(firstSegment(pathname)) || BOOK_RANGE_TAB.test(pathname);
+  RANGE_PAGES.has(firstSegment(pathname)) ||
+  BOOK_RANGE_TAB.test(pathname) ||
+  PLATFORM_OVERVIEW.test(pathname);

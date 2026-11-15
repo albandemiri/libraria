@@ -7,6 +7,7 @@ import {
   portalTokenLifetime,
   sessionCookie,
 } from '../auth/portal-session';
+import { acceptInvite, hashToken, inspectInvite } from '../auth/invites';
 import { signAccessToken, type UserRole } from '../auth/tokens';
 import { env, isProduction } from '../config/env';
 import { isPgError, PG_UNIQUE_VIOLATION } from '../db/errors';
@@ -14,6 +15,7 @@ import { pool } from '../db/pool';
 import { authContext } from '../middleware/auth';
 import { requireAuth } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
+import { rateLimit } from '../middleware/rate-limit';
 
 export const authRouter = Router();
 
@@ -192,5 +194,63 @@ authRouter.get('/me', requireAuth, async (req: Request, res: Response) => {
     throw new AppError(401, 'Account no longer exists', 'UNAUTHENTICATED');
   }
 
+  res.json({ user: publicUser(user) });
+});
+
+// ---------------------------------------------------------------------------
+// Publisher invites (public: the token is the credential)
+// ---------------------------------------------------------------------------
+
+// The token travels in the request body only: never in a URL, so no log line has it.
+const inviteTokenSchema = z.object({ token: z.string().min(1).max(200) });
+
+const acceptInviteSchema = inviteTokenSchema.extend({
+  password: passwordSchema,
+  displayName: z.string().trim().min(1).max(100),
+});
+
+const clientKey = (req: Request) => req.ip ?? 'unknown';
+
+const inspectInviteLimit = rateLimit({
+  name: 'invite-inspect',
+  limit: 30,
+  windowMs: 10 * 60 * 1000,
+  key: clientKey,
+});
+
+// Keyed on the token as well as the address, so one client guessing at a token cannot lock
+// out a different invitee behind the same address (an office, a proxy without TRUST_PROXY).
+const acceptInviteLimit = rateLimit({
+  name: 'invite-accept',
+  limit: 10,
+  windowMs: 10 * 60 * 1000,
+  key: (req) => {
+    const token = (req.body as { token?: unknown } | undefined)?.token;
+    const tokenKey = typeof token === 'string' ? hashToken(token).toString('hex') : '';
+    return `${clientKey(req)}|${tokenKey}`;
+  },
+});
+
+authRouter.post('/invites/inspect', inspectInviteLimit, async (req: Request, res: Response) => {
+  const { token } = inviteTokenSchema.parse(req.body);
+  res.setHeader('Cache-Control', 'no-store');
+  res.json(await inspectInvite(token));
+});
+
+/** Sets the password, creates the publisher login, uses the invite up and signs in with the portal cookie. */
+authRouter.post('/invites/accept', acceptInviteLimit, async (req: Request, res: Response) => {
+  const { token, password, displayName } = acceptInviteSchema.parse(req.body);
+  // Cheap checks first: only hash the password for an invite that is plausibly open. The
+  // authoritative re-check happens under the row lock in acceptInvite.
+  await inspectInvite(token);
+  const passwordHash = await bcrypt.hash(password, env.BCRYPT_ROUNDS);
+  const user = await acceptInvite(token, passwordHash, displayName);
+
+  const session = signAccessToken(
+    { userId: user.id, role: user.role, publisherId: user.publisher_id },
+    portalTokenLifetime(false),
+  );
+  res.setHeader('Cache-Control', 'no-store');
+  res.setHeader('Set-Cookie', sessionCookie(session, false, isProduction));
   res.json({ user: publicUser(user) });
 });
