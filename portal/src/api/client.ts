@@ -21,6 +21,21 @@ type ApiInit = RequestInit & { query?: Record<string, string | undefined> };
 
 const base = (): string => import.meta.env.VITE_API_BASE ?? '/api/v1';
 
+/**
+ * Resolves an API-served path (such as a cover URL, `/api/v1/books/{id}/cover?v=n`) against
+ * the API origin. With an absolute `VITE_API_BASE` the portal is served from another origin,
+ * so the path must point there; otherwise it is same-origin and stays as is.
+ */
+export function resolveApiUrl(path: string): string {
+  if (!path.startsWith('/')) return path;
+  try {
+    return new URL(path, new URL(base()).origin).toString();
+  } catch {
+    // A relative base such as `/api/v1` is not a URL: same origin.
+    return path;
+  }
+}
+
 function buildUrl(path: string, query: ApiInit['query']): string {
   const params = new URLSearchParams();
   for (const [key, value] of Object.entries(query ?? {})) {

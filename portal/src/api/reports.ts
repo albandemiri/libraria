@@ -2,13 +2,22 @@ import { useQuery } from '@tanstack/react-query';
 import { usePublisherScope } from '../layout/PublisherScope';
 import type { DateRange, Granularity } from '../lib/periods';
 import { api, apiBlob } from './client';
-import type { ByBookRow, ByCountryRow, SalesPage, SalesStatus, SummaryResponse } from './types';
+import type {
+  ByBookRow,
+  ByCountryRow,
+  OrdersPage,
+  SalesPage,
+  SalesStatus,
+  SummaryResponse,
+} from './types';
 
 export type SalesFilters = DateRange & {
   bookId?: string;
   /** ISO country code, or 'unknown' for sales with no country. */
   country?: string;
   status?: SalesStatus;
+  /** Case-insensitive match on a book title or a transaction-id prefix. */
+  q?: string;
 };
 
 const PREFIX = '/publisher/reports';
@@ -27,10 +36,11 @@ function useScopedQuery<T>(
   });
 }
 
-export const useSummary = (range: DateRange, granularity: Granularity) =>
-  useScopedQuery<SummaryResponse>([range.from, range.to, granularity], '/summary', {
+export const useSummary = (range: DateRange, granularity: Granularity, bookId?: string) =>
+  useScopedQuery<SummaryResponse>([range.from, range.to, granularity, bookId], '/summary', {
     ...range,
     granularity,
+    bookId,
   });
 
 export const useByBook = (range: DateRange) =>
@@ -41,9 +51,35 @@ export const useByCountry = (range: DateRange) =>
 
 export const useSales = (filters: SalesFilters, page: number, limit = 25) =>
   useScopedQuery<SalesPage>(
-    [filters.from, filters.to, filters.bookId, filters.country, filters.status, page, limit],
+    [
+      filters.from,
+      filters.to,
+      filters.bookId,
+      filters.country,
+      filters.status,
+      filters.q,
+      page,
+      limit,
+    ],
     '/sales',
     { ...filters, page: String(page), limit: String(limit) },
+  );
+
+/** Sales lines grouped by order (transaction). `q` matches a book title or a transaction-id prefix. */
+export const useOrders = (filters: SalesFilters, page: number, limit = 25) =>
+  useScopedQuery<OrdersPage>(
+    [
+      filters.from,
+      filters.to,
+      filters.bookId,
+      filters.country,
+      filters.status,
+      filters.q,
+      page,
+      limit,
+    ],
+    '/orders',
+    { ...filters, q: filters.q || undefined, page: String(page), limit: String(limit) },
   );
 
 /** Fetches the sales CSV (cookie + portal header) and returns the file body. */

@@ -545,8 +545,8 @@ async function completeAsset(ctx: RunContext, asset: AssetRow, done: Completion)
     // Lock order everywhere: book, then job, then asset.
     const { rows: books } = await client.query<{
       current_asset_id: string | null;
-      cover_image_url: string | null;
-    }>('SELECT current_asset_id, cover_image_url FROM books WHERE id = $1 FOR UPDATE', [
+      cover_object_key: string | null;
+    }>('SELECT current_asset_id, cover_object_key FROM books WHERE id = $1 FOR UPDATE', [
       asset.book_id,
     ]);
     await lockLease(client, ctx.job);
@@ -589,11 +589,16 @@ async function completeAsset(ctx: RunContext, asset: AssetRow, done: Completion)
       );
       wentLive = true;
     }
-    if (done.hasCover && books[0].cover_image_url === null) {
-      await client.query('UPDATE books SET cover_image_url = $2 WHERE id = $1', [
-        asset.book_id,
-        `/api/v1/books/${asset.book_id}/cover`,
-      ]);
+    // The EPUB's cover shows only if the asset is live and nothing was uploaded; the
+    // new version in the URL makes caches fetch it.
+    if (wentLive && done.hasCover && books[0].cover_object_key === null) {
+      await client.query(
+        `UPDATE books
+            SET cover_version = cover_version + 1,
+                cover_image_url = '/api/v1/books/' || id || '/cover?v=' || (cover_version + 1)
+          WHERE id = $1`,
+        [asset.book_id],
+      );
     }
 
     await client.query(`UPDATE asset_jobs SET state = 'done', locked_at = NULL WHERE id = $1`, [
@@ -770,11 +775,13 @@ export async function activateAsset(
   assetId: string,
   actorId: string | null,
 ): Promise<void> {
+  // Whether the asset has an extracted cover is fixed when it is stored, so look outside the lock.
+  const hasEpubCover = (await objectStorage().head(coverKey(bookId, assetId))) !== null;
   await withTransaction(async (client) => {
-    const book = await client.query<{ current_asset_id: string | null }>(
-      'SELECT current_asset_id FROM books WHERE id = $1 FOR UPDATE',
-      [bookId],
-    );
+    const book = await client.query<{
+      current_asset_id: string | null;
+      cover_object_key: string | null;
+    }>('SELECT current_asset_id, cover_object_key FROM books WHERE id = $1 FOR UPDATE', [bookId]);
     if (!book.rows[0]) throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
 
     const asset = await client.query<{ state: AssetState; version: number }>(
@@ -788,6 +795,18 @@ export async function activateAsset(
     if (book.rows[0].current_asset_id === assetId) return;
 
     await client.query('UPDATE books SET current_asset_id = $2 WHERE id = $1', [bookId, assetId]);
+    if (book.rows[0].cover_object_key === null) {
+      // No uploaded cover: the shown cover is the new asset's own, or none.
+      await client.query(
+        `UPDATE books
+            SET cover_version = cover_version + 1,
+                cover_image_url = CASE WHEN $2::boolean
+                                       THEN '/api/v1/books/' || id || '/cover?v=' || (cover_version + 1)
+                                       ELSE NULL END
+          WHERE id = $1`,
+        [bookId, hasEpubCover],
+      );
+    }
     await client.query(
       'UPDATE book_assets SET activated_at = NOW(), activated_by = $2 WHERE id = $1',
       [assetId, actorId],

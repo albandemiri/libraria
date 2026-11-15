@@ -155,7 +155,7 @@ describe('admin book writes with a picked publisher', () => {
 });
 
 describe('PATCH distinguishes an absent field from an explicit null', () => {
-  it('clears isbn13, description and coverImageUrl on null and keeps them when omitted', async () => {
+  it('clears isbn13 and description on null and keeps them when omitted; the cover is not settable', async () => {
     const publisher = await createPublisher('Clear House');
     const admin = await createUser({ role: 'admin' });
     const book = await createBook(publisher, { title: 'Clearable' });
@@ -191,8 +191,9 @@ describe('PATCH distinguishes an absent field from an explicit null', () => {
     assert.equal((await read()).description, null);
     assert.equal((await read()).cover_image_url, 'https://example.com/c.png');
 
-    assert.equal((await patch({ coverImageUrl: null })).status, 200);
-    assert.equal((await read()).cover_image_url, null);
+    // The cover is uploaded, no longer a settable link.
+    assert.equal((await patch({ coverImageUrl: null })).status, 400);
+    assert.equal((await read()).cover_image_url, 'https://example.com/c.png');
   });
 
   it('clears durationSeconds on null for an ebook and keeps it when omitted', async () => {

@@ -1,0 +1,36 @@
+.panel {
+  display: grid;
+  gap: var(--s-4);
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.statusRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-3);
+  font-size: var(--fs-13);
+}
+.text {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2);
+}
+.drm {
+  display: grid;
+  gap: var(--s-1);
+  padding-top: var(--s-4);
+  border-top: 1px solid var(--border);
+}
+.drm h3 {
+  margin: 0;
+  font-size: var(--fs-14);
+  font-weight: 600;
+}

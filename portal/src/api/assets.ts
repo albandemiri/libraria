@@ -49,7 +49,11 @@ export function useAssetMutations(bookId: string) {
   const done = () => client.invalidateQueries({ queryKey: ['assets'] });
   const upload = useMutation({
     mutationFn: (file: File) => uploadEpub(bookId, file, publisherId),
-    onSuccess: done,
+    onSuccess: () => {
+      void done();
+      // The book's derived status (processing, ready) follows its uploads.
+      void client.invalidateQueries({ queryKey: ['books'] });
+    },
   });
   const activate = useMutation({
     mutationFn: (assetId: string) => activateAsset(bookId, assetId, publisherId),

@@ -1,0 +1,84 @@
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--s-4);
+}
+.headText {
+  flex: 1;
+  min-width: 240px;
+  display: grid;
+  gap: var(--s-2);
+}
+.headText h1 {
+  overflow-wrap: anywhere;
+}
+.author {
+  margin: 0;
+  font-size: var(--fs-14);
+  color: var(--text-2-strong);
+  overflow-wrap: anywhere;
+}
+.back {
+  justify-self: start;
+  font-size: var(--fs-13);
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+.back:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.tabBody {
+  display: grid;
+  gap: var(--s-4);
+  padding-top: var(--s-4);
+}
+.details {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--s-4);
+  margin: 0;
+  padding: var(--s-4);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+}
+.details div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+.details dt {
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+}
+.details dd {
+  margin: 0;
+  font-size: var(--fs-14);
+  overflow-wrap: anywhere;
+  font-variant-numeric: tabular-nums;
+}
+.wide {
+  grid-column: 1 / -1;
+}
+.description {
+  white-space: pre-line;
+}
+.headActions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--s-2);
+}
+
+.focusable {
+  outline: none;
+}
+.focusable:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-lg);
+}

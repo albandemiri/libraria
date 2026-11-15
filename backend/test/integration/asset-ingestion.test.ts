@@ -413,7 +413,7 @@ describe('asset ingestion', () => {
     const asset = await ingestNow(bookId, staff.id, buildEpub({ cover: true }));
     assert.equal(asset.state, 'ready');
     const { rows } = await pool.query(`SELECT cover_image_url FROM books WHERE id = $1`, [bookId]);
-    assert.equal(rows[0].cover_image_url, `/api/v1/books/${bookId}/cover`);
+    assert.equal(rows[0].cover_image_url, `/api/v1/books/${bookId}/cover?v=1`);
 
     const res = await fetch(`${server.baseUrl}/books/${bookId}/cover`);
     assert.equal(res.status, 200);
@@ -422,7 +422,7 @@ describe('asset ingestion', () => {
     assert.equal(res.headers.get('x-content-type-options'), 'nosniff');
     assert.ok(Buffer.from(await res.arrayBuffer()).equals(PNG_1X1));
 
-    // A publisher-set cover URL is never overwritten.
+    // A legacy external URL (no longer settable) is replaced by the live asset's own cover.
     const own = await createBook(publisherId, { available: false });
     await pool.query(
       `UPDATE books SET cover_image_url = 'https://cdn.example/c.png' WHERE id = $1`,
@@ -430,7 +430,7 @@ describe('asset ingestion', () => {
     );
     await ingestNow(own, staff.id, buildEpub({ cover: true }));
     const kept = await pool.query(`SELECT cover_image_url FROM books WHERE id = $1`, [own]);
-    assert.equal(kept.rows[0].cover_image_url, 'https://cdn.example/c.png');
+    assert.equal(kept.rows[0].cover_image_url, `/api/v1/books/${own}/cover?v=1`);
 
     // No cover: 404, and the url stays empty.
     const plain = await createBook(publisherId, { available: false });

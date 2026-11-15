@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import * as fsp from 'node:fs/promises';
 import { mkdtemp, readdir, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
@@ -95,6 +96,66 @@ describe('LocalObjectStorage.createReadStream', () => {
         (await storage.getRange('covers/big.bin', 10, 1_000_000_000)).length,
         big.length - 10,
       );
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+});
+
+describe('LocalObjectStorage transient fs errors', () => {
+  const failing = (code: string, times: number) => {
+    const calls = { rename: 0, unlink: 0 };
+    const fail =
+      (name: 'rename' | 'unlink', real: (...a: string[]) => Promise<void>) =>
+      async (...args: string[]) => {
+        calls[name]++;
+        if (calls[name] <= times) throw Object.assign(new Error(code), { code });
+        return real(...args);
+      };
+    return {
+      calls,
+      fs: {
+        rename: fail('rename', (a, b) => fsp.rename(a, b)),
+        unlink: fail('unlink', (a) => fsp.unlink(a)),
+      },
+    };
+  };
+
+  it('retries rename and unlink on EPERM, then succeeds', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'libraria-retry-'));
+    try {
+      const { calls, fs } = failing('EPERM', 2);
+      const storage = new LocalObjectStorage(dir, fs);
+      await storage.put('assets/r/x.bin', Buffer.from('x'));
+      assert.equal(calls.rename, 3);
+      await storage.delete('assets/r/x.bin');
+      assert.equal(calls.unlink, 3);
+      assert.equal(await storage.head('assets/r/x.bin'), null);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('gives up after 5 attempts and leaves no temp file', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'libraria-retry-'));
+    try {
+      const { calls, fs } = failing('EBUSY', 99);
+      const storage = new LocalObjectStorage(dir, fs);
+      await assert.rejects(storage.put('assets/r/y.bin', Buffer.from('y')), { code: 'EBUSY' });
+      assert.equal(calls.rename, 5);
+      assert.deepEqual(await readdir(path.join(dir, 'assets', 'r')), []);
+    } finally {
+      await rm(dir, { recursive: true, force: true });
+    }
+  });
+
+  it('does not retry other errors', async () => {
+    const dir = await mkdtemp(path.join(tmpdir(), 'libraria-retry-'));
+    try {
+      const { calls, fs } = failing('EIO', 99);
+      const storage = new LocalObjectStorage(dir, fs);
+      await assert.rejects(storage.put('assets/r/z.bin', Buffer.from('z')), { code: 'EIO' });
+      assert.equal(calls.rename, 1);
     } finally {
       await rm(dir, { recursive: true, force: true });
     }

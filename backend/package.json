@@ -15,7 +15,8 @@
     "lint": "biome check",
     "lint:fix": "biome check --write",
     "test": "tsx --test \"src/**/*.test.ts\"",
-    "test:integration": "tsx --test --test-concurrency=1 \"test/integration/**/*.test.ts\""
+    "test:integration": "tsx --test --test-concurrency=1 \"test/integration/**/*.test.ts\"",
+    "test:integration:log": "tsx --test --test-concurrency=1 --test-reporter=spec --test-reporter-destination=stdout --test-reporter=spec --test-reporter-destination=var/test-integration.log \"test/integration/**/*.test.ts\""
   },
   "keywords": [],
   "type": "commonjs",
@@ -26,6 +27,7 @@
     "fast-xml-parser": "^5.12.1",
     "jsonwebtoken": "^9.0.3",
     "pg": "^8.23.0",
+    "sharp": "0.35.5",
     "yauzl": "^3.4.0",
     "zod": "^4.4.3"
   },

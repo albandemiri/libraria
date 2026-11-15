@@ -1,0 +1,171 @@
+.section {
+  display: grid;
+  grid-template-columns: minmax(180px, 1fr) minmax(0, 2fr);
+  gap: var(--s-5);
+  padding: var(--s-5) 0;
+  border-top: 1px solid var(--border);
+}
+.sectionHead h2 {
+  margin: 0 0 var(--s-1);
+  font-size: var(--fs-14);
+  font-weight: 600;
+}
+.sectionHead p {
+  margin: 0;
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+}
+.sectionBody {
+  display: grid;
+  gap: var(--s-4);
+  min-width: 0;
+}
+@media (max-width: 720px) {
+  .section {
+    grid-template-columns: 1fr;
+    gap: var(--s-3);
+  }
+}
+.field {
+  display: grid;
+  gap: 6px;
+}
+.label {
+  font-size: var(--fs-13);
+  font-weight: 500;
+}
+.required {
+  color: var(--accent-2);
+  margin-inline-start: 2px;
+}
+.hint {
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+}
+.error {
+  display: flex;
+  gap: var(--s-1);
+  align-items: center;
+  font-size: var(--fs-12);
+  color: var(--negative-fg);
+  font-weight: 500;
+}
+.input {
+  width: 100%;
+  height: var(--control-h);
+  padding: 0 var(--s-3);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: var(--surface);
+  color: var(--text);
+  font: 400 var(--fs-13) / 1.25 var(--font-ui);
+  transition: border-color var(--dur) var(--ease);
+}
+textarea.input {
+  height: auto;
+  min-height: 88px;
+  padding: var(--s-2) var(--s-3);
+  line-height: 1.5;
+  resize: vertical;
+}
+.input:hover {
+  border-color: var(--text-2);
+}
+.input:focus-visible {
+  outline-offset: 0;
+  border-color: var(--accent);
+}
+.input[aria-invalid="true"] {
+  border-color: var(--accent-2);
+}
+
+.drop {
+  position: relative;
+  display: grid;
+  justify-items: center;
+  gap: var(--s-1);
+  padding: var(--s-6) var(--s-4);
+  text-align: center;
+  background: var(--surface);
+  border: 1px dashed var(--border-strong);
+  border-radius: var(--radius-lg);
+  color: var(--text-2-strong);
+  cursor: pointer;
+  transition:
+    border-color var(--dur) var(--ease),
+    background-color var(--dur) var(--ease);
+}
+.drop:hover,
+.drop[data-over="true"] {
+  border-color: var(--accent);
+  background: var(--selected);
+}
+.drop:focus-within {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+}
+.drop[data-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+.dropTitle {
+  color: var(--text);
+  font-size: var(--fs-13);
+  font-weight: 500;
+}
+.dropWrap {
+  display: grid;
+  gap: var(--s-2);
+}
+.dropHint {
+  font-size: var(--fs-12);
+  color: var(--text-2-strong);
+}
+.fileInput {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: inherit;
+  width: 100%;
+  height: 100%;
+}
+
+.steps {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--s-2) var(--s-5);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.step {
+  display: flex;
+  align-items: center;
+  gap: var(--s-2);
+  font-size: var(--fs-13);
+  color: var(--text-2-strong);
+}
+.step[aria-current="step"] {
+  color: var(--text);
+  font-weight: 600;
+}
+.marker {
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid var(--border-strong);
+  border-radius: 50%;
+  font-size: var(--fs-12);
+  font-variant-numeric: tabular-nums;
+  background: var(--surface);
+}
+.done .marker {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+.step[aria-current="step"] .marker {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: var(--surface);
+}

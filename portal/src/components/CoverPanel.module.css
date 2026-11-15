@@ -1,0 +1,21 @@
+.panel {
+  display: grid;
+  gap: var(--s-4);
+}
+.current {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--s-4);
+}
+.side {
+  display: grid;
+  gap: var(--s-3);
+  min-width: 0;
+  flex: 1;
+}
+.drop {
+  min-width: 0;
+}
+.error {
+  outline: none;
+}

@@ -5,6 +5,7 @@ import { pool } from '../db/pool';
 import { type ItemStatus, METRICS_SQL, type ReportFilters, salesBase } from '../reports/base';
 import { CSV_HEADERS, type SalesLine, toCsvRow } from '../reports/csv';
 import { type Metrics, toMetrics } from '../reports/metrics';
+import { coverThumbUrl } from './publisher-books';
 import { resolvePublisherScope } from './publisher-scope';
 
 export const reportsRouter = Router();
@@ -48,13 +49,21 @@ const granularitySchema = z.object({
   granularity: z.enum(['day', 'week', 'month']).default('day'),
 });
 
+const summaryBookSchema = z.object({ bookId: z.string().uuid('Not a valid book id').optional() });
+
 const STEP = { day: '1 day', week: '1 week', month: '1 month' } as const;
 
 reportsRouter.get('/summary', async (req: Request, res: Response) => {
   const query = rangeQuerySchema.parse(req.query);
   const { granularity: g } = granularitySchema.parse(req.query); // enum-validated, safe to inline
   const publisherId = resolvePublisherScope(req, query.publisherId);
-  const base = salesBase({ publisherId, from: query.from, to: query.to });
+  const { bookId } = summaryBookSchema.parse(req.query);
+  const base = salesBase({
+    publisherId,
+    from: query.from,
+    to: query.to,
+    ...(bookId !== undefined ? { bookId } : {}),
+  });
 
   const totals = await pool.query(
     `WITH s AS (${base.sql}) SELECT ${METRICS_SQL} FROM s`,
@@ -96,13 +105,27 @@ reportsRouter.get('/by-book', async (req: Request, res: Response) => {
   const base = salesBase({ publisherId, from: query.from, to: query.to });
   const result = await pool.query(
     `WITH s AS (${base.sql})
-     SELECT s.book_id, MAX(s.title) AS title, ${METRICS_SQL}
-       FROM s GROUP BY s.book_id`,
+     SELECT s.book_id, MAX(s.title) AS title,
+            MAX(bk.cover_image_url) AS cover_image_url,
+            MAX(bk.cover_thumb_key) AS cover_thumb_key,
+            MAX(bk.cover_version) AS cover_version,
+            ${METRICS_SQL}
+       FROM s JOIN books bk ON bk.id = s.book_id
+      GROUP BY s.book_id`,
     base.params,
   );
   const rows = result.rows
     .map((row) => ({
-      book: { id: row.book_id as string, title: row.title as string },
+      book: {
+        id: row.book_id as string,
+        title: row.title as string,
+        coverImageUrl: (row.cover_image_url as string | null) ?? null,
+        coverThumbUrl: coverThumbUrl(
+          row.book_id as string,
+          row.cover_thumb_key as string | null,
+          row.cover_version as number,
+        ),
+      },
       ...toMetrics(row),
     }))
     .sort(
@@ -148,6 +171,7 @@ const salesFilterSchema = z.object({
     .regex(/^([A-Za-z]{2}|unknown)$/, 'Use a 2-letter country code or "unknown"')
     .optional(),
   status: z.enum(['paid', 'partially_refunded', 'refunded', 'disputed']).optional(),
+  q: z.string().trim().min(1).max(100).optional(),
 });
 
 const pageSchema = z.object({
@@ -164,16 +188,21 @@ function salesFilters(req: Request): { filters: ReportFilters; from: string; to:
   const filters: ReportFilters = { publisherId, from: query.from, to: query.to };
   if (extra.bookId !== undefined) filters.bookId = extra.bookId;
   if (extra.status !== undefined) filters.status = extra.status;
+  if (extra.q !== undefined) filters.q = extra.q;
   if (extra.country !== undefined) {
     filters.country = extra.country === 'unknown' ? null : extra.country.toUpperCase();
   }
   return { filters, from: query.from, to: query.to };
 }
 
-const LINE_COLUMNS = `s.paid_at, s.transaction_id, s.book_id, s.title, s.customer_country,
+const LINE_COLUMNS = `s.item_id, s.refunded_at, s.paid_at, s.transaction_id, s.book_id, s.title, s.customer_country,
        s.item_status, s.gross_cents, s.tax_cents, s.raw_fee_cents, s.commission_rate_bps,
        (s.commission_cents - s.commission_reversed_cents) AS line_commission_cents,
+       s.commission_cents AS commission_at_sale_cents,
+       s.commission_reversed_cents,
        (s.earnings_cents - s.earnings_reversed_cents) AS line_earnings_cents,
+       s.earnings_cents AS earnings_at_sale_cents,
+       s.earnings_reversed_cents,
        s.refunds_cents, s.split`;
 
 // Newest first; the item id makes ties deterministic.
@@ -182,6 +211,8 @@ const LINE_ORDER = 'ORDER BY s.paid_at DESC, s.item_id';
 function toSalesLine(row: Record<string, unknown>): SalesLine {
   const nullableNumber = (value: unknown) => (value === null ? null : Number(value));
   return {
+    itemId: row.item_id as string,
+    refundedAt: row.refunded_at === null ? null : (row.refunded_at as Date).toISOString(),
     paidAt: (row.paid_at as Date).toISOString(),
     transactionId: row.transaction_id as string,
     book: { id: row.book_id as string, title: row.title as string },
@@ -192,7 +223,11 @@ function toSalesLine(row: Record<string, unknown>): SalesLine {
     feeCents: nullableNumber(row.raw_fee_cents),
     commissionRateBps: nullableNumber(row.commission_rate_bps),
     commissionCents: Number(row.line_commission_cents),
+    commissionAtSaleCents: Number(row.commission_at_sale_cents),
+    commissionReversedCents: Number(row.commission_reversed_cents),
     earningsCents: Number(row.line_earnings_cents),
+    earningsAtSaleCents: Number(row.earnings_at_sale_cents),
+    earningsReversedCents: Number(row.earnings_reversed_cents),
     refundedCents: Number(row.refunds_cents),
     split: row.split as SalesLine['split'],
   };
@@ -215,6 +250,53 @@ reportsRouter.get('/sales', async (req: Request, res: Response) => {
   );
   res.json({
     lines: result.rows.map(toSalesLine),
+    pagination: { page, limit, total: count, totalPages: Math.ceil(count / limit) },
+  });
+});
+
+const ordersPageSchema = z.object({
+  page: pageSchema.shape.page,
+  limit: z.coerce.number().int().min(1).max(100).default(50),
+});
+
+// Filters select ORDERS: an order is listed when any of this publisher's lines in it matches all
+// the filters, and it then returns all of this publisher's lines. Paginated by distinct
+// transaction. Both CTEs come from salesBase, so tenant scope and rules are the single definition;
+// they share $1-$3 (publisher, from, to) and the filtered one adds the filter parameters.
+reportsRouter.get('/orders', async (req: Request, res: Response) => {
+  const { filters } = salesFilters(req);
+  const { page, limit } = ordersPageSchema.parse(req.query);
+  const matching = salesBase(filters);
+  const all = salesBase({ publisherId: filters.publisherId, from: filters.from, to: filters.to });
+  const n = matching.params.length;
+  const selected = `selected AS (SELECT f.transaction_id, MAX(f.paid_at) AS order_paid_at
+                                   FROM f GROUP BY f.transaction_id)`;
+  const total = await pool.query(
+    `WITH f AS (${matching.sql}), ${selected} SELECT COUNT(*)::int AS n FROM selected`,
+    matching.params,
+  );
+  const count = total.rows[0].n as number;
+  const result = await pool.query(
+    `WITH f AS (${matching.sql}), s AS (${all.sql}), ${selected},
+          page AS (
+            SELECT transaction_id, order_paid_at FROM selected
+             ORDER BY order_paid_at DESC, transaction_id
+             LIMIT $${n + 1} OFFSET $${n + 2}
+          )
+     SELECT ${LINE_COLUMNS}
+       FROM s JOIN page p ON p.transaction_id = s.transaction_id
+      ORDER BY p.order_paid_at DESC, p.transaction_id, s.item_id`,
+    [...matching.params, limit, (page - 1) * limit],
+  );
+  const orders: Array<{ transactionId: string; paidAt: string; lines: SalesLine[] }> = [];
+  for (const row of result.rows) {
+    const line = toSalesLine(row);
+    const last = orders[orders.length - 1];
+    if (last && last.transactionId === line.transactionId) last.lines.push(line);
+    else orders.push({ transactionId: line.transactionId, paidAt: line.paidAt, lines: [line] });
+  }
+  res.json({
+    orders,
     pagination: { page, limit, total: count, totalPages: Math.ceil(count / limit) },
   });
 });

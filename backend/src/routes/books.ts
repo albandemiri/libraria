@@ -1,6 +1,7 @@
 import { type Request, type Response, Router } from 'express';
 import { z } from 'zod';
 import { rateInForceSql } from '../commerce/rates';
+import { sniffImageType } from '../covers/sniff';
 import { pool } from '../db/pool';
 import { objectStorage } from '../drm/object-storage';
 import { AppError } from '../middleware/errors';
@@ -169,38 +170,33 @@ booksRouter.get('/:id', async (req: Request, res: Response) => {
   res.json({ book: publicBook(book) });
 });
 
-/** The image type from its first bytes, never from anything the uploader declared. */
-function sniffImageType(data: Buffer): string | null {
-  if (data.length >= 8 && data.subarray(0, 8).equals(Buffer.from('89504e470d0a1a0a', 'hex'))) {
-    return 'image/png';
-  }
-  if (data.length >= 3 && data[0] === 0xff && data[1] === 0xd8 && data[2] === 0xff) {
-    return 'image/jpeg';
-  }
-  if (data.length >= 6 && /^GIF8[79]a$/.test(data.subarray(0, 6).toString('latin1'))) {
-    return 'image/gif';
-  }
-  if (
-    data.length >= 12 &&
-    data.subarray(0, 4).toString('latin1') === 'RIFF' &&
-    data.subarray(8, 12).toString('latin1') === 'WEBP'
-  ) {
-    return 'image/webp';
-  }
-  return null;
-}
-
-/** The cover the ingestion worker extracted from the book's current asset. Public, cacheable. */
+/**
+ * The book's cover. Public and cacheable: the uploaded cover when there is one
+ * (`?size=thumb` for its thumbnail), otherwise the cover the ingestion worker
+ * extracted from the current asset, which has no thumbnail. The `v` in
+ * `coverImageUrl` changes with every upload or removal, busting the cache.
+ */
 booksRouter.get('/:id/cover', async (req: Request, res: Response) => {
   const { id } = idParamSchema.parse(req.params);
-  const { rows } = await pool.query<{ current_asset_id: string | null }>(
-    'SELECT current_asset_id FROM books WHERE id = $1 AND withdrawn_at IS NULL',
+  const { rows } = await pool.query<{
+    current_asset_id: string | null;
+    cover_object_key: string | null;
+    cover_thumb_key: string | null;
+  }>(
+    `SELECT current_asset_id, cover_object_key, cover_thumb_key
+       FROM books WHERE id = $1 AND withdrawn_at IS NULL`,
     [id],
   );
-  const assetId = rows[0]?.current_asset_id;
-  if (!assetId) throw new AppError(404, 'Cover not found', 'NOT_FOUND');
+  const book = rows[0];
+  if (!book) throw new AppError(404, 'Cover not found', 'NOT_FOUND');
 
-  const key = `covers/${id}/${assetId}`;
+  const uploaded =
+    req.query.size === 'thumb'
+      ? (book.cover_thumb_key ?? book.cover_object_key)
+      : book.cover_object_key;
+  const key = uploaded ?? (book.current_asset_id ? `covers/${id}/${book.current_asset_id}` : null);
+  if (!key) throw new AppError(404, 'Cover not found', 'NOT_FOUND');
+
   const storage = objectStorage();
   const data = (await storage.head(key)) ? await storage.get(key).catch(() => null) : null;
   const type = data ? sniffImageType(data) : null;

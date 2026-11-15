@@ -16,6 +16,13 @@ export interface ReportFilters {
   /** undefined: any country; null: unknown country; string: that country. */
   country?: string | null;
   status?: ItemStatus;
+  /** Case-insensitive title substring, or transaction-id prefix. Literal text, not a pattern. */
+  q?: string;
+}
+
+/** Escapes LIKE metacharacters so user text matches literally (backslash is the default escape). */
+export function escapeLike(value: string): string {
+  return value.replace(/[\\%_]/g, (c) => `\\${c}`);
 }
 
 export function salesBase(filters: ReportFilters): { sql: string; params: unknown[] } {
@@ -35,11 +42,17 @@ export function salesBase(filters: ReportFilters): { sql: string; params: unknow
     params.push(filters.status);
     outer.push(`item_status = $${params.length}`);
   }
+  if (filters.q !== undefined) {
+    params.push(escapeLike(filters.q));
+    const n = params.length;
+    outer.push(`(title ILIKE '%' || $${n} || '%' OR transaction_id::text ILIKE $${n} || '%')`);
+  }
 
   const sql = `SELECT * FROM (
     SELECT ti.id AS item_id,
            t.id AS transaction_id,
            t.paid_at,
+           ti.refunded_at,
            ti.book_id,
            ti.title,
            t.customer_country,

@@ -475,6 +475,32 @@ describe('GET /publisher/reports/sales', () => {
     assert.equal(badStatus.status, 400);
   });
 
+  it('by-book rows carry the cover URLs from the books table', async () => {
+    const publisher = await createPublisher();
+    const withCover = await createBook(publisher, { priceCents: 1000, title: 'Covered' });
+    const bare = await createBook(publisher, { priceCents: 900, title: 'Bare' });
+    await pool.query(
+      `UPDATE books SET cover_image_url = '/api/v1/books/' || id || '/cover?v=3',
+              cover_thumb_key = 'covers/t.webp', cover_version = 3 WHERE id = $1`,
+      [withCover],
+    );
+    await sellAtNet(withCover, 1000, { paidAt: PAID });
+    await sellAtNet(bare, 900, { paidAt: PAID });
+    const owner = await staff(publisher);
+    const res = await api('GET', `/publisher/reports/by-book${RANGE}`, { token: owner.token });
+    const byTitle = Object.fromEntries(
+      res.body.rows.map(
+        (r: {
+          book: { title: string; coverImageUrl: string | null; coverThumbUrl: string | null };
+        }) => [r.book.title, r.book],
+      ),
+    );
+    assert.equal(byTitle.Covered.coverImageUrl, `/api/v1/books/${withCover}/cover?v=3`);
+    assert.equal(byTitle.Covered.coverThumbUrl, `/api/v1/books/${withCover}/cover?size=thumb&v=3`);
+    assert.equal(byTitle.Bare.coverImageUrl, null);
+    assert.equal(byTitle.Bare.coverThumbUrl, null);
+  });
+
   it('breaks ties in by-book and by-country deterministically', async () => {
     const publisher = await createPublisher();
     const zed = await createBook(publisher, { priceCents: 1000, title: 'Zed' });
@@ -599,5 +625,259 @@ describe('GET /publisher/reports/sales.csv', () => {
     } finally {
       exportLimits.maxRows = previous;
     }
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Portal redesign read extensions
+// ---------------------------------------------------------------------------
+
+describe('sales line fields, search, orders and per-book summary', () => {
+  it('lines expose item id, refund time and at-sale/reversed shares', async () => {
+    const publisher = await createPublisher();
+    const book = await createBook(publisher, { priceCents: 1000 });
+    const id = await sellAtNet(book, 1000, { fee: 50, paidAt: PAID });
+    await sellAtNet(book, 1000, { fee: 50, paidAt: PAID });
+    await sandbox(id, { kind: 'refund', partialAmountCents: 300 });
+    const owner = await staff(publisher);
+    const res = await api('GET', `/publisher/reports/sales${RANGE}`, { token: owner.token });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    const lines = res.body.lines as Array<Record<string, number | string | null>>;
+    const partial = lines.find((l) => l.transactionId === id);
+    assert.ok(partial);
+    assert.equal(typeof partial.itemId, 'string');
+    assert.equal(partial.refundedAt, null, 'a partial refund is not a full refund');
+    // 1000 gross, 50 fee: net 950 splits 190 commission / 760 earnings; 30% refunded.
+    assert.equal(partial.commissionAtSaleCents, 190);
+    assert.equal(partial.commissionReversedCents, 57);
+    assert.equal(partial.earningsAtSaleCents, 760);
+    assert.equal(partial.earningsReversedCents, 228);
+    assert.equal(partial.commissionCents, 133);
+    assert.equal(partial.earningsCents, 532);
+    for (const l of lines) {
+      assert.equal(
+        (l.earningsAtSaleCents as number) - (l.earningsReversedCents as number),
+        l.earningsCents,
+      );
+      assert.equal(
+        (l.commissionAtSaleCents as number) - (l.commissionReversedCents as number),
+        l.commissionCents,
+      );
+    }
+  });
+
+  it('refundedAt is set for a fully refunded line', async () => {
+    const publisher = await createPublisher();
+    const book = await createBook(publisher, { priceCents: 1000 });
+    const id = await sellAtNet(book, 1000, { fee: 50, paidAt: PAID });
+    await sandbox(id, { kind: 'refund' });
+    const owner = await staff(publisher);
+    const res = await api('GET', `/publisher/reports/sales${RANGE}`, { token: owner.token });
+    assert.equal(typeof res.body.lines[0].refundedAt, 'string');
+  });
+
+  it('q searches titles case-insensitively, transaction-id prefixes, and escapes LIKE', async () => {
+    const publisher = await createPublisher();
+    const named = await createBook(publisher, { priceCents: 1000, title: 'The Great 100% Book' });
+    const other = await createBook(publisher, { priceCents: 1000, title: 'Plain' });
+    const underscore = await createBook(publisher, { priceCents: 1000, title: 'a_c' });
+    const abc = await createBook(publisher, { priceCents: 1000, title: 'abc' });
+    const first = await sellAtNet(named, 1000, { paidAt: PAID });
+    await sellAtNet(other, 1000, { paidAt: PAID });
+    await sellAtNet(underscore, 1000, { paidAt: PAID });
+    await sellAtNet(abc, 1000, { paidAt: PAID });
+    const owner = await staff(publisher);
+    const get = (q: string) =>
+      api('GET', `/publisher/reports/sales${RANGE}&q=${encodeURIComponent(q)}`, {
+        token: owner.token,
+      });
+
+    const byTitle = await get('great');
+    assert.equal(byTitle.body.lines.length, 1);
+    assert.equal(byTitle.body.lines[0].book.id, named);
+    const byId = await get(first.slice(0, 8).toUpperCase());
+    assert.equal(byId.body.lines.length, 1);
+    assert.equal(byId.body.lines[0].transactionId, first);
+    const percent = await get('%');
+    assert.equal(percent.body.lines.length, 1, 'only the title containing a literal %');
+    assert.equal(percent.body.lines[0].book.id, named);
+    const under = await get('a_c');
+    assert.equal(under.body.lines.length, 1, '_ is literal, so abc does not match');
+    assert.equal(under.body.lines[0].book.id, underscore);
+    const backslash = await get('\\');
+    assert.equal(backslash.status, 200);
+    assert.equal(backslash.body.lines.length, 0);
+    const empty = await get('   ');
+    assert.equal(empty.status, 400);
+    const long = await get('x'.repeat(101));
+    assert.equal(long.status, 400);
+  });
+
+  it('the CSV respects q', async () => {
+    const publisher = await createPublisher();
+    await sellAtNet(await createBook(publisher, { priceCents: 1000, title: 'Keep' }), 1000, {
+      paidAt: PAID,
+    });
+    await sellAtNet(await createBook(publisher, { priceCents: 1000, title: 'Drop' }), 1000, {
+      paidAt: PAID,
+    });
+    const owner = await staff(publisher);
+    const res = await csvExport(owner.token, `${RANGE}&q=keep`);
+    assert.equal(res.status, 200);
+    assert.ok(res.text.includes('Keep'));
+    assert.ok(!res.text.includes('Drop'));
+  });
+
+  it('/orders groups a multi-book order into one order with two lines', async () => {
+    const publisher = await createPublisher();
+    const one = await createBook(publisher, { priceCents: 1000 });
+    const two = await createBook(publisher, { priceCents: 1000 });
+    const id = await buy(api, reader.token, [one, two]);
+    owners.set(id, reader.token);
+    await pool.query('UPDATE transactions SET paid_at = $2 WHERE id = $1', [id, PAID]);
+    const owner = await staff(publisher);
+    const res = await api('GET', `/publisher/reports/orders${RANGE}`, { token: owner.token });
+    assert.equal(res.status, 200, JSON.stringify(res.body));
+    assert.equal(res.body.orders.length, 1);
+    assert.equal(res.body.orders[0].transactionId, id);
+    assert.equal(res.body.orders[0].lines.length, 2);
+    assert.equal(typeof res.body.orders[0].paidAt, 'string');
+    assert.deepEqual(res.body.pagination, { page: 1, limit: 50, total: 1, totalPages: 1 });
+  });
+
+  it('/orders shows each publisher only their own lines', async () => {
+    const a = await createPublisher();
+    const b = await createPublisher();
+    const bookA = await createBook(a, { priceCents: 1000 });
+    const bookB = await createBook(b, { priceCents: 1000 });
+    const id = await buy(api, reader.token, [bookA, bookB]);
+    owners.set(id, reader.token);
+    await pool.query('UPDATE transactions SET paid_at = $2 WHERE id = $1', [id, PAID]);
+    const staffA = await staff(a);
+    const res = await api('GET', `/publisher/reports/orders${RANGE}&publisherId=${b}`, {
+      token: staffA.token,
+    });
+    assert.equal(res.body.orders.length, 1);
+    assert.equal(res.body.orders[0].lines.length, 1);
+    assert.equal(res.body.orders[0].lines[0].book.id, bookA);
+  });
+
+  it('/orders paginates by order, not by line', async () => {
+    const publisher = await createPublisher();
+    const one = await createBook(publisher, { priceCents: 1000 });
+    const two = await createBook(publisher, { priceCents: 1000 });
+    const ids: string[] = [];
+    for (let i = 0; i < 3; i++) {
+      const buyer = await createUser();
+      const id = await buy(api, buyer.token, [one, two]);
+      owners.set(id, buyer.token);
+      await pool.query('UPDATE transactions SET paid_at = $2 WHERE id = $1', [
+        id,
+        `2026-11-0${i + 1}T10:00:00Z`,
+      ]);
+      ids.push(id);
+    }
+    const owner = await staff(publisher);
+    const p1 = await api('GET', `/publisher/reports/orders${RANGE}&limit=2`, {
+      token: owner.token,
+    });
+    assert.equal(p1.body.orders.length, 2);
+    assert.deepEqual(p1.body.pagination, { page: 1, limit: 2, total: 3, totalPages: 2 });
+    assert.deepEqual(
+      p1.body.orders.map((o: { transactionId: string }) => o.transactionId),
+      [ids[2], ids[1]],
+    );
+    for (const o of p1.body.orders) assert.equal(o.lines.length, 2);
+    const p2 = await api('GET', `/publisher/reports/orders${RANGE}&limit=2&page=2`, {
+      token: owner.token,
+    });
+    assert.deepEqual(
+      p2.body.orders.map((o: { transactionId: string }) => o.transactionId),
+      [ids[0]],
+    );
+    const over = await api('GET', `/publisher/reports/orders${RANGE}&limit=101`, {
+      token: owner.token,
+    });
+    assert.equal(over.status, 400);
+  });
+
+  it('/orders honours filters and q', async () => {
+    const publisher = await createPublisher();
+    const one = await createBook(publisher, { priceCents: 1000, title: 'Alpha' });
+    const two = await createBook(publisher, { priceCents: 1000, title: 'Beta' });
+    await sellAtNet(one, 1000, { paidAt: PAID, countryCode: 'AL' });
+    await sellAtNet(two, 1000, { paidAt: PAID, countryCode: 'XK' });
+    const owner = await staff(publisher);
+    const byQ = await api('GET', `/publisher/reports/orders${RANGE}&q=beta`, {
+      token: owner.token,
+    });
+    assert.equal(byQ.body.orders.length, 1);
+    const byCountry = await api('GET', `/publisher/reports/orders${RANGE}&country=AL`, {
+      token: owner.token,
+    });
+    assert.equal(byCountry.body.orders.length, 1);
+    assert.equal(byCountry.body.orders[0].lines[0].book.id, one);
+    const byBook = await api('GET', `/publisher/reports/orders${RANGE}&bookId=${two}`, {
+      token: owner.token,
+    });
+    assert.equal(byBook.body.orders[0].lines[0].book.id, two);
+    const asReader = await api('GET', `/publisher/reports/orders${RANGE}`, {
+      token: reader.token,
+    });
+    assert.equal(asReader.status, 403);
+  });
+
+  it('/orders: filters select orders and each order returns all of the publisher lines', async () => {
+    const a = await createPublisher();
+    const b = await createPublisher();
+    const alpha = await createBook(a, { priceCents: 1000, title: 'Alpha' });
+    const beta = await createBook(a, { priceCents: 1000, title: 'Beta' });
+    const other = await createBook(b, { priceCents: 1000, title: 'Alpha Other' });
+    const id = await buy(api, reader.token, [alpha, beta, other]);
+    owners.set(id, reader.token);
+    await pool.query('UPDATE transactions SET paid_at = $2 WHERE id = $1', [id, PAID]);
+    const staffA = await staff(a);
+    for (const filter of [`q=beta`, `bookId=${beta}`, `country=DE`, `q=${id.slice(0, 8)}`]) {
+      const res = await api('GET', `/publisher/reports/orders${RANGE}&${filter}`, {
+        token: staffA.token,
+      });
+      assert.equal(res.status, 200, JSON.stringify(res.body));
+      assert.equal(res.body.orders.length, 1, filter);
+      const ids = res.body.orders[0].lines.map((l: { book: { id: string } }) => l.book.id).sort();
+      assert.deepEqual(ids, [alpha, beta].sort(), `${filter}: all of A's lines, none of B's`);
+      assert.deepEqual(res.body.pagination, { page: 1, limit: 50, total: 1, totalPages: 1 });
+    }
+    const none = await api('GET', `/publisher/reports/orders${RANGE}&q=nomatch`, {
+      token: staffA.token,
+    });
+    assert.equal(none.body.orders.length, 0);
+    assert.equal(none.body.pagination.total, 0);
+    // a q matching only the other publisher's title selects nothing for A
+    const cross = await api('GET', `/publisher/reports/orders${RANGE}&q=other`, {
+      token: staffA.token,
+    });
+    assert.equal(cross.body.orders.length, 0);
+  });
+
+  it('/summary?bookId equals that book row of /by-book', async () => {
+    const publisher = await createPublisher();
+    const one = await createBook(publisher, { priceCents: 2000, title: 'One' });
+    const two = await createBook(publisher, { priceCents: 1000, title: 'Two' });
+    await sellAtNet(one, 2000, { paidAt: PAID, fee: 50 });
+    const refunded = await sellAtNet(one, 2000, { paidAt: PAID, fee: 50 });
+    await sellAtNet(two, 1000, { paidAt: PAID });
+    await sandbox(refunded, { kind: 'refund', partialAmountCents: 500 });
+    const owner = await staff(publisher);
+    const summary = await api('GET', `/publisher/reports/summary${RANGE}&bookId=${one}`, {
+      token: owner.token,
+    });
+    const byBook = await api('GET', `/publisher/reports/by-book${RANGE}`, { token: owner.token });
+    assert.equal(summary.status, 200, JSON.stringify(summary.body));
+    const row = byBook.body.rows.find((r: { book: { id: string } }) => r.book.id === one);
+    for (const key of KEYS) assert.equal(summary.body.totals[key], row[key], key);
+    const bad = await api('GET', `/publisher/reports/summary${RANGE}&bookId=nope`, {
+      token: owner.token,
+    });
+    assert.equal(bad.status, 400);
   });
 });

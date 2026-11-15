@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { countryName, formatDate, formatMoney, formatPercentBps, parseEuroInput } from './format';
+import {
+  countryName,
+  formatDate,
+  formatMoney,
+  formatMonth,
+  formatPercentBps,
+  parseEuroInput,
+} from './format';
 
 describe('parseEuroInput', () => {
   it('parses comma and dot decimals into integer cents', () => {
@@ -53,5 +60,12 @@ describe('formatDate', () => {
 describe('formatPercentBps', () => {
   it('formats basis points as a percentage', () => {
     expect(normalise(formatPercentBps(1250, 'en'))).toBe('12.5%');
+  });
+});
+
+describe('formatMonth', () => {
+  it('capitalises the first letter in both languages', () => {
+    expect(formatMonth('2026-11-01', 'sq')).toMatch(/^Nën/);
+    expect(formatMonth('2026-11-01', 'en')).toMatch(/^Nov/);
   });
 });

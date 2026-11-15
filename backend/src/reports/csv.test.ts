@@ -4,6 +4,12 @@ import { CSV_HEADERS, csvField, formatCents, toCsvRow } from './csv';
 import type { SalesLine } from './csv';
 
 const line: SalesLine = {
+  itemId: 'i1',
+  refundedAt: null,
+  commissionAtSaleCents: 0,
+  commissionReversedCents: 0,
+  earningsAtSaleCents: -20,
+  earningsReversedCents: 0,
   paidAt: '2026-11-05T10:00:00.000Z',
   transactionId: 't1',
   book: { id: 'b1', title: 'Plain' },

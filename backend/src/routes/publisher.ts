@@ -6,13 +6,27 @@ import { pool } from '../db/pool';
 import { requireAuth, requireRole } from '../middleware/auth';
 import { AppError } from '../middleware/errors';
 import { assetsRouter } from './assets-publisher';
+import { deleteBook } from './book-lifecycle';
+import { coverRouter } from './covers-publisher';
+import {
+  BOOK_JOINS,
+  BOOK_SELECT_COLUMNS,
+  BOOK_STATUS_SQL,
+  formatPublisherBook,
+  loadPublisherBook,
+  type PublisherBookRow,
+} from './publisher-books';
 import {
   bookWriteScope,
   publisherScopeQuerySchema,
   resolvePublisherScope,
   tenantFilter,
 } from './publisher-scope';
+import { escapeLike } from '../reports/base';
 import { reportsRouter } from './reports';
+
+/** Book languages accepted at launch (ISO 639-1). Albanian is the default. */
+export const BOOK_LANGUAGES = ['sq', 'en'] as const;
 
 export { publisherScopeQuerySchema, resolvePublisherScope };
 
@@ -22,9 +36,16 @@ export const publisherRouter = Router();
 publisherRouter.use(requireAuth, requireRole('publisher', 'admin'));
 publisherRouter.use('/reports', reportsRouter);
 publisherRouter.use('/books/:bookId/assets', assetsRouter);
+publisherRouter.use('/books/:bookId/cover', coverRouter);
 
 export const listPublisherBooksQuerySchema = z.object({
-  status: z.enum(['all', 'published', 'draft']).default('all'),
+  // `all|published|draft` predate the derived status; they select by the same
+  // derived value shown on each book.
+  status: z
+    .enum(['all', 'draft', 'processing', 'ready', 'published', 'archived', 'withdrawn'])
+    .default('all'),
+  sort: z.enum(['updated', 'title', 'copies', 'earnings', 'price']).default('updated'),
+  order: z.enum(['asc', 'desc']).optional(),
   search: z.string().trim().min(1).max(200).optional(),
   page: z.coerce.number().int().min(1).default(1),
   limit: z.coerce.number().int().min(1).max(100).default(20),
@@ -39,7 +60,7 @@ export const bookIdParamSchema = z.object({
 const isbn13Regex = /^[0-9]{13}$/;
 
 export const createBookSchema = z
-  .object({
+  .strictObject({
     title: z.string().trim().min(1, 'Title is required').max(500),
     author: z.string().trim().min(1, 'Author is required').max(300),
     isbn13: z
@@ -50,15 +71,11 @@ export const createBookSchema = z
       .optional(),
     description: z.string().trim().max(10000).nullable().optional(),
     genre: z.string().trim().min(1, 'Genre is required').max(100),
-    language: z
-      .string()
-      .trim()
-      .length(2, 'Language must be a 2-letter ISO 639-1 code')
-      .default('en'),
+    // Libraria is an Albanian ebook marketplace: Albanian first, English for now.
+    language: z.enum(BOOK_LANGUAGES).default('sq'),
     priceCents: z.coerce.number().int().min(0, 'Price cannot be negative'),
     // EUR only at launch (see SUPPORTED_CURRENCIES).
     currency: z.enum(SUPPORTED_CURRENCIES).default('EUR'),
-    coverImageUrl: z.string().trim().url('Not a valid URL').nullable().optional(),
     mediaType: z.enum(['ebook', 'audiobook']).default('ebook'),
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
     publisherId: z.string().uuid().optional(),
@@ -69,7 +86,7 @@ export const createBookSchema = z
   });
 
 export const updateBookSchema = z
-  .object({
+  .strictObject({
     title: z.string().trim().min(1).max(500).optional(),
     author: z.string().trim().min(1).max(300).optional(),
     isbn13: z
@@ -80,10 +97,9 @@ export const updateBookSchema = z
       .optional(),
     description: z.string().trim().max(10000).nullable().optional(),
     genre: z.string().trim().min(1).max(100).optional(),
-    language: z.string().trim().length(2).optional(),
+    language: z.enum(BOOK_LANGUAGES).optional(),
     priceCents: z.coerce.number().int().min(0).optional(),
     currency: z.enum(SUPPORTED_CURRENCIES).optional(),
-    coverImageUrl: z.string().trim().url().nullable().optional(),
     mediaType: z.enum(['ebook', 'audiobook']).optional(),
     durationSeconds: z.coerce.number().int().positive().nullable().optional(),
   })
@@ -93,75 +109,16 @@ export const updateBookSchema = z
   });
 
 /**
- * `has_asset` / `file_size_bytes`: whether the book has a ready current asset,
- * and that asset's original size. `ref` is the books table name or alias.
+ * Whitelisted ORDER BY expressions and their natural direction; user input
+ * only ever selects a key, never reaches the SQL text.
  */
-function assetColumns(ref: string): string {
-  const current = `(SELECT ba.original_size_bytes FROM book_assets ba
-                     WHERE ba.id = ${ref}.current_asset_id AND ba.state = 'ready')`;
-  return `${current} AS file_size_bytes,
-            EXISTS (SELECT 1 FROM book_assets ba
-                     WHERE ba.id = ${ref}.current_asset_id AND ba.state = 'ready') AS has_asset`;
-}
-
-interface PublisherBookRow {
-  id: string;
-  publisher_id: string;
-  title: string;
-  author: string;
-  isbn13: string | null;
-  description: string | null;
-  genre: string;
-  language: string;
-  price_cents: number;
-  currency: string;
-  cover_image_url: string | null;
-  published_at: Date | null;
-  is_available: boolean;
-  media_type: 'ebook' | 'audiobook';
-  duration_seconds: number | null;
-  /** original_size_bytes of the current asset; null without a ready one. */
-  file_size_bytes: string | null;
-  has_asset: boolean;
-  sales_count: number;
-  total_revenue_cents: number;
-  /** Publisher's share after refund reversals; absent on write responses. */
-  earnings_cents?: string;
-  created_at: Date;
-  updated_at: Date;
-  total_count?: string;
-}
-
-function formatPublisherBook(row: PublisherBookRow) {
-  return {
-    id: row.id,
-    publisherId: row.publisher_id,
-    title: row.title,
-    author: row.author,
-    isbn13: row.isbn13,
-    description: row.description,
-    genre: row.genre,
-    language: row.language,
-    price: {
-      amountCents: row.price_cents,
-      currency: row.currency,
-    },
-    coverImageUrl: row.cover_image_url,
-    publishedAt: row.published_at,
-    isAvailable: row.is_available,
-    mediaType: row.media_type,
-    durationSeconds: row.duration_seconds,
-    hasAsset: row.has_asset,
-    fileSizeBytes: row.file_size_bytes ? Number(row.file_size_bytes) : null,
-    metrics: {
-      salesCount: Number(row.sales_count ?? 0),
-      totalRevenueCents: Number(row.total_revenue_cents ?? 0),
-      earningsCents: Number(row.earnings_cents ?? 0),
-    },
-    createdAt: row.created_at,
-    updatedAt: row.updated_at,
-  };
-}
+const BOOK_SORTS = {
+  updated: { sql: 'b.updated_at', defaultOrder: 'desc' },
+  title: { sql: 'LOWER(b.title)', defaultOrder: 'asc' },
+  copies: { sql: 'COALESCE(s.sales_count, 0)', defaultOrder: 'desc' },
+  earnings: { sql: 'COALESCE(s.earnings, 0)', defaultOrder: 'desc' },
+  price: { sql: 'b.price_cents', defaultOrder: 'desc' },
+} as const;
 
 /**
  * Lists books belonging to the publisher portal account (drafts & published).
@@ -169,53 +126,21 @@ function formatPublisherBook(row: PublisherBookRow) {
 publisherRouter.get('/books', async (req: Request, res: Response) => {
   const query = listPublisherBooksQuerySchema.parse(req.query);
   const { status, search, page, limit } = query;
+  const sort = BOOK_SORTS[query.sort];
+  const direction = (query.order ?? sort.defaultOrder) === 'asc' ? 'ASC' : 'DESC';
   const publisherId = tenantFilter(req) ?? query.publisherId ?? null;
   const offset = (page - 1) * limit;
 
   const result = await pool.query<PublisherBookRow>(
-    `SELECT b.id,
-            b.publisher_id,
-            b.title,
-            b.author,
-            b.isbn13,
-            b.description,
-            b.genre,
-            b.language,
-            b.price_cents,
-            b.currency,
-            b.cover_image_url,
-            b.published_at,
-            b.is_available,
-            b.media_type,
-            b.duration_seconds,
-            ${assetColumns('b')},
-            b.created_at,
-            b.updated_at,
-            COALESCE(s.sales_count, 0) AS sales_count,
-            COALESCE(s.total_revenue, 0) AS total_revenue_cents,
-            COALESCE(s.earnings, 0)::bigint AS earnings_cents,
+    `SELECT ${BOOK_SELECT_COLUMNS},
             COUNT(*) OVER() AS total_count
-       FROM books b
-       LEFT JOIN (SELECT book_id, sales_count, gross_revenue_cents AS total_revenue,
-                         publisher_earnings_cents AS earnings,
-                         platform_commission_cents AS commission
-                    FROM book_sales) s ON s.book_id = b.id
+       ${BOOK_JOINS}
       WHERE ($1::uuid IS NULL OR b.publisher_id = $1)
-        AND (
-          $2::text = 'all'
-          OR ($2 = 'published' AND b.is_available)
-          OR ($2 = 'draft' AND NOT b.is_available)
-        )
+        AND (($2::text = 'all' AND ${BOOK_STATUS_SQL} <> 'archived') OR ${BOOK_STATUS_SQL} = $2)
         AND ($3::text IS NULL OR b.title ILIKE $3 OR b.author ILIKE $3)
-      ORDER BY b.updated_at DESC
+      ORDER BY ${sort.sql} ${direction}, b.id ${direction}
       LIMIT $4 OFFSET $5`,
-    [
-      publisherId,
-      status,
-      search ? `%${search.replace(/([\\%_])/g, '\\$1')}%` : null,
-      limit,
-      offset,
-    ],
+    [publisherId, status, search ? `%${escapeLike(search)}%` : null, limit, offset],
   );
 
   const total = result.rows.length > 0 ? Number(result.rows[0].total_count) : 0;
@@ -249,9 +174,9 @@ publisherRouter.get('/stats', async (req: Request, res: Response) => {
     total_earnings_cents: string;
     total_platform_commission_cents: string;
   }>(
-    `SELECT COUNT(b.id)::int AS total_titles,
+    `SELECT COUNT(b.id) FILTER (WHERE b.archived_at IS NULL)::int AS total_titles,
             COUNT(b.id) FILTER (WHERE b.is_available)::int AS published_titles,
-            COUNT(b.id) FILTER (WHERE NOT b.is_available)::int AS draft_titles,
+            COUNT(b.id) FILTER (WHERE NOT b.is_available AND b.archived_at IS NULL)::int AS draft_titles,
             COALESCE(SUM(s.sales_count), 0)::bigint AS total_copies_sold,
             COALESCE(SUM(s.total_revenue), 0)::bigint AS total_revenue_cents,
             COALESCE(SUM(s.earnings), 0)::bigint AS total_earnings_cents,
@@ -303,6 +228,13 @@ publisherRouter.get('/contract', async (req: Request, res: Response) => {
   });
 });
 
+/** Every write answers with the same payload as the list and the single book. */
+async function respondBook(id: string, scope: string | null) {
+  const book = await loadPublisherBook(id, scope);
+  if (!book) throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
+  return formatPublisherBook(book);
+}
+
 /**
  * Creates a new title in draft status (`is_available = false`).
  */
@@ -321,15 +253,11 @@ publisherRouter.post('/books', async (req: Request, res: Response) => {
        language,
        price_cents,
        currency,
-       cover_image_url,
        media_type,
        duration_seconds,
        is_available
-     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, FALSE)
-     RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
-               price_cents, currency, cover_image_url, published_at, is_available,
-               media_type, duration_seconds, ${assetColumns('books')},
-               0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
+     ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, FALSE)
+     RETURNING id`,
     [
       publisherId,
       input.title,
@@ -340,13 +268,12 @@ publisherRouter.post('/books', async (req: Request, res: Response) => {
       input.language,
       input.priceCents,
       input.currency,
-      input.coverImageUrl ?? null,
       input.mediaType,
       input.durationSeconds ?? null,
     ],
   );
 
-  res.status(201).json({ book: formatPublisherBook(result.rows[0]) });
+  res.status(201).json({ book: await respondBook(result.rows[0].id, publisherId) });
 });
 
 /**
@@ -355,39 +282,7 @@ publisherRouter.post('/books', async (req: Request, res: Response) => {
 publisherRouter.get('/books/:id', async (req: Request, res: Response) => {
   const { id } = bookIdParamSchema.parse(req.params);
 
-  const result = await pool.query<PublisherBookRow>(
-    `SELECT b.id,
-            b.publisher_id,
-            b.title,
-            b.author,
-            b.isbn13,
-            b.description,
-            b.genre,
-            b.language,
-            b.price_cents,
-            b.currency,
-            b.cover_image_url,
-            b.published_at,
-            b.is_available,
-            b.media_type,
-            b.duration_seconds,
-            ${assetColumns('b')},
-            b.created_at,
-            b.updated_at,
-            COALESCE(s.sales_count, 0) AS sales_count,
-            COALESCE(s.total_revenue, 0) AS total_revenue_cents,
-            COALESCE(s.earnings, 0)::bigint AS earnings_cents
-       FROM books b
-       LEFT JOIN (SELECT book_id, sales_count, gross_revenue_cents AS total_revenue,
-                         publisher_earnings_cents AS earnings,
-                         platform_commission_cents AS commission
-                    FROM book_sales) s ON s.book_id = b.id
-      WHERE b.id = $1
-        AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
-    [id, bookWriteScope(req)],
-  );
-
-  const book = result.rows[0];
+  const book = await loadPublisherBook(id, bookWriteScope(req));
   if (!book) {
     throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
@@ -408,21 +303,18 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
     `UPDATE books
         SET title = COALESCE($1, title),
             author = COALESCE($2, author),
-            isbn13 = CASE WHEN $14::boolean THEN $3::text ELSE isbn13 END,
-            description = CASE WHEN $15::boolean THEN $4::text ELSE description END,
+            isbn13 = CASE WHEN $13::boolean THEN $3::text ELSE isbn13 END,
+            description = CASE WHEN $14::boolean THEN $4::text ELSE description END,
             genre = COALESCE($5, genre),
             language = COALESCE($6, language),
             price_cents = COALESCE($7, price_cents),
             currency = COALESCE($8, currency),
-            cover_image_url = CASE WHEN $16::boolean THEN $9::text ELSE cover_image_url END,
-            media_type = COALESCE($10, media_type),
-            duration_seconds = CASE WHEN $17::boolean THEN $11::int ELSE duration_seconds END
-      WHERE id = $12
-        AND ($13::uuid IS NULL OR publisher_id = $13)
-  RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
-            price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, ${assetColumns('books')},
-            0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
+            media_type = COALESCE($9, media_type),
+            duration_seconds = CASE WHEN $15::boolean THEN $10::int ELSE duration_seconds END
+      WHERE id = $11
+        AND ($12::uuid IS NULL OR publisher_id = $12)
+        AND archived_at IS NULL
+  RETURNING id`,
     [
       input.title ?? null,
       input.author ?? null,
@@ -432,7 +324,6 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
       input.language ?? null,
       input.priceCents ?? null,
       input.currency ?? null,
-      input.coverImageUrl === undefined ? null : input.coverImageUrl,
       input.mediaType ?? null,
       input.durationSeconds === undefined ? null : input.durationSeconds,
       id,
@@ -440,17 +331,29 @@ publisherRouter.patch('/books/:id', async (req: Request, res: Response) => {
       // An absent field leaves the column alone; an explicit null clears it.
       input.isbn13 !== undefined,
       input.description !== undefined,
-      input.coverImageUrl !== undefined,
       input.durationSeconds !== undefined,
     ],
   );
 
   const updated = result.rows[0];
   if (!updated) {
+    // Either not ours, or archived (read-only until restored).
+    const archived = await pool.query(
+      `SELECT 1 FROM books
+        WHERE id = $1 AND ($2::uuid IS NULL OR publisher_id = $2) AND archived_at IS NOT NULL`,
+      [id, publisherId],
+    );
+    if (archived.rowCount) {
+      throw new AppError(
+        409,
+        'This title is archived and read-only. Restore it before editing.',
+        'BOOK_ARCHIVED',
+      );
+    }
     throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
-  res.json({ book: formatPublisherBook(updated) });
+  res.json({ book: await respondBook(updated.id, publisherId) });
 });
 
 let publishHook: (() => Promise<void>) | null = null;
@@ -458,6 +361,14 @@ let publishHook: (() => Promise<void>) | null = null;
 /** Test seam: runs between the publish checks and the update, to exercise races. */
 export function setPublishHookForTests(hook: (() => Promise<void>) | null): void {
   publishHook = hook;
+}
+
+function archivedError(): AppError {
+  return new AppError(
+    409,
+    'This title is archived. Restore it before publishing.',
+    'BOOK_ARCHIVED',
+  );
 }
 
 /**
@@ -469,10 +380,15 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
 
   const publisherId = bookWriteScope(req);
 
-  const existingResult = await pool.query<{ has_ready_asset: boolean; withdrawn: boolean }>(
+  const existingResult = await pool.query<{
+    has_ready_asset: boolean;
+    withdrawn: boolean;
+    archived: boolean;
+  }>(
     `SELECT EXISTS (SELECT 1 FROM book_assets ba
                      WHERE ba.id = b.current_asset_id AND ba.state = 'ready') AS has_ready_asset,
-            b.withdrawn_at IS NOT NULL AS withdrawn
+            b.withdrawn_at IS NOT NULL AS withdrawn,
+            b.archived_at IS NOT NULL AS archived
        FROM books b
       WHERE b.id = $1
         AND ($2::uuid IS NULL OR b.publisher_id = $2)`,
@@ -487,6 +403,8 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
   if (existing.withdrawn) {
     throw new AppError(403, 'This title has been withdrawn and cannot be published', 'FORBIDDEN');
   }
+
+  if (existing.archived) throw archivedError();
 
   if (!existing.has_ready_asset) {
     throw new AppError(
@@ -504,20 +422,24 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
             published_at = COALESCE(published_at, CURRENT_DATE)
       WHERE id = $1
         AND withdrawn_at IS NULL
+        AND archived_at IS NULL
         AND ($2::uuid IS NULL OR publisher_id = $2)
-  RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
-            price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, ${assetColumns('books')},
-            0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
+  RETURNING id`,
     [id, publisherId],
   );
 
-  // The book exists (checked above), so no row means a takedown landed after that check.
+  // The book exists (checked above), so no row means an archive or takedown landed after that check.
   if (result.rows.length === 0) {
+    const now = await pool.query<{ archived: boolean }>(
+      'SELECT archived_at IS NOT NULL AS archived FROM books WHERE id = $1',
+      [id],
+    );
+    if (!now.rows[0]) throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
+    if (now.rows[0].archived) throw archivedError();
     throw new AppError(403, 'This title has been withdrawn and cannot be published', 'FORBIDDEN');
   }
 
-  res.json({ book: formatPublisherBook(result.rows[0]) });
+  res.json({ book: await respondBook(id, publisherId) });
 });
 
 /**
@@ -525,17 +447,15 @@ publisherRouter.post('/books/:id/publish', async (req: Request, res: Response) =
  */
 publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response) => {
   const { id } = bookIdParamSchema.parse(req.params);
+  const publisherId = bookWriteScope(req);
 
   const result = await pool.query<PublisherBookRow>(
     `UPDATE books
         SET is_available = FALSE
       WHERE id = $1
         AND ($2::uuid IS NULL OR publisher_id = $2)
-  RETURNING id, publisher_id, title, author, isbn13, description, genre, language,
-            price_cents, currency, cover_image_url, published_at, is_available,
-            media_type, duration_seconds, ${assetColumns('books')},
-            0 as sales_count, 0 as total_revenue_cents, created_at, updated_at`,
-    [id, bookWriteScope(req)],
+  RETURNING id`,
+    [id, publisherId],
   );
 
   const updated = result.rows[0];
@@ -543,5 +463,72 @@ publisherRouter.post('/books/:id/unpublish', async (req: Request, res: Response)
     throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
   }
 
-  res.json({ book: formatPublisherBook(updated) });
+  res.json({ book: await respondBook(updated.id, publisherId) });
+});
+
+/**
+ * Archives a book: off sale for good (it cannot be published until restored),
+ * while everyone who owns it keeps reading. One statement, so the book leaves
+ * the storefront at the same moment it is archived.
+ */
+publisherRouter.post('/books/:id/archive', async (req: Request, res: Response) => {
+  const { id } = bookIdParamSchema.parse(req.params);
+  const publisherId = bookWriteScope(req);
+
+  const result = await pool.query(
+    `UPDATE books
+        SET archived_at = NOW(), is_available = FALSE
+      WHERE id = $1
+        AND withdrawn_at IS NULL
+        AND archived_at IS NULL
+        AND ($2::uuid IS NULL OR publisher_id = $2)
+  RETURNING id`,
+    [id, publisherId],
+  );
+
+  if (result.rows.length === 0) {
+    const current = await pool.query<{ withdrawn: boolean; archived: boolean }>(
+      `SELECT withdrawn_at IS NOT NULL AS withdrawn, archived_at IS NOT NULL AS archived
+         FROM books WHERE id = $1 AND ($2::uuid IS NULL OR publisher_id = $2)`,
+      [id, publisherId],
+    );
+    const book = current.rows[0];
+    if (!book) throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
+    if (book.withdrawn) {
+      throw new AppError(403, 'This title has been withdrawn and cannot be archived', 'FORBIDDEN');
+    }
+    throw new AppError(409, 'This title is already archived', 'BOOK_ARCHIVED');
+  }
+
+  res.json({ book: await respondBook(id, publisherId) });
+});
+
+/**
+ * Restores an archived book. It stays off sale: publishing is a separate,
+ * deliberate step. Restoring a book that is not archived changes nothing.
+ */
+publisherRouter.post('/books/:id/restore', async (req: Request, res: Response) => {
+  const { id } = bookIdParamSchema.parse(req.params);
+  const publisherId = bookWriteScope(req);
+
+  const result = await pool.query(
+    `UPDATE books
+        SET archived_at = NULL
+      WHERE id = $1
+        AND ($2::uuid IS NULL OR publisher_id = $2)
+  RETURNING id`,
+    [id, publisherId],
+  );
+  if (result.rows.length === 0) {
+    throw new AppError(404, 'Book not found or access denied', 'NOT_FOUND');
+  }
+
+  res.json({ book: await respondBook(id, publisherId) });
+});
+
+/** Permanently deletes a book that has never been sold, with its files. */
+publisherRouter.delete('/books/:id', async (req: Request, res: Response) => {
+  const { id } = bookIdParamSchema.parse(req.params);
+  await deleteBook(id, bookWriteScope(req));
+  res.status(204).end();
 });

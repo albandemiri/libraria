@@ -378,6 +378,37 @@ describe('commission rates API', () => {
     assert.equal(JSON.stringify(res.body).includes('createdBy'), false);
   });
 
+  it('labels each contract rate active, scheduled or superseded', async () => {
+    const publisherId = await createPublisher(); // 2020 rate
+    await pool.query(
+      `INSERT INTO publisher_commission_rates (publisher_id, rate_bps, effective_from)
+       VALUES ($1, 1500, '2024-01-01T00:00:00Z'), ($1, 1000, NOW() + INTERVAL '30 days')`,
+      [publisherId],
+    );
+    const staff = await createUser({ role: 'publisher', publisherId });
+    const admin = await createUser({ role: 'admin' });
+
+    const res = await api('GET', '/publisher/contract', { token: staff.token });
+    assert.equal(res.status, 200);
+    assert.deepEqual(
+      res.body.history.map((r: { rateBps: number; status: string }) => [r.rateBps, r.status]),
+      [
+        [1000, 'scheduled'],
+        [1500, 'active'],
+        [2000, 'superseded'],
+      ],
+    );
+    assert.equal(res.body.current.status, 'active');
+
+    const adminRes = await api('GET', `/admin/publishers/${publisherId}/commission-rates`, {
+      token: admin.token,
+    });
+    assert.deepEqual(
+      adminRes.body.rates.map((r: { status: string }) => r.status),
+      ['scheduled', 'active', 'superseded'],
+    );
+  });
+
   it('returns current: null for a publisher without a rate', async () => {
     const publisherId = await createPublisher(undefined, { commissionBps: null });
     const staff = await createUser({ role: 'publisher', publisherId });

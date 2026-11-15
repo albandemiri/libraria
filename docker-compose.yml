@@ -61,7 +61,11 @@ services:
     depends_on:
       db:
         condition: service_healthy
-    environment: *backend-env
+    environment:
+      <<: *backend-env
+      # Windows/macOS bind mounts do not deliver file-change events into the
+      # container; tsx watch (chokidar) must poll or it keeps serving stale code.
+      CHOKIDAR_USEPOLLING: "true"
     # Installs deps if the lockfile changed, migrates, then starts tsx watch.
     command: ["sh", "docker/dev-entrypoint.sh"]
     ports:
