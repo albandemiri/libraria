@@ -1,0 +1,3 @@
+foliate-js (MIT), copied unmodified from https://github.com/johnfactotum/foliate-js
+at commit 78914aef4466eb960965702401634c2cb348e9b1 (2026-05-01).
+Omitted: vendor/pdfjs, ui/, tests/, rollup/ (not used; PDF/MOBI/FB2/comic/TTS are stubbed at bundle time).
