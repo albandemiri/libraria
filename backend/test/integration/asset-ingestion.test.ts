@@ -229,6 +229,34 @@ describe('asset ingestion', () => {
     assert.equal(await currentAssetId(), v3.id);
   });
 
+  it("an EPUB without dc:language is accepted and takes the book's language", async () => {
+    // Not the column default ('sq'), so the test proves the book's own value is used.
+    await pool.query(`UPDATE books SET language = 'en' WHERE id = $1`, [bookId]);
+    const asset = await ingestNow(
+      bookId,
+      staff.id,
+      buildEpub({ title: 'No Language', language: null }),
+    );
+    assert.equal(asset.state, 'ready');
+    const detail = await api('GET', `/publisher/books/${bookId}/assets/${asset.id}`, {
+      token: staff.token,
+    });
+    assert.equal(detail.body.asset.extractedMetadata.language, 'en');
+    assert.equal(detail.body.asset.extractedMetadata.languageSource, 'book');
+    assert.equal(await currentAssetId(), asset.id);
+  });
+
+  it("an EPUB's own dc:language is kept even if it differs from the book's", async () => {
+    await pool.query(`UPDATE books SET language = 'en' WHERE id = $1`, [bookId]);
+    const asset = await ingestNow(bookId, staff.id, buildEpub({ language: 'sq' }));
+    assert.equal(asset.state, 'ready');
+    const detail = await api('GET', `/publisher/books/${bookId}/assets/${asset.id}`, {
+      token: staff.token,
+    });
+    assert.equal(detail.body.asset.extractedMetadata.language, 'sq');
+    assert.equal(detail.body.asset.extractedMetadata.languageSource, 'epub');
+  });
+
   it('rejected upload never touches the live book', async () => {
     const v1 = await ingestNow(bookId, staff.id, sampleEpub('One'));
     const bad = await upload(staff.token, bookId, buildEpub({ scripted: true }));

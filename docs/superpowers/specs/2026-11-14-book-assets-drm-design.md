@@ -290,9 +290,10 @@ They sit under `backend/src/drm/`, with adapters in `backend/src/drm/adapters/`.
   - `INVALID_CONTAINER`: `META-INF/container.xml` names an OPF rootfile that
     must exist;
   - `INVALID_PACKAGE`: OPF parsing with `fast-xml-parser` (external entities
-    and DTDs disabled) fails, or `dc:title` or `dc:language` is missing, or
-    the manifest or spine is empty, or a spine item is missing from the
-    archive;
+    and DTDs disabled) fails, or `dc:title` is missing, or the manifest or
+    spine is empty, or a spine item is missing from the archive.
+    (Amended 2026-11-16: a missing `dc:language` is no longer a rejection; the
+    stored metadata takes the book's language, with `languageSource: "book"`.)
   - `UNSUPPORTED_ENCRYPTION`: an `encryption.xml` other than font
     obfuscation, i.e. an already-DRM'd file;
   - `ENCRYPTED_ARCHIVE`.

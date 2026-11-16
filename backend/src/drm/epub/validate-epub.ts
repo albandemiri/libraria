@@ -33,7 +33,8 @@ export type EpubReasonCode =
 export interface ExtractedMetadata {
   title: string;
   creators: string[];
-  language: string;
+  /** The EPUB's dc:language, or null when the file has none. */
+  language: string | null;
   identifiers: string[];
   isbn: string | null;
   description: string | null;
@@ -867,8 +868,9 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
   const metadata = isNode(pkg.metadata) ? pkg.metadata : {};
   const title = toArray(metadata.title).map(textOf).find(Boolean);
   if (!title) throw invalidPackage('The book has no title (dc:title).');
-  const language = toArray(metadata.language).map(textOf).find(Boolean);
-  if (!language) throw invalidPackage('The book has no language (dc:language).');
+  // Optional: many real files (e.g. Wikisource exports) leave dc:language empty.
+  // Ingestion then records the language the publisher chose for the book.
+  const language = toArray(metadata.language).map(textOf).find(Boolean) ?? null;
   const creators = toArray(metadata.creator).map(textOf).filter(Boolean);
   const identifiers = toArray(metadata.identifier).map(textOf).filter(Boolean);
   const description = toArray(metadata.description).map(textOf).find(Boolean);
@@ -1076,7 +1078,7 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
     metadata: {
       title: title.slice(0, 1000),
       creators: creators.slice(0, 50).map((c) => c.slice(0, 500)),
-      language: language.slice(0, 50),
+      language: language ? language.slice(0, 50) : null,
       identifiers: identifiers.slice(0, 50).map((i) => i.slice(0, 200)),
       isbn: extractIsbn(identifiers),
       description: description ? description.slice(0, 5000) : null,

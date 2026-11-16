@@ -403,6 +403,11 @@ why) or `failed` (an operational problem; an admin can retry).
   `UNSUPPORTED_ENCRYPTION`, `ENCRYPTED_ARCHIVE`, `SCRIPTED_CONTENT`,
   `REMOTE_RESOURCES`, `UNSUPPORTED_MEDIA`, `MALWARE_DETECTED`,
   `SCAN_UNAVAILABLE`, `PROCESSING_TIMEOUT`, `PROCESSING_ERROR`.
+- A missing `dc:language` is accepted: the version's `extractedMetadata`
+  then carries the book's language (set in the portal) with
+  `languageSource: "book"`; otherwise it is the file's own, with
+  `languageSource: "epub"`. Readers should use the book's language when the EPUB
+  has none (for hyphenation and the `lang` attribute).
 - Encryption is AES-256-GCM with a random key per version, wrapped by the KMS.
   Plaintext keys and EPUB bytes are never stored or logged.
 - Jobs get 3 attempts with backoff, a processing timeout
