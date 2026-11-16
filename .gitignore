@@ -25,3 +25,9 @@ Thumbs.db
 
 # Local asset storage (development)
 backend/var/
+
+# Local test books and covers (some are copyrighted; never commit).
+# Both spellings: Linux matches case-sensitively.
+/Books/
+/books/
+/covers/
