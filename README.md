@@ -6,6 +6,8 @@ Cross-platform EPUB bookstore, e-reader and publisher platform.
 | ---------- | ----------------------------------------------------------- |
 | `backend/` | Node.js 24, Express 5, TypeScript, PostgreSQL 15            |
 | `mobile/`  | Expo / React Native reader app (TypeScript)                 |
+| `design/`  | Design tokens (source of truth) and generated CSS variables |
+| `web/`     | Reader website: React Router 7, server-rendered (TypeScript) |
 
 The governing design document is the **Libraria Technical Architecture &
 Development Specification v2.1**. Section 2 of that spec records what is
@@ -141,6 +143,25 @@ the production image build on every push and pull request.
 - Logs are JSON lines. Never log tokens, keys, signed URLs, passwords or book
   content.
 
+### Storefront endpoints
+
+Public reading endpoints send the token when there is one: no token, or an
+invalid, expired or suspended one, counts as a guest and is never an error.
+All are ebook only. With a signed-in reader, books carry `owned` (an active
+entitlement).
+
+| Endpoint | Who | Purpose |
+| --- | --- | --- |
+| `GET /api/v1/books` | public, optional auth | Catalogue. Filters `genre`, `search`, `publisherId` (repeatable), `language`, `minPrice`, `maxPrice` (cents), `publishedSince`, `hideOwned`; `sort` (`new`, `top`, `title`, `price_asc`, `price_desc`), `page`, `limit`. A `maxPrice` below `minPrice` is `400` |
+| `GET /api/v1/books/facets` | public, optional auth | Counts of genres, publishers and languages for the same filters; each count ignores its own filter so alternatives stay visible |
+| `GET /api/v1/books/genres` | public | Genres with book counts |
+| `GET /api/v1/books/:id` | public, optional auth | One book with `pageCount` and `availability` (`on_sale`, `not_for_sale`, plus `archived` and `taken_down` for an owner only; anyone else gets `404`). A signed-in reader also gets a `viewer` block (ownership, reading progress, refund and pending checkout) |
+| `GET /api/v1/books/:id/cover` | public, optional auth | Cover; the cover of a taken-down book is served to its owners only |
+| `GET /api/v1/search/suggest?q=` | public, optional auth | Up to 5 titles, 3 authors and 3 publishers matching `q` (2 to 100 characters) |
+| `GET /api/v1/publishers` | public | Publishers with at least one storefront (available ebook) book, with counts; the books need not be for sale right now |
+| `GET /api/v1/publishers/:id` | public | One publisher; `404` for an unknown id |
+| `GET /api/v1/discover` | public, optional auth | The home page as typed sections: featured book, strip, continue reading (signed in), new releases, most read, genres, publisher spotlight and an interlude |
+
 ## Payments
 
 Paddle Billing is the payment provider and merchant of record: it charges the
@@ -231,6 +252,85 @@ transaction or anything the app says.
     portal's session cookie. A cookie-authenticated write must send
     `X-Libraria-Portal: 1`, otherwise `403 CSRF_CHECK_FAILED`. Mobile Bearer
     requests are unaffected.
+
+## Website
+
+The reader website (`web/`) is a server-rendered React Router 7 app: the
+storefront where readers discover, buy and read books. It is in Albanian
+(default) and English; the language comes from the `libraria_lang` cookie, then
+`Accept-Language`, and is not in the URL. Design tokens live in `design/`
+(`design/dist/tokens.css` is generated from them).
+
+Start it with the rest of the stack:
+
+```sh
+docker compose up --build     # website on http://localhost:5174
+docker compose exec backend npm run seed:demo
+```
+
+On the host instead:
+
+```sh
+cd design && npm ci && cd ../web
+npm ci
+npm run dev        # http://localhost:5174
+```
+
+`npm run dev`, `build`, `test` and `typecheck` first build `design/dist/tokens.css`.
+The API must be running on `:3000`; loaders call it server-side, so there is
+no `/api` proxy and `CORS_ORIGINS` stays empty. Scripts: `npm test`,
+`npm run typecheck`, `npm run lint`, `npm run build`, `npm run e2e`.
+
+| Variable              | Default                       | Purpose                                              |
+| --------------------- | ----------------------------- | ---------------------------------------------------- |
+| `API_URL`             | `http://localhost:3000`       | Backend origin (`http://backend:3000` in Docker)     |
+| `SESSION_SECRET`      | `dev-only-web-session-secret` | Signs the session cookie; dev default refused in production |
+| `PUBLIC_ORIGIN`       | `http://localhost:5174`       | This site's origin, for the same-origin check on posts |
+| `PAYMENTS_MODE`       | `simulated`                   | `simulated` or `paddle`                              |
+| `PADDLE_CLIENT_TOKEN` | (unset)                       | Paddle.js token, needed only for `paddle`            |
+| `PADDLE_ENVIRONMENT`  | `sandbox`                     | `sandbox` or `production`                            |
+| `PORTAL_URL`          | `http://localhost:5173`       | Publisher portal link                                |
+
+See `web/.env.example`; a `web/.env` file is read if present. In Docker the
+session secret comes from `WEB_SESSION_SECRET` in the root `.env`, and
+`PORTAL_URL` from `PORTAL_ORIGIN`.
+
+Pages: `/` (discover), `/eksploro` and `/eksploro/:genre` (catalogue), `/kerko?q=`
+(search), `/botues/:id` (publisher), `/libri/:id/:slug?` (book; the slug is optional and redirects to the canonical one), `/hyr`,
+`/regjistrohu` (sign in, register), `/dil` (sign-out action, POST), `/pagesa`
+and `/pagesa/:transactionId` (checkout and its result), `/biblioteka` (library),
+`/lista` (list) and `/lexo/:id` (reader).
+
+**Signing in.** Any reader from `npm run seed:demo` works, with password
+`Password123!` (the seed prints the emails). You can also register at
+`/regjistrohu`.
+
+**Buying in simulated mode.** With `PAYMENTS_MODE=simulated` (the default),
+"Bli librin" opens the checkout page `/pagesa/:transactionId`, which shows a
+development payment panel instead of Paddle (`/pagesa` itself is only the
+Paddle checkout landing page): choose pay, fail or cancel, and the site sends
+the matching signed webhook through
+the real payment path, so the book lands in the library exactly as a real
+purchase would.
+
+**End-to-end tests.** `cd web && npm run e2e` runs Playwright against the
+running Docker stack (website on :5174, API on :3000, demo data loaded,
+simulated payments); nothing is started for you. It uses `/usr/bin/chromium`
+when it exists, or the path in `PLAYWRIGHT_CHROMIUM_PATH`, and runs in English
+because headless Chromium may lack Albanian locale data.
+
+Known limits:
+
+- **The Paddle checkout path is UNVERIFIED.** It is built to Paddle's
+  documented contract but has not run against Paddle: that needs a Paddle
+  sandbox account (see the checklist under **Payments**). Use `simulated`
+  until then.
+- The website sets **no Content-Security-Policy** yet. That is a later
+  hardening step; when added, `/pagesa` needs Paddle's origins.
+- **Page counts** appear only for books ingested after this change. To see
+  them locally, reset the database and reload the demo data (see Quick start).
+- **Audiobooks are not in the storefront.** Every storefront endpoint returns
+  ebooks only, and checkout refuses audiobooks.
 
 ## Portal
 

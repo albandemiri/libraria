@@ -1,0 +1,24 @@
+.main {
+  min-height: 60vh;
+}
+
+.skip {
+  position: absolute;
+  left: var(--space-2);
+  top: -64px;
+  z-index: 30;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.skip:focus {
+  top: var(--space-2);
+}
+
+/* Keep content and footer clear of the fixed bottom bar on phones. */
+@media (max-width: 767px) {
+  .shell {
+    padding-bottom: calc(var(--size-touch-target) + var(--space-4) + env(safe-area-inset-bottom));
+  }
+}

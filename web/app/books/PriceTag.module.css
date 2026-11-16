@@ -1,0 +1,18 @@
+.tag {
+  font-family: var(--font-interface);
+  font-size: var(--size-interface-text);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.owned {
+  color: var(--color-accent);
+  font-size: 13px;
+}
+
+.muted {
+  color: var(--color-text-secondary);
+  font-size: 13px;
+  font-weight: 400;
+  white-space: normal;
+}

@@ -1,0 +1,65 @@
+.synopsis {
+  min-width: 0;
+}
+
+.title {
+  margin-bottom: 18px;
+  font: 500 30px / 1.2 var(--font-editorial);
+}
+
+.paragraph {
+  /* Contains the drop cap, so a short synopsis never lets the tags wrap around it. */
+  display: flow-root;
+  max-width: 660px;
+  margin-bottom: var(--space-4);
+  font: 400 18px / 1.7 var(--font-editorial);
+}
+
+.paragraph:first-of-type::first-letter {
+  float: left;
+  margin: var(--space-2) 10px 0 0;
+  font: 400 72px / 0.8 var(--font-editorial);
+  color: var(--color-accent2);
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  margin: 22px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.tag {
+  display: inline-flex;
+  align-items: center;
+  height: 30px;
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-chip);
+  background: var(--color-surface);
+  color: inherit;
+  font-size: 13px;
+  text-decoration: none;
+}
+
+a.tag:hover {
+  border-color: var(--color-text-tertiary);
+}
+
+@media (pointer: coarse) {
+  a.tag {
+    height: var(--size-touch-target);
+  }
+}
+
+@media (max-width: 767px) {
+  .title {
+    font-size: 26px;
+  }
+
+  .paragraph {
+    font-size: 17px;
+  }
+}

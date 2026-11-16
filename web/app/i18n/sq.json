@@ -1,0 +1,387 @@
+{
+  "app": {
+    "name": "Libraria"
+  },
+  "nav": {
+    "discover": "Zbulo",
+    "explore": "Eksploro",
+    "library": "Biblioteka ime",
+    "lists": "Listat e leximit",
+    "primary": "Navigimi kryesor",
+    "mobile": "Navigimi i telefonit"
+  },
+  "discover": {
+    "title": "Zbulo",
+    "metaTitle": "Libraria — Zbulo",
+    "metaDescription": "Libra elektronikë shqip nga botues shqiptarë: e zgjedhura e javës, të rejat, më të lexuarat dhe zhanret.",
+    "by": "nga",
+    "featured": {
+      "buy": "Bli librin",
+      "read": "Lexo tani",
+      "about": "Rreth librit",
+      "related": "Në të njëjtin raft:"
+    },
+    "strip": {
+      "label": "Përzgjedhje të javës",
+      "new": "E re",
+      "top_month": "Nr. 1 këtë muaj",
+      "publisher": "Nga {{name}}"
+    },
+    "continue": {
+      "title": "Vazhdo leximin",
+      "all": "Biblioteka ime →",
+      "resume": "Vazhdo",
+      "resumeTitle": "Vazhdo leximin e {{title}}",
+      "progress": "Përparimi në {{title}}"
+    },
+    "newReleases": {
+      "kicker": "Sapo mbërritën",
+      "title": "Të rejat",
+      "all": "Shiko të gjitha →"
+    },
+    "mostRead": {
+      "kicker": "Këtë muaj",
+      "title": "Më të lexuarat",
+      "all": "Të gjitha →"
+    },
+    "genreTiles": {
+      "kicker": "Shfleto",
+      "title": "Sipas zhanrit"
+    },
+    "books_one": "{{count}} libër",
+    "books_other": "{{count}} libra",
+    "spotlight": {
+      "kicker": "Nga botuesit",
+      "titles_one": "titull",
+      "titles_other": "tituj",
+      "genres_one": "zhanër",
+      "genres_other": "zhanre",
+      "newest": "më i riu",
+      "catalogue": "Katalogu i botuesit →"
+    },
+    "interlude": {
+      "browse": "{{books}} · Shfleto zhanrin →",
+      "lines": {
+        "Fiction": "Histori për ata që lexojnë <em>ngadalë</em>, deri në faqen e fundit.",
+        "History": "Rrugë, kala dhe njerëz që na <em>kujtojnë</em> nga vijmë.",
+        "Poetry": "Vargje për t’u lexuar <em>me zë</em>, një nga një.",
+        "Essays": "Libra për ata që lexojnë <em>ngadalë</em>, me laps në dorë.",
+        "Children": "Histori për t’u lexuar <em>bashkë</em>, para gjumit.",
+        "default": "Një raft për ata që lexojnë <em>ngadalë</em>."
+      }
+    },
+    "error": {
+      "title": "Faqja nuk u ngarkua",
+      "description": "Nuk arritëm të marrim librat e kësaj jave. Provo përsëri pas pak.",
+      "retry": "Provo përsëri"
+    }
+  },
+  "genres": {
+    "Fiction": "Prozë",
+    "History": "Histori",
+    "Poetry": "Poezi",
+    "Essays": "Ese",
+    "Children": "Për fëmijë"
+  },
+  "ui": {
+    "close": "Mbyll",
+    "pagination": "Faqosja",
+    "previous": "Para",
+    "next": "Pas",
+    "pageN": "Faqja {{n}}",
+    "breadcrumb": "Rruga e faqes",
+    "emptyTitle": "Nuk ka asgjë këtu",
+    "errorTitle": "Diçka shkoi keq",
+    "errorDescription": "Provoni përsëri pas pak."
+  },
+  "book": {
+    "owned": "✓ Në bibliotekën tënde",
+    "notForSale": "Përkohësisht nuk shitet",
+    "writtenIn": {
+      "sq": "në shqip",
+      "en": "në anglisht"
+    },
+    "coverAlt": "Kopertina e {{title}}",
+    "by": "nga",
+    "metaTitle": "{{title}} nga {{author}} — Libraria",
+    "metaDescription": "{{title}} nga {{author}}, botuar nga {{publisher}}. Libër elektronik në Libraria.",
+    "purchase": {
+      "label": "Blerja",
+      "vat": "TVSH e përfshirë",
+      "buy": "Bli librin",
+      "buyAgain": "Bli përsëri",
+      "ownedSince": "✓ Në bibliotekën tënde që nga {{date}}",
+      "progressLabel": "Përparimi i leximit",
+      "continue": "Vazhdo leximin",
+      "readNow": "Lexo tani",
+      "takenDown": "Ky libër është hequr nga botuesi dhe nuk mund të lexohet më",
+      "refunded": "Ke blerë këtë libër më {{purchasedAt}} dhe u rimbursove më {{refundedAt}}.",
+      "pending": "Pagesa po përpunohet",
+      "pendingLink": "Shiko gjendjen e pagesës",
+      "anywhereLead": "Lexoje kudo.",
+      "anywhere": "Në shfletues dhe në aplikacionin Libraria për iOS dhe Android, edhe pa internet.",
+      "errors": {
+        "unavailable": "Blerjet nuk janë ende të disponueshme",
+        "notForSale": "Ky libër nuk mund të blihet tani.",
+        "generic": "Blerja nuk nisi. Provo përsëri pas pak."
+      }
+    },
+    "details": {
+      "label": "Të dhënat e librit",
+      "publisher": "Botuesi",
+      "published": "Botuar",
+      "language": "Gjuha",
+      "length": "Gjatësia",
+      "pages": "rreth {{count}} faqe",
+      "format": "Formati",
+      "formatValue": "EPUB · e mbrojtur",
+      "isbn": "ISBN"
+    },
+    "about": "Rreth librit",
+    "tags": "Etiketat",
+    "shelves": {
+      "publisher": "Nga e njëjta shtëpi botuese",
+      "publisherAction": "Katalogu →",
+      "similar": "Të ngjashme",
+      "similarAction": "Të gjitha →",
+      "author": "Më shumë nga {{author}}"
+    }
+  },
+  "masthead": {
+    "week": "Java {{week}}",
+    "pick": "E zgjedhura e javës",
+    "books_one": "{{count}} libër",
+    "books_other": "{{count}} libra",
+    "publishers_one": "{{count}} botues",
+    "publishers_other": "{{count}} botues"
+  },
+  "header": {
+    "search": "Kërko",
+    "home": "Libraria, faqja kryesore",
+    "skip": "Kalo te përmbajtja"
+  },
+  "language": {
+    "label": "Gjuha",
+    "sq": "SQ",
+    "en": "EN",
+    "sqName": "Shqip",
+    "enName": "English"
+  },
+  "account": {
+    "label": "Llogaria",
+    "signIn": "Hyr",
+    "signOut": "Dil"
+  },
+  "footer": {
+    "tagline": "Një shtëpi dixhitale për letërsinë.",
+    "about": "Rreth nesh",
+    "help": "Ndihmë",
+    "contact": "Kontakt",
+    "legal": "Ligjore",
+    "terms": "Kushtet",
+    "privacy": "Privatësia",
+    "refunds": "Rimbursimet",
+    "publishers": "Botuesit",
+    "portal": "Portali i botuesve",
+    "partner": "Bëhu partner",
+    "label": "Fundi i faqes"
+  },
+  "comingSoon": {
+    "badge": "Së shpejti",
+    "library": {
+      "title": "Biblioteka ime",
+      "body": "Biblioteka jote në ueb po vjen së shpejti. Librat e tu mund t’i lexosh që sot në aplikacionin Libraria."
+    },
+    "lists": {
+      "title": "Listat e leximit",
+      "body": "Listat e leximit po vijnë së shpejti. Librat mund t’i lexosh që sot në aplikacionin Libraria."
+    },
+    "reader": {
+      "title": "Leximi në shfletues",
+      "body": "Lexuesi në ueb po vjen së shpejti. Këtë libër mund ta lexosh që sot në aplikacionin Libraria.",
+      "back": "Kthehu te libri"
+    },
+    "home": "Kthehu te Zbulo"
+  },
+  "auth": {
+    "signIn": {
+      "kicker": "Llogaria",
+      "title": "Hyr",
+      "lede": "Hyr për të blerë libra dhe për t’i gjetur në bibliotekën tënde.",
+      "submit": "Hyr",
+      "noAccount": "Nuk ke llogari?",
+      "toRegister": "Regjistrohu"
+    },
+    "register": {
+      "kicker": "Llogaria",
+      "title": "Regjistrohu",
+      "lede": "Krijo një llogari falas për të blerë dhe lexuar libra shqip.",
+      "submit": "Regjistrohu",
+      "haveAccount": "Ke tashmë një llogari?",
+      "toSignIn": "Hyr"
+    },
+    "email": "Email",
+    "password": "Fjalëkalimi",
+    "passwordHint": "Të paktën 10 karaktere.",
+    "displayName": "Emri",
+    "displayNameHint": "Opsionale. Shfaqet pranë llogarisë tënde.",
+    "portal": {
+      "message": "Ky është një llogari botuesi. Përdor portalin e botuesve.",
+      "link": "Hap portalin e botuesve"
+    },
+    "errors": {
+      "invalidCredentials": "Email-i ose fjalëkalimi nuk është i saktë.",
+      "suspended": "Kjo llogari është pezulluar.",
+      "emailTaken": "Ky email është i regjistruar tashmë.",
+      "email": "Shkruaj një email të vlefshëm.",
+      "passwordRequired": "Shkruaj fjalëkalimin.",
+      "password": "Fjalëkalimi duhet të ketë 10 deri në 72 karaktere.",
+      "displayName": "Emri duhet të ketë deri në 100 karaktere.",
+      "generic": "Diçka shkoi keq. Provo përsëri."
+    }
+  },
+  "search": {
+    "label": "Kërko në Libraria",
+    "placeholder": "Kërko tituj, autorë, botues",
+    "titles": "Tituj",
+    "authors": "Autorë",
+    "publishers": "Botues",
+    "recent": "Kërkimet e fundit",
+    "all": "Shiko të gjitha rezultatet për \"{{q}}\"",
+    "enter": "↵ Enter",
+    "remove": "Hiq \"{{q}}\" nga kërkimet e fundit",
+    "removeHint": "Shtyp Delete për ta hequr një kërkim të fundit"
+  },
+  "explore": {
+    "all": "Të gjitha librat",
+    "allShort": "Të gjitha",
+    "searchTitle": "Rezultatet për „{{q}}“",
+    "searchPrompt": "Kërko",
+    "count": "{{books}} · {{publishers}}",
+    "genreBar": "Zhanret",
+    "results": "Rezultatet",
+    "metaTitle": "{{title}} — Libraria",
+    "metaDescription": {
+      "all": "Të gjithë librat elektronikë shqip në Libraria, sipas zhanrit, botuesit, gjuhës dhe çmimit.",
+      "search": "Rezultatet e kërkimit në Libraria.",
+      "publisher": "Katalogu i {{name}} në Libraria."
+    },
+    "prompt": {
+      "title": "Çfarë po kërkon?",
+      "description": "Shkruaj një titull, një autor ose një botues.",
+      "label": "Kërko tituj, autorë, botues",
+      "submit": "Kërko"
+    },
+    "filters": {
+      "title": "Filtrat",
+      "label": "Filtro rezultatet",
+      "publisher": "Botuesi",
+      "language": "Gjuha",
+      "allLanguages": "Të gjitha",
+      "price": "Çmimi",
+      "anyPrice": "Çdo çmim",
+      "upTo": "Deri në {{price}}",
+      "published": "Botuar",
+      "last30": "30 ditët e fundit",
+      "last30Short": "30 ditë",
+      "thisYear": "Këtë vit",
+      "anyTime": "Çdo kohë",
+      "hideOwned": "Fshih librat që i kam",
+      "apply": "Apliko",
+      "open": "Filtrat · {{count}}",
+      "clear": "Pastro",
+      "show_one": "Shfaq {{count}} libër",
+      "show_other": "Shfaq {{count}} libra",
+      "showAny": "Shfaq librat"
+    },
+    "languages": {
+      "sq": "Shqip",
+      "en": "Anglisht"
+    },
+    "chips": {
+      "label": "Filtrat aktivë",
+      "remove": "Hiq filtrin {{label}}",
+      "clearAll": "Pastro të gjitha",
+      "publisher": "Botues"
+    },
+    "toolbar": {
+      "sort": "Rendit",
+      "sorts": {
+        "new": "Më të rejat",
+        "top": "Më të lexuarat",
+        "title": "Titulli",
+        "price_asc": "Çmimi në rritje",
+        "price_desc": "Çmimi në zbritje"
+      },
+      "view": "Pamja",
+      "grid": "Pamja si rrjetë",
+      "list": "Pamja si listë"
+    },
+    "empty": {
+      "title": "Asnjë libër nuk përputhet",
+      "description": "Provo të heqësh disa filtra ose të kërkosh diçka tjetër.",
+      "clear": "Pastro filtrat"
+    },
+    "error": {
+      "title": "Librat nuk u ngarkuan",
+      "description": "Nuk arritëm të marrim katalogun. Provo përsëri pas pak.",
+      "retry": "Provo përsëri"
+    }
+  },
+  "genreIntro": {
+    "Fiction": "Romane dhe tregime nga autorë shqiptarë bashkëkohorë.",
+    "History": "Kronika, qytete dhe njerëz që bënë historinë.",
+    "Poetry": "Vargje për stinët, detin dhe fjalët e pathëna.",
+    "Essays": "Ese mbi kujtesën, gjuhën dhe qytetin.",
+    "Children": "Libra për t'u lexuar bashkë, nga përrallat te udhëtimet."
+  },
+  "notFound": {
+    "title": "Faqja nuk u gjet",
+    "description": "Kjo faqe nuk ekziston ose nuk është më e disponueshme.",
+    "back": "Kthehu te Eksploro"
+  },
+  "checkout": {
+    "metaTitle": "Pagesa — Libraria",
+    "kicker": "Pagesa",
+    "total": "Gjithsej",
+    "confirming": "Po konfirmojmë pagesën…",
+    "stillProcessing": "Pagesa po përpunohet; do ta shohësh librin në bibliotekë sapo të konfirmohet.",
+    "continue": "Vazhdo pagesën",
+    "paid": {
+      "title": "Libri është në bibliotekën tënde",
+      "open": "Shko te libri"
+    },
+    "failed": {
+      "title": "Pagesa nuk u krye",
+      "text": "Pagesa u refuzua. Nuk të është tërhequr asnjë shumë."
+    },
+    "cancelled": {
+      "title": "Pagesa u anulua",
+      "text": "Pagesa u anulua para se të përfundonte. Nuk të është tërhequr asnjë shumë."
+    },
+    "expired": {
+      "title": "Pagesa skadoi",
+      "text": "Pagesa nuk u përfundua në kohë. Nuk të është tërhequr asnjë shumë."
+    },
+    "closed": {
+      "title": "Kjo pagesë është mbyllur",
+      "text": "Gjendjen e tanishme të librit e sheh në faqen e tij."
+    },
+    "retry": "Provo përsëri",
+    "simulated": {
+      "title": "Mjedis zhvillimi · pagesë e simuluar",
+      "text": "Asnjë pagesë e vërtetë. Zgjidh si përfundon kjo pagesë.",
+      "pay": "Paguaj",
+      "fail": "Dështo",
+      "cancel": "Anulo"
+    },
+    "paddle": {
+      "opening": "Po hapim pagesën…",
+      "errorTitle": "Pagesa nuk mund të hapet",
+      "missing": "Kjo lidhje pagese nuk është e plotë.",
+      "loadFailed": "Faqja e pagesës nuk u ngarkua. Provo përsëri pas pak.",
+      "back": "Kthehu te Eksploro",
+      "toBook": "Shko te libri"
+    }
+  }
+}

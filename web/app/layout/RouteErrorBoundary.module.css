@@ -1,0 +1,27 @@
+.wrap {
+  max-width: var(--size-content-max);
+  margin-inline: auto;
+  padding: var(--space-7) var(--size-page-padding) var(--space-8);
+  text-align: center;
+}
+
+.title {
+  font: 400 56px / 1 var(--font-editorial);
+  letter-spacing: -0.02em;
+}
+
+@media (max-width: 767px) {
+  .wrap {
+    padding-inline: var(--size-page-padding-mobile);
+  }
+
+  .title {
+    font-size: 40px;
+  }
+}
+
+.text {
+  margin: var(--space-4) auto var(--space-5);
+  max-width: 48ch;
+  color: var(--color-text-secondary);
+}

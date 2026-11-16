@@ -1,0 +1,11 @@
+.kicker {
+  display: block;
+  font: 600 12px / 1 var(--font-interface);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-accent-2);
+}
+
+.onDark {
+  color: var(--color-gold);
+}

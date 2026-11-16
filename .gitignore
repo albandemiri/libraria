@@ -31,3 +31,6 @@ backend/var/
 /Books/
 /books/
 /covers/
+
+# Brainstorming mockups (local)
+.superpowers/

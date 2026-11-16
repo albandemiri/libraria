@@ -1,0 +1,23 @@
+.page {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--size-page-padding);
+  text-align: center;
+}
+
+.status {
+  color: var(--color-text-secondary);
+  font: 400 20px / 1.4 var(--font-editorial);
+}
+
+.onward {
+  display: flex;
+  justify-content: center;
+  margin-top: var(--space-5);
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-6) var(--size-page-padding-mobile);
+  }
+}

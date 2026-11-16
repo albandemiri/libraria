@@ -1,0 +1,33 @@
+/* Unmistakably not part of the shop: a dashed frame in the second accent. */
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  width: 100%;
+  padding: var(--space-5);
+  border: 1px dashed var(--color-accent2);
+  border-radius: var(--radius-popover);
+  background: var(--color-surface);
+}
+
+.title {
+  color: var(--color-accent2);
+  font: 600 12px / 1.3 var(--font-interface);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.text {
+  color: var(--color-text-secondary);
+  font-size: 14px;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.actions > button {
+  min-height: var(--size-touch-target);
+}

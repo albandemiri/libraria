@@ -1,0 +1,39 @@
+.page {
+  max-width: var(--size-content-max);
+  margin-inline: auto;
+}
+
+.crumbs {
+  padding: 20px var(--size-page-padding) 0;
+}
+
+.about {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 72px;
+  padding: 0 var(--size-page-padding) var(--space-8);
+}
+
+@media (max-width: 1023px) {
+  .about {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 767px) {
+  .crumbs {
+    padding: var(--space-3) var(--size-page-padding-mobile) 0;
+  }
+
+  .about {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-6);
+    padding: 0 var(--size-page-padding-mobile) var(--space-7);
+  }
+
+  /* Room for the pinned purchase bar (PurchaseBox), which sits above the mobile nav. */
+  .withBar {
+    padding-bottom: 88px;
+  }
+}

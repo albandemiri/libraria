@@ -1,0 +1,116 @@
+.button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-control);
+  background: transparent;
+  color: var(--color-accent);
+  font-family: var(--font-interface);
+  font-size: var(--size-interface-text);
+  font-weight: 500;
+  line-height: 1;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background-color var(--motion-duration-fast) var(--motion-easing);
+}
+
+.md {
+  min-height: 40px;
+}
+
+.lg {
+  min-height: 48px;
+  padding: 0 22px;
+  font-size: 15px;
+}
+
+.primary {
+  background: var(--color-accent);
+  color: #fff;
+}
+
+.primary:hover {
+  background: var(--color-accent-hover);
+}
+
+.primary:active {
+  background: var(--color-accent-pressed);
+}
+
+.secondary:hover {
+  background: var(--color-surface);
+}
+
+.ghost {
+  border-color: transparent;
+}
+
+.ghost:hover {
+  background: var(--color-surface);
+}
+
+.onDark {
+  border-color: var(--color-cream);
+  background: transparent;
+  color: var(--color-cream);
+}
+
+.onDark:hover {
+  background: rgb(241 235 221 / 12%);
+}
+
+.button:disabled,
+.button[aria-disabled="true"]:not([aria-busy="true"]) {
+  border-color: var(--color-disabled);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+.loading {
+  cursor: progress;
+}
+
+.content {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+}
+
+.loading .content {
+  opacity: 0;
+}
+
+.spinner {
+  position: absolute;
+  inset: 0;
+  margin: auto;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentcolor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (pointer: coarse) {
+  .button {
+    min-height: var(--size-touch-target);
+  }
+
+  .lg {
+    min-height: 48px;
+  }
+}

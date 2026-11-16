@@ -1,0 +1,131 @@
+.card {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  color: inherit;
+  text-decoration: none;
+}
+
+.title {
+  margin-top: var(--space-2);
+  font: 500 16px / 1.3 var(--font-editorial);
+}
+
+.author,
+.publisher {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+.genre {
+  margin-top: var(--space-3);
+  font: 500 11px / 1.3 var(--font-interface);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+}
+
+.genre + .title {
+  margin-top: 0;
+}
+
+.grid .title {
+  font-size: 17px;
+}
+
+.grid > :last-child:not(.author) {
+  margin-top: var(--space-1);
+}
+
+.description {
+  margin-top: var(--space-2);
+  font: 400 16px / 1.55 var(--font-editorial);
+  color: var(--color-text);
+  display: -webkit-box;
+  -webkit-line-clamp: 5;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.lead .title {
+  font-size: 24px;
+  line-height: 1.2;
+}
+
+.leadCover {
+  width: 78%;
+  margin-bottom: var(--space-2);
+}
+
+.list,
+.ranked {
+  display: grid;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-4) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list {
+  grid-template-columns: 52px 1fr auto;
+}
+
+.ranked {
+  grid-template-columns: 56px 52px 1fr auto;
+  gap: 18px;
+}
+
+.list .title,
+.ranked .title {
+  margin-top: 0;
+  font-size: 18px;
+}
+
+.thumb {
+  display: block;
+}
+
+.info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.rank {
+  font: italic 400 40px / 1 var(--font-editorial);
+  color: var(--color-accent-2);
+}
+
+.compact .title {
+  font-size: 15px;
+}
+
+.card:hover .title {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 640px) {
+  .ranked {
+    grid-template-columns: 36px 44px 1fr auto;
+    gap: var(--space-3);
+  }
+
+  .rank {
+    font-size: 28px;
+  }
+}
+
+.languageTag {
+  display: inline-block;
+  margin-left: 6px;
+  padding: 1px 4px;
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+  font: 600 10px / 1.3 var(--font-interface);
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  vertical-align: 3px;
+}

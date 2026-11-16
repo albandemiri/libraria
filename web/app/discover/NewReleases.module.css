@@ -1,0 +1,53 @@
+.layout {
+  display: grid;
+  grid-template-columns: 4fr 8fr;
+  gap: var(--space-7);
+}
+
+.lead {
+  padding-right: var(--space-7);
+  border-right: 1px solid var(--color-border);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-6) 28px;
+  align-content: start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+@media (max-width: 1023px) {
+  .layout {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+
+  .lead {
+    padding-right: var(--space-6);
+  }
+
+  .grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: var(--space-5) var(--space-4);
+  }
+}
+
+@media (max-width: 767px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .lead {
+    padding: 0 0 var(--space-6);
+    border-right: 0;
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  /* BookCard's lead cover is 78% wide; on a phone that is most of the screen. */
+  .lead > a > :first-child {
+    width: 56%;
+  }
+}

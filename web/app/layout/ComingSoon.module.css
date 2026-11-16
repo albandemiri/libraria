@@ -1,0 +1,36 @@
+.page {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-4);
+  max-width: 640px;
+  margin: 0 auto;
+  padding: var(--space-8) var(--size-page-padding);
+}
+
+.badge {
+  color: var(--color-accent2);
+  font: 600 12px / 1 var(--font-interface);
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.title {
+  font-size: 40px;
+  letter-spacing: -0.01em;
+}
+
+.body {
+  color: var(--color-text-secondary);
+  font-size: 17px;
+  line-height: 1.6;
+}
+
+@media (max-width: 767px) {
+  .page {
+    padding: var(--space-6) var(--size-page-padding-mobile);
+  }
+  .title {
+    font-size: 30px;
+  }
+}

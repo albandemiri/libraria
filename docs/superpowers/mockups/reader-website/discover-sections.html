@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Libraria — Discover A, richer</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,500;0,8..60,600;1,8..60,400;1,8..60,500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#F5F2EA; --surface:#FFFEFA; --text:#25251F; --text-2:#85847C; --text-2-strong:#6B6A62;
+    --border:#DEDAD0; --accent:#263D32; --accent-2:#793E43; --cream:#F1EBDD;
+    --serif:"Source Serif 4", Georgia, serif; --sans:Inter, system-ui, sans-serif;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#E9E6DE;font-family:var(--sans);color:var(--text);padding:32px 24px 80px}
+  .intro{max-width:1280px;margin:0 auto 24px}
+  .intro h1{font:600 22px/1.3 var(--sans)}
+  .intro p{color:var(--text-2-strong);font-size:15px;margin-top:6px;max-width:820px;line-height:1.55}
+  .intro ol{color:var(--text-2-strong);font-size:14px;margin:10px 0 0 20px;line-height:1.7;max-width:820px}
+  .frame{max-width:1280px;margin:0 auto;background:var(--bg);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+  .n-tag{display:inline-grid;place-items:center;width:20px;height:20px;border-radius:50%;background:var(--accent-2);color:#fff;font:600 11px var(--sans);vertical-align:middle;margin-right:6px}
+
+  .hdr{display:flex;align-items:center;gap:40px;padding:18px 48px;border-bottom:1px solid var(--border)}
+  .wordmark{font:600 24px/1 var(--serif);letter-spacing:-.01em}
+  .nav{display:flex;gap:28px;font-size:14px;font-weight:500}
+  .nav a{color:var(--text-2-strong);padding:6px 0;border-bottom:2px solid transparent}
+  .nav a.on{color:var(--text);border-color:var(--accent)}
+  .search{margin-left:auto;display:flex;align-items:center;gap:8px;width:300px;height:38px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:0 12px;color:var(--text-2);font-size:14px}
+  .acct{font-size:14px;font-weight:500;display:flex;gap:16px;align-items:center}
+  .lang{color:var(--text-2-strong);font-size:13px}
+  .wrap{padding:0 48px}
+  .cover{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:2px;box-shadow:0 1px 2px rgba(37,37,31,.14),0 6px 14px -6px rgba(37,37,31,.25)}
+  .kicker{font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2)}
+  .sec-h{display:flex;align-items:baseline;gap:20px;padding:56px 0 22px}
+  .sec-h .kicker{width:100%;display:block}
+  .sec-h h3{font:500 34px/1.1 var(--serif);letter-spacing:-.01em}
+  .sec-h p{color:var(--text-2-strong);font-size:15px}
+  .sec-h a{margin-left:auto;font-size:14px;color:var(--accent);font-weight:500;white-space:nowrap}
+  .stack{display:flex;flex-direction:column;gap:6px}
+  .bt{font:500 16px/1.3 var(--serif);margin-top:12px}
+  .ba{font-size:13px;color:var(--text-2-strong);margin-top:3px}
+  .bp{font-size:13px;font-weight:500;margin-top:6px}
+  .bg-tag{font:500 11px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--text-2-strong);margin-top:12px}
+  .btn{display:inline-flex;align-items:center;height:44px;padding:0 22px;border-radius:6px;font:500 15px var(--sans);border:1px solid var(--accent)}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.ghost{color:var(--accent)}
+  .progress{height:3px;background:var(--border);border-radius:2px;margin-top:10px}
+  .progress i{display:block;height:100%;background:var(--accent);border-radius:2px}
+  .rule{border-top:1px solid var(--border)}
+
+  /* 1. hero takes its colour from the featured cover */
+  .hero{background:#2F3A45;color:var(--cream);position:relative}
+  .hero-in{display:grid;grid-template-columns:5fr 7fr;gap:72px;padding:64px 48px 0;align-items:end}
+  .hero .cover{max-width:380px;margin:0 0 -48px auto;box-shadow:0 24px 48px rgba(0,0,0,.35)}
+  .hero .kicker{color:#D7B98A}
+  .hero h2{font:500 64px/1.02 var(--serif);letter-spacing:-.02em;margin:20px 0 14px}
+  .hero .by{font-size:16px;color:#C9C3B5}
+  .hero .by b{color:var(--cream);font-weight:500}
+  .hero blockquote{font:italic 400 21px/1.55 var(--serif);max-width:540px;margin:28px 0 30px;padding-left:20px;border-left:2px solid #D7B98A}
+  .hero .btn.primary{background:var(--cream);color:#2F3A45;border-color:var(--cream)}
+  .hero .btn.ghost{color:var(--cream);border-color:rgba(241,235,221,.5)}
+  .hero .meta{font-size:13px;color:#A9A496;margin:20px 0 56px}
+  .hero-also{background:var(--bg);padding:72px 48px 0}
+  .also{display:flex;align-items:center;gap:20px;font-size:14px;color:var(--text-2-strong)}
+  .also img{width:40px}
+  .also .t{font:500 15px var(--serif);color:var(--text)}
+
+  /* continue reading */
+  .cont{display:grid;grid-template-columns:repeat(3,1fr);gap:24px}
+  .rc{display:grid;grid-template-columns:72px 1fr;gap:18px;padding:18px;border:1px solid var(--border);border-radius:6px;background:var(--surface)}
+  .rc .t{font:500 18px/1.25 var(--serif)}
+  .rc .m{font-size:13px;color:var(--text-2-strong);margin-top:4px}
+  .rc .row{display:flex;justify-content:space-between;align-items:center;margin-top:14px;font-size:13px}
+  .rc .row a{color:var(--accent);font-weight:500}
+
+  /* 2. new releases: lead book + grid */
+  .nr{display:grid;grid-template-columns:4fr 8fr;gap:48px}
+  .nr-lead{display:grid;grid-template-columns:1fr;gap:0;padding-right:48px;border-right:1px solid var(--border)}
+  .nr-lead .cover{width:78%}
+  .nr-lead .bt{font-size:24px;line-height:1.2}
+  .nr-lead p{font:400 16px/1.55 var(--serif);color:var(--text);margin-top:10px}
+  .nr-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:32px 28px}
+
+  /* 3. ranked */
+  .two{display:grid;grid-template-columns:7fr 5fr;gap:72px}
+  .ranked{list-style:none}
+  .ranked li{display:grid;grid-template-columns:56px 52px 1fr auto;gap:18px;align-items:center;padding:16px 0;border-bottom:1px solid var(--border)}
+  .ranked li:first-child{border-top:1px solid var(--text)}
+  .ranked .n{font:italic 400 40px/1 var(--serif);color:var(--accent-2)}
+  .ranked .t{font:500 18px/1.3 var(--serif)}
+
+  /* 4. genres with fanned covers */
+  .genres{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+  .g{background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:18px 18px 0;overflow:hidden;height:168px;position:relative}
+  .g h4{font:500 22px var(--serif)}
+  .g span{font-size:12px;color:var(--text-2-strong)}
+  .fan{position:absolute;right:14px;bottom:-34px;width:150px;height:110px}
+  .fan img{position:absolute;width:62px;bottom:0}
+  .fan img:nth-child(1){left:0;transform:rotate(-9deg)}
+  .fan img:nth-child(2){left:40px;transform:rotate(-1deg);z-index:2;bottom:8px}
+  .fan img:nth-child(3){left:82px;transform:rotate(8deg)}
+  .g.wide{grid-column:span 2;height:120px}
+  .g.wide .fan{bottom:-56px}
+
+  /* 5. publisher spotlight on accent */
+  .spot{margin-top:72px;background:var(--accent);color:var(--cream)}
+  .spot-in{display:grid;grid-template-columns:4fr 8fr;gap:64px;align-items:center;padding:64px 48px}
+  .spot .kicker{color:#D7B98A}
+  .spot .mono{width:64px;height:64px;border-radius:50%;border:1px solid rgba(241,235,221,.5);display:grid;place-items:center;font:500 24px var(--serif);margin-bottom:22px}
+  .spot h4{font:500 40px/1.1 var(--serif);margin:14px 0 14px}
+  .spot p{font:400 17px/1.6 var(--serif);color:#D6D9CF;max-width:400px}
+  .spot .facts{display:flex;gap:28px;margin:22px 0 26px;font-size:13px;color:#B7BFB5}
+  .spot .facts b{display:block;font:500 22px var(--serif);color:var(--cream)}
+  .spot .btn{color:var(--cream);border-color:rgba(241,235,221,.5)}
+  .spot .row{display:grid;grid-template-columns:repeat(4,1fr);gap:28px}
+  .spot .bt{color:var(--cream)} .spot .ba{color:#B7BFB5}
+
+  /* 6. essay strip */
+  .essay{display:grid;grid-template-columns:5fr 7fr;gap:64px;padding:72px 0 8px;align-items:center}
+  .essay h3{font:400 40px/1.15 var(--serif);letter-spacing:-.01em}
+  .essay h3 em{color:var(--accent-2)}
+  .essay .shelf{display:flex;align-items:flex-end;gap:14px;padding:0 0 14px;border-bottom:6px solid #D9D3C4}
+  .essay .shelf img{width:92px}
+  .essay .shelf img:nth-child(2n){width:104px}
+  .foot{margin-top:72px;border-top:1px solid var(--border);padding:36px 48px;display:grid;grid-template-columns:4fr 2fr 2fr 2fr;gap:32px;font-size:13px;color:var(--text-2-strong);line-height:2}
+  .foot b{display:block;color:var(--text);font:600 20px var(--serif);margin-bottom:6px}
+  .foot h6{font:600 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--text);margin-bottom:4px}
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>Discover A, richer</h1>
+  <p>Same structure as A, with more depth. Each numbered change can be kept or dropped on its own. All of it stays within the guidelines: colour comes from the books and the palette, with no gradients or decorative graphics.</p>
+  <ol>
+    <li><b>Hero takes its colour from the featured book's cover</b>. It changes weekly with the book. The description is set as a pull quote.</li>
+    <li><b>New releases have a lead book</b>, shown bigger with its description, beside a grid with genre labels.</li>
+    <li><b>Most read uses large italic numerals</b> in the secondary accent, with a stronger top rule.</li>
+    <li><b>Genres become tiles with a fan of their covers</b>, instead of a plain list.</li>
+    <li><b>Publisher spotlight moves to a deep green band</b>, with a monogram and a few facts.</li>
+    <li><b>An editorial interlude</b>: a quiet typographic line beside a "shelf" of essay covers, ahead of the footer.</li>
+  </ol>
+</div>
+
+<div class="frame">
+  <header class="hdr">
+    <div class="wordmark">Libraria</div>
+    <nav class="nav"><a class="on">Zbulo</a><a>Eksploro</a><a>Biblioteka ime</a><a>Listat e leximit</a></nav>
+    <div class="search">⌕&nbsp; Kërko tituj, autorë, botues</div>
+    <div class="acct"><span class="lang">SQ · EN</span><span>Leart</span></div>
+  </header>
+
+  <section class="hero">
+    <div class="hero-in">
+      <img class="cover" src="http://localhost:3000/api/v1/books/15459259-2a29-5a98-87aa-5f467426529a/cover?v=1" alt="">
+      <div>
+        <div class="kicker"><span class="n-tag">1</span>E zgjedhura e javës</div>
+        <h2>Zonja e Hanit të Bardhë</h2>
+        <div class="by">nga <b>Leart Osmani</b> · Pema e Kuqe Botime</div>
+        <blockquote>Një han në udhëkryq, një grua që di më shumë se ç'thotë, dhe udhëtarë që nuk largohen kurrë njësoj si erdhën.</blockquote>
+        <span class="btn primary">Bli librin · 5,99 €</span>&nbsp;&nbsp;<span class="btn ghost">Lexo një pjesë</span>
+        <div class="meta">Prozë · Shqip · EPUB · Botuar nëntor 2026</div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <div class="sec-h" style="padding-top:88px"><div class="stack"><h3>Vazhdo leximin</h3></div><a>Biblioteka ime →</a></div>
+    <div class="cont">
+      <div class="rc"><img class="cover" src="http://localhost:3000/api/v1/books/25bb72c9-f7f9-572c-922f-ab2689a93ec6/cover?v=1" alt=""><div><div class="t">Peshkatari dhe Hëna</div><div class="m">Artan Gashi</div><div class="progress"><i style="width:42%"></i></div><div class="row"><span class="ba" style="margin:0">42% · Kapitulli 7</span><a>Vazhdo</a></div></div></div>
+      <div class="rc"><img class="cover" src="http://localhost:3000/api/v1/books/76471262-0819-5c1c-ab40-a5501cd44450/cover?v=1" alt=""><div><div class="t">Biblioteka e Natës</div><div class="m">Mimoza Osmani</div><div class="progress"><i style="width:12%"></i></div><div class="row"><span class="ba" style="margin:0">12% · 3 ditë më parë</span><a>Vazhdo</a></div></div></div>
+      <div class="rc"><img class="cover" src="http://localhost:3000/api/v1/books/cfdd8e47-0c75-5091-b26b-93feb26aa544/cover?v=1" alt=""><div><div class="t">Lutje për Mëngjesin</div><div class="m">Hana Shkurti</div><div class="progress"><i style="width:78%"></i></div><div class="row"><span class="ba" style="margin:0">78% · javën e kaluar</span><a>Vazhdo</a></div></div></div>
+    </div>
+
+    <div class="sec-h"><div class="stack"><span class="kicker"><span class="n-tag">2</span>Sapo mbërritën</span><h3>Të rejat</h3></div><a>Shiko të gjitha →</a></div>
+    <div class="nr">
+      <div class="nr-lead">
+        <img class="cover" src="http://localhost:3000/api/v1/books/88962d36-c8b7-57fe-865e-8988ff41a28c/cover?v=1" alt="">
+        <div class="bg-tag">Poezi · 5 nëntor</div>
+        <div class="bt">Shpirti i Pyllit</div>
+        <div class="ba">Kaltrina Ndreca · Pema e Kuqe Botime</div>
+        <p>Një përmbledhje vargjesh për stinët, detin dhe fjalët që nuk thuhen me zë të lartë.</p>
+        <div class="bp" style="margin-top:12px">5,49 €</div>
+      </div>
+      <div class="nr-grid">
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/81eb61d7-9633-5137-87dd-be556bf37862/cover?v=1" alt=""><div class="bg-tag">Histori</div><div class="bt" style="margin-top:4px">Kalatë dhe Njerëzit e Tyre</div><div class="ba">Besnik Lleshi</div><div class="bp">13,99 €</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/73b4350c-dd38-5583-826e-c7cbeee6ba2b/cover?v=1" alt=""><div class="bg-tag">Prozë</div><div class="bt" style="margin-top:4px">Udhëtari pa Hartë</div><div class="ba">Arben Kryeziu</div><div class="bp">8,49 €</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/614ceee5-b703-56b7-8083-80c3bb0578d0/cover?v=1" alt=""><div class="bg-tag">Prozë</div><div class="bt" style="margin-top:4px">Era e Marsit</div><div class="ba">Nderim Isufi</div><div class="bp">5,99 €</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/cd0bc6a3-c3ba-57c1-bf71-e6ac1555b368/cover?v=1" alt=""><div class="bg-tag">Histori</div><div class="bt" style="margin-top:4px">Letrat e Kapedanit</div><div class="ba">Liridona Sadiku</div><div class="bp" style="color:var(--accent)">✓ Në bibliotekën tënde</div></div>
+      </div>
+    </div>
+
+    <div class="two">
+      <div>
+        <div class="sec-h"><div class="stack"><span class="kicker"><span class="n-tag">3</span>Nëntor</span><h3>Më të lexuarat</h3></div><a>Të gjitha →</a></div>
+        <ol class="ranked">
+          <li><span class="n">1</span><img class="cover" src="http://localhost:3000/api/v1/books/4ffb7a03-cc42-5d91-9aa4-4444377f54be/cover?v=1" alt=""><div><div class="t">Mjeshtri i Balonave</div><div class="ba">Pranvera Bardhi · Për fëmijë</div></div><span class="bp">4,49 €</span></li>
+          <li><span class="n">2</span><img class="cover" src="http://localhost:3000/api/v1/books/f4ef294a-bcc2-5879-a855-b2c74e739e09/cover?v=1" alt=""><div><div class="t">Dera e Nëntë</div><div class="ba">Pranvera Mehmetaj · Prozë</div></div><span class="bp">7,99 €</span></li>
+          <li><span class="n">3</span><img class="cover" src="http://localhost:3000/api/v1/books/a822cfb9-01c7-52c6-8f04-c44ac9c122c4/cover?v=1" alt=""><div><div class="t">Nata kur Retë Ranë</div><div class="ba">Nora Hoti · Prozë</div></div><span class="bp">5,99 €</span></li>
+          <li><span class="n">4</span><img class="cover" src="http://localhost:3000/api/v1/books/b9468e61-2fac-5bcf-8942-1d3c9ee78645/cover?v=1" alt=""><div><div class="t">Zogjtë e Mëngjesit të Vonë</div><div class="ba">Pranvera Hoti · Prozë</div></div><span class="bp">12,99 €</span></li>
+          <li><span class="n">5</span><img class="cover" src="http://localhost:3000/api/v1/books/f1e15219-5f6d-503a-92b0-a3941fa0497d/cover?v=1" alt=""><div><div class="t">Pas Largimit të Detit</div><div class="ba">Petrit Elezi · Prozë</div></div><span class="bp">6,99 €</span></li>
+        </ol>
+      </div>
+      <div>
+        <div class="sec-h"><div class="stack"><span class="kicker"><span class="n-tag">4</span>Shfleto</span><h3>Sipas zhanrit</h3></div></div>
+        <div class="genres">
+          <div class="g"><h4>Prozë</h4><span>18 libra</span><div class="fan"><img class="cover" src="http://localhost:3000/api/v1/books/2bb320c9-ea8c-5a7c-9f18-1d6540650a39/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/f4ef294a-bcc2-5879-a855-b2c74e739e09/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/1e5deca1-9876-5a09-920a-8221cb9c529d/cover?v=1" alt=""></div></div>
+          <div class="g"><h4>Histori</h4><span>10 libra</span><div class="fan"><img class="cover" src="http://localhost:3000/api/v1/books/994cf246-781e-5a03-b116-3e3b2392f0d5/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/36261022-e077-55fd-9b09-2b945b83ce01/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/fc6c4f4a-5884-5332-9438-0fa55e67a09d/cover?v=1" alt=""></div></div>
+          <div class="g"><h4>Poezi</h4><span>9 libra</span><div class="fan"><img class="cover" src="http://localhost:3000/api/v1/books/3e4c9d7f-0504-5e8e-857a-934a6b34efca/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/a31c1ec8-ca46-5477-9d75-c70bf584b27d/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/46cb0f23-5b9b-511b-91c4-0ab9ced3e63f/cover?v=1" alt=""></div></div>
+          <div class="g"><h4>Ese</h4><span>8 libra</span><div class="fan"><img class="cover" src="http://localhost:3000/api/v1/books/273a19d0-1874-573b-aa46-5162ed53dbc2/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/3c7e64a3-1b0c-5681-b0a7-cb4e02102183/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/39c1aa82-0a25-533b-8efd-a7236a7b507a/cover?v=1" alt=""></div></div>
+          <div class="g wide"><h4>Për fëmijë</h4><span>8 libra</span><div class="fan"><img class="cover" src="http://localhost:3000/api/v1/books/2cc5b1c3-e140-551a-be2e-e6a4c5cd882c/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/f14f0619-2553-5e9f-af5c-0706662eb627/cover?v=1" alt=""><img class="cover" src="http://localhost:3000/api/v1/books/51fa0062-3543-5162-b97a-037b8df1cc14/cover?v=1" alt=""></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <section class="spot">
+    <div class="spot-in">
+      <div>
+        <div class="mono">KB</div>
+        <div class="kicker"><span class="n-tag">5</span>Nga botuesit</div>
+        <h4>Kodra e Blertë</h4>
+        <p>Prozë bashkëkohore, poezi dhe libra për fëmijë nga një shtëpi botuese e vogël në Tiranë.</p>
+        <div class="facts"><span><b>16</b>tituj</span><span><b>4</b>zhanre</span><span><b>2026</b>më i riu</span></div>
+        <span class="btn">Katalogu i botuesit →</span>
+      </div>
+      <div class="row">
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/b9b7616a-dbca-5be2-b488-7cabf4ffb4f8/cover?v=1" alt=""><div class="bt">Rrugët e Mendimit</div><div class="ba">Besa Prenga</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/7bfa228c-982d-5f1e-a4b2-cf888ebebdeb/cover?v=1" alt=""><div class="bt">Hijet e Rrugës së Gurtë</div><div class="ba">Besa Selimi</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/2c79bb5f-fa76-5811-abf6-95d9998b6d3e/cover?v=1" alt=""><div class="bt">Letra nga Qyteti i Harruar</div><div class="ba">Nderim Selimi</div></div>
+        <div><img class="cover" src="http://localhost:3000/api/v1/books/49987440-f30b-540a-b9d4-c7f820dae323/cover?v=1" alt=""><div class="bt">Dimri në Kullën e Vjetër</div><div class="ba">Besa Sadiku</div></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="wrap">
+    <section class="essay">
+      <div>
+        <div class="kicker"><span class="n-tag">6</span>Ese</div>
+        <h3 style="margin-top:16px">Libra për ata që lexojnë <em>ngadalë</em>, me laps në dorë.</h3>
+        <p class="ba" style="font-size:15px;margin-top:14px">8 ese mbi kujtesën, gjuhën dhe qytetin →</p>
+      </div>
+      <div class="shelf">
+        <img class="cover" src="http://localhost:3000/api/v1/books/76471262-0819-5c1c-ab40-a5501cd44450/cover?v=1" alt="">
+        <img class="cover" src="http://localhost:3000/api/v1/books/f186a923-cb19-533f-9c27-e6408434c494/cover?v=1" alt="">
+        <img class="cover" src="http://localhost:3000/api/v1/books/6cca9094-ce17-5da0-bc5b-e5ad9be4f9ee/cover?v=1" alt="">
+        <img class="cover" src="http://localhost:3000/api/v1/books/39c1aa82-0a25-533b-8efd-a7236a7b507a/cover?v=1" alt="">
+        <img class="cover" src="http://localhost:3000/api/v1/books/3c7e64a3-1b0c-5681-b0a7-cb4e02102183/cover?v=1" alt="">
+      </div>
+    </section>
+  </div>
+
+  <footer class="foot">
+    <div><b>Libraria</b>Një shtëpi dixhitale për letërsinë.</div>
+    <div><h6>Libraria</h6>Rreth nesh<br>Ndihmë<br>Kontakt</div>
+    <div><h6>Ligjore</h6>Kushtet<br>Privatësia<br>Rimbursimet</div>
+    <div><h6>Botuesit</h6>Portali i botuesve<br>Bëhu partner</div>
+  </footer>
+</div>
+</body>
+</html>
