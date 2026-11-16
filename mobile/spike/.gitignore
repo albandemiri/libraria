@@ -1,0 +1,10 @@
+# Generated: rebuild with `node spike/build-reader-html.mjs`
+readerHtml.generated.ts
+
+# Desktop harness outputs (6+ MB page with embedded ciphertext, Chrome profiles, results)
+desktop-harness/harness.html
+desktop-harness/manifest.tmp.mjs
+desktop-harness/result.json
+desktop-harness/run*.json
+desktop-harness/*.png
+desktop-harness/profile*/
