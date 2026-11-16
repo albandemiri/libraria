@@ -21,6 +21,16 @@ async function reason(data: Buffer): Promise<string> {
 }
 
 describe('validateEpub: valid books', () => {
+  it('counts text characters across spine documents', async () => {
+    const result = await validateEpub(
+      buildEpub({
+        chapterBody: '<p>Një dy <em>tre</em></p><style>p { color: red }</style>\n  <p>&amp;</p>',
+      }),
+    );
+    assert.ok(result.ok);
+    assert.equal(result.metadata.textCharacters, 9); // "Njëdytre" + "&"
+  });
+
   it('valid EPUB 3 with cover', async () => {
     const result = await validateEpub(buildEpub({ cover: true, isbn: VALID_ISBN }));
     assert.equal(result.ok, true);

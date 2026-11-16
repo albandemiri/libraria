@@ -1,0 +1,139 @@
+.mast {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: var(--space-7);
+  align-items: start;
+  padding-top: 40px;
+  padding-bottom: 40px;
+}
+
+.title {
+  font: 400 clamp(42px, 8.4vw, 108px) / 0.92 var(--font-editorial);
+  letter-spacing: -0.035em;
+  overflow-wrap: break-word;
+  hyphens: auto;
+}
+
+.title em {
+  font-style: italic;
+  color: var(--color-accent2);
+}
+
+.lede {
+  max-width: 560px;
+  margin-top: 28px;
+  font: 400 20px / 1.55 var(--font-editorial);
+}
+
+.by {
+  margin-top: var(--space-4);
+  font-size: var(--size-interface-text);
+  color: var(--color-text-secondary);
+}
+
+.by b {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.publisher {
+  color: inherit;
+  text-decoration: none;
+}
+
+.publisher:hover {
+  color: var(--color-text);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.by > :last-child {
+  color: var(--color-text);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  margin-top: 28px;
+}
+
+.buy {
+  display: contents;
+}
+
+/* The cover spread: the pick large, the related book tucked behind its lower-left edge. */
+.covers {
+  position: relative;
+  width: 100%;
+  max-width: 480px;
+  justify-self: end;
+}
+
+.main {
+  position: relative;
+  z-index: 1;
+  display: block;
+  width: 63.5%;
+  margin: 0 8.5% 0 auto;
+}
+
+.main > * {
+  box-shadow:
+    0 2px 4px rgb(37 37 31 / 18%),
+    0 30px 60px -10px rgb(37 37 31 / 35%);
+}
+
+.related {
+  position: absolute;
+  top: 34%;
+  right: 63.5%;
+  width: 36%;
+  transform: rotate(-5deg);
+}
+
+.caption {
+  width: 63.5%;
+  margin: 20px 8.5% 0 auto;
+  padding-top: 10px;
+  border-top: 1px solid var(--color-text);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.caption a {
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.caption a:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+@media (max-width: 1023px) {
+  .mast {
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-6);
+  }
+}
+
+@media (max-width: 767px) {
+  .mast {
+    grid-template-columns: 1fr;
+    gap: var(--space-6);
+    padding-top: var(--space-6);
+    padding-bottom: var(--space-6);
+  }
+
+  .lede {
+    margin-top: var(--space-5);
+    font-size: 18px;
+  }
+
+  .covers {
+    max-width: 380px;
+    justify-self: center;
+  }
+}

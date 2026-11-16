@@ -1,0 +1,46 @@
+.wrap {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--size-interface-text);
+}
+
+.label {
+  color: var(--color-text-secondary);
+}
+
+.control {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.select {
+  appearance: none;
+  height: 34px;
+  padding: 0 36px 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-control);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--size-interface-text);
+  cursor: pointer;
+}
+
+.caret {
+  position: absolute;
+  right: 12px;
+  pointer-events: none;
+}
+
+.select:disabled {
+  border-color: var(--color-disabled);
+  color: var(--color-text-secondary);
+  cursor: not-allowed;
+}
+
+@media (pointer: coarse) {
+  .select {
+    height: var(--size-touch-target);
+  }
+}

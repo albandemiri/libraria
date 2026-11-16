@@ -1,0 +1,120 @@
+.box {
+  max-width: 680px;
+  padding: 22px 0;
+  border-top: 1px solid var(--color-text);
+  border-bottom: 1px solid var(--color-border);
+  text-align: left;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.top {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+/* Price, then the main button in the first of two equal columns (as in the mockup). */
+.main {
+  display: grid;
+  grid-template-columns: auto 1fr 1fr;
+  gap: var(--space-4);
+  align-items: center;
+}
+
+.price {
+  padding-right: var(--space-4);
+  font: 400 40px / 1 var(--font-editorial);
+  white-space: nowrap;
+}
+
+.vat {
+  display: block;
+  margin-top: var(--space-2);
+  font: 400 12px / 1.2 var(--font-interface);
+  color: var(--color-text-secondary);
+}
+
+.action {
+  display: flex;
+  min-width: 0;
+}
+
+.button {
+  width: 100%;
+  white-space: nowrap;
+}
+
+.owned {
+  font: 500 14px / 1.4 var(--font-interface);
+  color: var(--color-accent);
+}
+
+.progress {
+  max-width: 420px;
+  margin-top: 6px;
+}
+
+.caption,
+.note {
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--color-text-secondary);
+}
+
+.status {
+  font: 500 15px / 1.4 var(--font-interface);
+}
+
+.error {
+  font: 500 15px / 1.4 var(--font-interface);
+  color: var(--color-error);
+}
+
+.muted {
+  font: 400 20px / 1.35 var(--font-editorial);
+  color: var(--color-text-secondary);
+}
+
+/* Phone: the price and the main button are pinned above the site's mobile nav. */
+@media (max-width: 767px) {
+  .box {
+    max-width: none;
+    display: block;
+    padding: 0;
+    border: 0;
+  }
+
+  .top {
+    padding: var(--space-4) 0;
+    border-top: 1px solid var(--color-text);
+    border-bottom: 1px solid var(--color-border);
+  }
+
+  .main {
+    position: fixed;
+    inset: auto 0 calc(var(--size-touch-target) + 1px + env(safe-area-inset-bottom));
+    z-index: 19;
+    display: flex;
+    gap: var(--space-3);
+    margin: 0;
+    padding: var(--space-3) var(--size-page-padding-mobile);
+    border-top: 1px solid var(--color-border);
+    background: var(--color-surface);
+  }
+
+  .price {
+    padding: 0;
+    font-size: 26px;
+  }
+
+  .vat {
+    margin-top: var(--space-1);
+    font-size: 11px;
+  }
+
+  .action {
+    flex: 1;
+  }
+}

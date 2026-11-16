@@ -1,0 +1,387 @@
+{
+  "app": {
+    "name": "Libraria"
+  },
+  "nav": {
+    "discover": "Discover",
+    "explore": "Explore",
+    "library": "My Library",
+    "lists": "Reading Lists",
+    "primary": "Main navigation",
+    "mobile": "Mobile navigation"
+  },
+  "discover": {
+    "title": "Discover",
+    "metaTitle": "Libraria — Discover",
+    "metaDescription": "Albanian ebooks from Albanian publishers: the pick of the week, new releases, the most read and every genre.",
+    "by": "by",
+    "featured": {
+      "buy": "Buy the book",
+      "read": "Read now",
+      "about": "About the book",
+      "related": "On the same shelf:"
+    },
+    "strip": {
+      "label": "Picks of the week",
+      "new": "New",
+      "top_month": "No. 1 this month",
+      "publisher": "From {{name}}"
+    },
+    "continue": {
+      "title": "Continue reading",
+      "all": "My Library →",
+      "resume": "Resume",
+      "resumeTitle": "Resume reading {{title}}",
+      "progress": "Progress in {{title}}"
+    },
+    "newReleases": {
+      "kicker": "Just arrived",
+      "title": "New releases",
+      "all": "See all →"
+    },
+    "mostRead": {
+      "kicker": "This month",
+      "title": "Most read",
+      "all": "See all →"
+    },
+    "genreTiles": {
+      "kicker": "Browse",
+      "title": "By genre"
+    },
+    "books_one": "{{count}} book",
+    "books_other": "{{count}} books",
+    "spotlight": {
+      "kicker": "From the publishers",
+      "titles_one": "title",
+      "titles_other": "titles",
+      "genres_one": "genre",
+      "genres_other": "genres",
+      "newest": "newest",
+      "catalogue": "Publisher catalogue →"
+    },
+    "interlude": {
+      "browse": "{{books}} · Browse the genre →",
+      "lines": {
+        "Fiction": "Stories for those who read <em>slowly</em>, to the very last page.",
+        "History": "Roads, castles and people that <em>remind</em> us where we come from.",
+        "Poetry": "Verses to read <em>aloud</em>, one at a time.",
+        "Essays": "Books for those who read <em>slowly</em>, pencil in hand.",
+        "Children": "Stories to read <em>together</em>, before bedtime.",
+        "default": "A shelf for those who read <em>slowly</em>."
+      }
+    },
+    "error": {
+      "title": "The page did not load",
+      "description": "We could not fetch this week’s books. Please try again in a moment.",
+      "retry": "Try again"
+    }
+  },
+  "genres": {
+    "Fiction": "Fiction",
+    "History": "History",
+    "Poetry": "Poetry",
+    "Essays": "Essays",
+    "Children": "Children"
+  },
+  "ui": {
+    "close": "Close",
+    "pagination": "Pagination",
+    "previous": "Previous",
+    "next": "Next",
+    "pageN": "Page {{n}}",
+    "breadcrumb": "Breadcrumb",
+    "emptyTitle": "Nothing here",
+    "errorTitle": "Something went wrong",
+    "errorDescription": "Please try again in a moment."
+  },
+  "book": {
+    "owned": "✓ In your library",
+    "notForSale": "Temporarily not for sale",
+    "writtenIn": {
+      "sq": "in Albanian",
+      "en": "in English"
+    },
+    "coverAlt": "Cover of {{title}}",
+    "by": "by",
+    "metaTitle": "{{title}} by {{author}} — Libraria",
+    "metaDescription": "{{title}} by {{author}}, published by {{publisher}}. An ebook on Libraria.",
+    "purchase": {
+      "label": "Purchase",
+      "vat": "VAT included",
+      "buy": "Buy the book",
+      "buyAgain": "Buy again",
+      "ownedSince": "✓ In your library since {{date}}",
+      "progressLabel": "Reading progress",
+      "continue": "Continue reading",
+      "readNow": "Read now",
+      "takenDown": "This book has been removed by the publisher and can no longer be read",
+      "refunded": "You bought this book on {{purchasedAt}} and were refunded on {{refundedAt}}.",
+      "pending": "Payment is being processed",
+      "pendingLink": "See the payment status",
+      "anywhereLead": "Read it anywhere.",
+      "anywhere": "In the browser and in the Libraria app for iOS and Android, even offline.",
+      "errors": {
+        "unavailable": "Purchases are not available yet",
+        "notForSale": "This book cannot be bought right now.",
+        "generic": "The purchase did not start. Please try again shortly."
+      }
+    },
+    "details": {
+      "label": "Book details",
+      "publisher": "Publisher",
+      "published": "Published",
+      "language": "Language",
+      "length": "Length",
+      "pages": "about {{count}} pages",
+      "format": "Format",
+      "formatValue": "EPUB · protected",
+      "isbn": "ISBN"
+    },
+    "about": "About the book",
+    "tags": "Tags",
+    "shelves": {
+      "publisher": "From the same publisher",
+      "publisherAction": "Catalogue →",
+      "similar": "Similar books",
+      "similarAction": "See all →",
+      "author": "More by {{author}}"
+    }
+  },
+  "masthead": {
+    "week": "Week {{week}}",
+    "pick": "Pick of the week",
+    "books_one": "{{count}} book",
+    "books_other": "{{count}} books",
+    "publishers_one": "{{count}} publisher",
+    "publishers_other": "{{count}} publishers"
+  },
+  "header": {
+    "search": "Search",
+    "home": "Libraria, home page",
+    "skip": "Skip to content"
+  },
+  "language": {
+    "label": "Language",
+    "sq": "SQ",
+    "en": "EN",
+    "sqName": "Shqip",
+    "enName": "English"
+  },
+  "account": {
+    "label": "Account",
+    "signIn": "Sign in",
+    "signOut": "Sign out"
+  },
+  "footer": {
+    "tagline": "A digital home for literature.",
+    "about": "About us",
+    "help": "Help",
+    "contact": "Contact",
+    "legal": "Legal",
+    "terms": "Terms",
+    "privacy": "Privacy",
+    "refunds": "Refunds",
+    "publishers": "Publishers",
+    "portal": "Publisher portal",
+    "partner": "Become a partner",
+    "label": "Page footer"
+  },
+  "comingSoon": {
+    "badge": "Coming soon",
+    "library": {
+      "title": "My Library",
+      "body": "Your library on the web is coming soon. You can read your books today in the Libraria app."
+    },
+    "lists": {
+      "title": "Reading Lists",
+      "body": "Reading lists are coming soon. You can read books today in the Libraria app."
+    },
+    "reader": {
+      "title": "Reading in the browser",
+      "body": "The web reader is coming soon. You can read this book today in the Libraria app.",
+      "back": "Back to the book"
+    },
+    "home": "Back to Discover"
+  },
+  "auth": {
+    "signIn": {
+      "kicker": "Account",
+      "title": "Sign in",
+      "lede": "Sign in to buy books and find them in your library.",
+      "submit": "Sign in",
+      "noAccount": "No account yet?",
+      "toRegister": "Register"
+    },
+    "register": {
+      "kicker": "Account",
+      "title": "Register",
+      "lede": "Create a free account to buy and read books in Albanian.",
+      "submit": "Register",
+      "haveAccount": "Already have an account?",
+      "toSignIn": "Sign in"
+    },
+    "email": "Email",
+    "password": "Password",
+    "passwordHint": "At least 10 characters.",
+    "displayName": "Name",
+    "displayNameHint": "Optional. Shown next to your account.",
+    "portal": {
+      "message": "This is a publisher account. Use the publisher portal.",
+      "link": "Open the publisher portal"
+    },
+    "errors": {
+      "invalidCredentials": "The email or password is not correct.",
+      "suspended": "This account has been suspended.",
+      "emailTaken": "This email is already registered.",
+      "email": "Enter a valid email.",
+      "passwordRequired": "Enter your password.",
+      "password": "The password must be 10 to 72 characters.",
+      "displayName": "The name can be at most 100 characters.",
+      "generic": "Something went wrong. Please try again."
+    }
+  },
+  "search": {
+    "label": "Search Libraria",
+    "placeholder": "Search titles, authors, publishers",
+    "titles": "Titles",
+    "authors": "Authors",
+    "publishers": "Publishers",
+    "recent": "Recent searches",
+    "all": "See all results for \"{{q}}\"",
+    "enter": "↵ Enter",
+    "remove": "Remove \"{{q}}\" from recent searches",
+    "removeHint": "Press Delete to remove a recent search"
+  },
+  "explore": {
+    "all": "All books",
+    "allShort": "All",
+    "searchTitle": "Results for “{{q}}”",
+    "searchPrompt": "Search",
+    "count": "{{books}} · {{publishers}}",
+    "genreBar": "Genres",
+    "results": "Results",
+    "metaTitle": "{{title}} — Libraria",
+    "metaDescription": {
+      "all": "Every Albanian ebook on Libraria, by genre, publisher, language and price.",
+      "search": "Search results on Libraria.",
+      "publisher": "The {{name}} catalogue on Libraria."
+    },
+    "prompt": {
+      "title": "What are you looking for?",
+      "description": "Type a title, an author or a publisher.",
+      "label": "Search titles, authors, publishers",
+      "submit": "Search"
+    },
+    "filters": {
+      "title": "Filters",
+      "label": "Filter the results",
+      "publisher": "Publisher",
+      "language": "Language",
+      "allLanguages": "All",
+      "price": "Price",
+      "anyPrice": "Any price",
+      "upTo": "Up to {{price}}",
+      "published": "Published",
+      "last30": "Last 30 days",
+      "last30Short": "30 days",
+      "thisYear": "This year",
+      "anyTime": "Any time",
+      "hideOwned": "Hide books I own",
+      "apply": "Apply",
+      "open": "Filters · {{count}}",
+      "clear": "Clear",
+      "show_one": "Show {{count}} book",
+      "show_other": "Show {{count}} books",
+      "showAny": "Show books"
+    },
+    "languages": {
+      "sq": "Albanian",
+      "en": "English"
+    },
+    "chips": {
+      "label": "Active filters",
+      "remove": "Remove the {{label}} filter",
+      "clearAll": "Clear all",
+      "publisher": "Publisher"
+    },
+    "toolbar": {
+      "sort": "Sort",
+      "sorts": {
+        "new": "Newest",
+        "top": "Most read",
+        "title": "Title",
+        "price_asc": "Price, low to high",
+        "price_desc": "Price, high to low"
+      },
+      "view": "View",
+      "grid": "Grid view",
+      "list": "List view"
+    },
+    "empty": {
+      "title": "No books match",
+      "description": "Try removing some filters or searching for something else.",
+      "clear": "Clear filters"
+    },
+    "error": {
+      "title": "The books did not load",
+      "description": "We could not reach the catalogue. Please try again shortly.",
+      "retry": "Try again"
+    }
+  },
+  "genreIntro": {
+    "Fiction": "Novels and stories by contemporary Albanian authors.",
+    "History": "Chronicles, cities and the people who made history.",
+    "Poetry": "Verse for the seasons, the sea and the words left unsaid.",
+    "Essays": "Essays on memory, language and the city.",
+    "Children": "Books to read together, from fairy tales to journeys."
+  },
+  "notFound": {
+    "title": "Page not found",
+    "description": "This page does not exist or is no longer available.",
+    "back": "Back to Explore"
+  },
+  "checkout": {
+    "metaTitle": "Payment — Libraria",
+    "kicker": "Payment",
+    "total": "Total",
+    "confirming": "Confirming your payment…",
+    "stillProcessing": "Your payment is being processed; you will see the book in your library as soon as it is confirmed.",
+    "continue": "Continue payment",
+    "paid": {
+      "title": "The book is in your library",
+      "open": "Go to the book"
+    },
+    "failed": {
+      "title": "The payment did not go through",
+      "text": "The payment was declined. You have not been charged."
+    },
+    "cancelled": {
+      "title": "The payment was cancelled",
+      "text": "The payment was cancelled before it was completed. You have not been charged."
+    },
+    "expired": {
+      "title": "The payment expired",
+      "text": "The payment was not completed in time. You have not been charged."
+    },
+    "closed": {
+      "title": "This payment is closed",
+      "text": "The book page shows where things stand now."
+    },
+    "retry": "Try again",
+    "simulated": {
+      "title": "Development environment · simulated payment",
+      "text": "No real payment. Choose how this payment ends.",
+      "pay": "Pay",
+      "fail": "Fail",
+      "cancel": "Cancel"
+    },
+    "paddle": {
+      "opening": "Opening the payment…",
+      "errorTitle": "The payment cannot be opened",
+      "missing": "This payment link is incomplete.",
+      "loadFailed": "The payment page did not load. Please try again shortly.",
+      "back": "Back to Explore",
+      "toBook": "Go to the book"
+    }
+  }
+}

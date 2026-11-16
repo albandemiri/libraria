@@ -1,0 +1,125 @@
+.hero {
+  display: grid;
+  grid-template-columns: 400px minmax(0, 1fr);
+  gap: 72px;
+  padding: 36px var(--size-page-padding) var(--space-8);
+}
+
+/* A deeper shadow than the shelves' covers: the book sits above the page. */
+.cover > :first-child {
+  box-shadow: 0 30px 60px -12px rgb(37 37 31 / 40%);
+}
+
+.text {
+  min-width: 0;
+  padding-top: var(--space-2);
+}
+
+.title {
+  margin: 18px 0;
+  font: 400 80px / 0.95 var(--font-editorial);
+  letter-spacing: -0.03em;
+  overflow-wrap: anywhere;
+}
+
+.by {
+  font: 400 20px / 1.4 var(--font-editorial);
+}
+
+.author {
+  color: inherit;
+  text-decoration: none;
+  border-bottom: 1px solid var(--color-text);
+}
+
+.author:hover {
+  border-bottom-width: 2px;
+}
+
+.publisher {
+  margin-top: var(--space-2);
+  font-size: var(--size-interface-text);
+  color: var(--color-text-secondary);
+}
+
+.lede {
+  max-width: 640px;
+  margin: var(--space-6) 0;
+  padding-left: 22px;
+  border-left: 2px solid var(--color-accent2);
+  font: italic 400 24px / 1.5 var(--font-editorial);
+}
+
+/* With no pull quote the purchase box keeps the same distance from the byline. */
+.publisher + section {
+  margin-top: var(--space-6);
+}
+
+.fine {
+  max-width: 680px;
+  margin-top: 14px;
+  font-size: 13px;
+  line-height: 1.6;
+  color: var(--color-text-secondary);
+}
+
+.fine b {
+  font-weight: 500;
+  color: var(--color-text);
+}
+
+@media (max-width: 1023px) {
+  .hero {
+    grid-template-columns: 280px minmax(0, 1fr);
+    gap: var(--space-6);
+  }
+
+  .title {
+    font-size: 56px;
+  }
+}
+
+@media (max-width: 767px) {
+  .hero {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 22px;
+    padding: var(--space-4) var(--size-page-padding-mobile) var(--space-7);
+  }
+
+  .cover {
+    width: 190px;
+    margin: 0 auto;
+  }
+
+  .cover > :first-child {
+    box-shadow: 0 20px 40px -10px rgb(37 37 31 / 40%);
+  }
+
+  .text {
+    padding-top: 0;
+    text-align: center;
+  }
+
+  .title {
+    margin: 10px 0 var(--space-2);
+    font-size: 36px;
+    line-height: 1;
+    letter-spacing: -0.02em;
+  }
+
+  .by {
+    font-size: 16px;
+  }
+
+  .lede {
+    margin: var(--space-4) 0;
+    padding-left: 0;
+    border-left: 0;
+    font-size: 17px;
+    text-align: left;
+  }
+
+  .fine {
+    text-align: left;
+  }
+}

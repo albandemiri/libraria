@@ -1,0 +1,28 @@
+.facts {
+  margin: 0;
+  border-top: 1px solid var(--color-text);
+  align-self: start;
+}
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+  font-size: var(--size-interface-text);
+}
+
+.term {
+  color: var(--color-text-secondary);
+}
+
+.value {
+  margin: 0;
+  font-weight: 500;
+  text-align: right;
+}
+
+.link {
+  color: var(--color-accent);
+}

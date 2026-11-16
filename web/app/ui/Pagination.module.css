@@ -1,0 +1,47 @@
+.pager {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: var(--space-7);
+  font-size: var(--size-interface-text);
+}
+
+.link,
+.gap {
+  display: grid;
+  place-items: center;
+  min-width: 36px;
+  height: 36px;
+  border-radius: var(--radius-control);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+}
+
+.link:hover {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.word {
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  color: var(--color-text);
+  grid-auto-flow: column;
+}
+
+.current,
+.current:hover {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+@media (pointer: coarse) {
+  .link,
+  .gap {
+    min-width: var(--size-touch-target);
+    height: var(--size-touch-target);
+  }
+}

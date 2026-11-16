@@ -40,6 +40,8 @@ export interface ExtractedMetadata {
   description: string | null;
   tocSummary: Array<{ label: string; depth: number }>;
   hasCover: boolean;
+  /** Non-whitespace characters in the text of the spine's XHTML documents (drives page count). */
+  textCharacters: number;
   epubVersion: '2.0' | '3.0' | string;
 }
 
@@ -678,6 +680,34 @@ function scanXmlTree(root: XmlNode): Violation | null {
 }
 
 /**
+ * Counts the non-whitespace characters of the text nodes in a parsed XHTML document's body,
+ * skipping <script> and <style> content (iterative, so depth cannot overflow the stack).
+ */
+function countTextCharacters(document: XmlNode): number {
+  let total = 0;
+  // Only the body is reading text: the head's <title> is not part of the book's pages.
+  const html = Object.entries(document).find(([key]) => key.split(':').pop() === 'html')?.[1];
+  const body = isNode(html)
+    ? Object.entries(html).find(([key]) => key.split(':').pop() === 'body')
+    : undefined;
+  const stack: Array<[string, unknown]> = body ? [body] : Object.entries(document);
+  while (stack.length > 0) {
+    const [key, value] = stack.pop() as [string, unknown];
+    if (key.startsWith('@_') || key.startsWith('?')) continue;
+    const name = (key.split(':').pop() ?? key).toLowerCase();
+    if (name === 'script' || name === 'style') continue;
+    for (const node of Array.isArray(value) ? value : [value]) {
+      if (typeof node === 'string') {
+        total += Array.from(decodeEntities(node).replace(/\s+/g, '')).length;
+      } else if (isNode(node)) {
+        stack.push(...Object.entries(node));
+      }
+    }
+  }
+  return total;
+}
+
+/**
  * Adobe auxiliary XML (page map, XPGT) has no known "remote" elements, so any
  * attribute value or text that is itself a remote URL counts. xmlns
  * declarations are namespace names, not fetches, and are ignored.
@@ -987,6 +1017,11 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
     }
   }
 
+  const spinePaths = new Set(
+    spine.map((ref) => manifest.get(attr(ref, 'idref') as string)).map((item) => item?.path),
+  );
+  let textCharacters = 0;
+
   // scan every XHTML/SVG document and stylesheet; each declared one must exist under that exact name
   const scanTypes = new Set([XHTML_TYPE, SVG_TYPE, 'text/css', PAGE_MAP_TYPE, PAGE_TEMPLATE_TYPE]);
   for (const item of items) {
@@ -1008,6 +1043,9 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
         contentParser,
       );
       violation = scanXmlTree(tree);
+      if (item.mediaType === XHTML_TYPE && spinePaths.has(item.path)) {
+        textCharacters += countTextCharacters(tree);
+      }
       if (
         !violation &&
         (item.mediaType === PAGE_MAP_TYPE || item.mediaType === PAGE_TEMPLATE_TYPE)
@@ -1084,6 +1122,7 @@ async function inspect(archive: Archive): Promise<ValidateResult> {
       description: description ? description.slice(0, 5000) : null,
       tocSummary,
       hasCover: cover !== null,
+      textCharacters,
       epubVersion: version,
     },
     cover,

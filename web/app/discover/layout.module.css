@@ -1,0 +1,12 @@
+/* The centred content column shared by every Discover section (1280px with 48px gutters). */
+.wrap {
+  max-width: var(--size-content-max);
+  margin-inline: auto;
+  padding-inline: var(--size-page-padding);
+}
+
+@media (max-width: 767px) {
+  .wrap {
+    padding-inline: var(--size-page-padding-mobile);
+  }
+}

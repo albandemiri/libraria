@@ -1,0 +1,33 @@
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.chips a {
+  text-decoration: none;
+}
+
+.clear {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  margin-left: var(--space-1);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-accent);
+}
+
+.clear:hover {
+  text-decoration: underline;
+}
+
+@media (pointer: coarse) {
+  .clear {
+    min-height: var(--size-touch-target);
+  }
+}

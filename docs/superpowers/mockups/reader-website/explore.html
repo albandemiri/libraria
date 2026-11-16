@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="sq">
+<head>
+<meta charset="utf-8">
+<title>Libraria — Explore</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,300;0,8..60,400;0,8..60,500;1,8..60,300;1,8..60,400&display=swap" rel="stylesheet">
+<style>
+  :root{--bg:#F5F2EA;--surface:#FFFEFA;--text:#25251F;--t2:#6B6A62;--t3:#85847C;--border:#DEDAD0;--accent:#263D32;--accent-2:#793E43;
+    --serif:"Source Serif 4",Georgia,serif;--sans:Inter,system-ui,sans-serif;
+    --grain:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0.15 0 0 0 0 0.14 0 0 0 0 0.1 0 0 0 .07 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E")}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:#DCD8CF;font-family:var(--sans);color:var(--text);padding:32px 24px 80px}
+  .intro{max-width:1280px;margin:0 auto 24px} .intro h1{font:600 22px var(--sans)} .intro p{color:var(--t2);font-size:15px;margin-top:6px;max-width:840px;line-height:1.55}
+  .lbl{max-width:1280px;margin:40px auto 10px;font:600 15px var(--sans)} .lbl span{font-weight:400;color:var(--t2)}
+  .frame{max-width:1280px;margin:0 auto;border:1px solid var(--border);border-radius:8px;overflow:hidden;background:var(--bg) var(--grain)}
+  .hdr{display:flex;align-items:center;gap:40px;padding:18px 48px;border-bottom:1px solid var(--border)}
+  .wm{font:600 24px/1 var(--serif)} .nav{display:flex;gap:28px;font-size:14px;font-weight:500;color:var(--t2)} .nav b{color:var(--text);font-weight:500;border-bottom:2px solid var(--accent);padding-bottom:4px}
+  .search{margin-left:auto;width:300px;height:38px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:0 12px;display:flex;align-items:center;color:var(--t3);font-size:14px}
+  .acct{font-size:14px;font-weight:500}
+  .cover{display:block;width:100%;aspect-ratio:2/3;object-fit:cover;border-radius:2px;box-shadow:0 1px 2px rgba(0,0,0,.14),0 8px 18px -8px rgba(0,0,0,.3)}
+  .k{font:600 12px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent-2)}
+
+  .crumbs{padding:20px 48px 0;font-size:13px;color:var(--t2)} .crumbs b{color:var(--text);font-weight:500}
+  .pagehead{padding:18px 48px 28px;display:grid;grid-template-columns:1fr auto;align-items:end;gap:32px;border-bottom:1px solid var(--text);margin:0 48px;padding-left:0;padding-right:0}
+  .pagehead h2{font:400 84px/.95 var(--serif);letter-spacing:-.03em}
+  .pagehead p{font:400 18px/1.55 var(--serif);max-width:560px;margin-top:16px}
+  .pagehead .count{font:italic 300 20px var(--serif);color:var(--t2);text-align:right}
+  .genrebar{display:flex;gap:26px;padding:14px 48px;font-size:14px;color:var(--t2);border-bottom:1px solid var(--border)}
+  .genrebar b{color:var(--text);font-weight:500}
+
+  .body{display:grid;grid-template-columns:240px 1fr;gap:48px;padding:28px 48px 48px}
+  aside h5{font:600 12px var(--sans);letter-spacing:.1em;text-transform:uppercase;margin:0 0 10px}
+  aside .grp{padding:0 0 22px;margin-bottom:22px;border-bottom:1px solid var(--border)}
+  aside label{display:flex;align-items:center;gap:10px;font-size:14px;padding:5px 0}
+  aside label span{margin-left:auto;color:var(--t2);font-size:12px}
+  .box{width:16px;height:16px;border:1px solid #B9B4A7;border-radius:3px;background:var(--surface);flex:none}
+  .box.on{background:var(--accent);border-color:var(--accent);position:relative}
+  .box.on::after{content:"";position:absolute;left:4px;top:1px;width:5px;height:9px;border:solid #fff;border-width:0 2px 2px 0;transform:rotate(45deg)}
+  .radio{width:16px;height:16px;border:1px solid #B9B4A7;border-radius:50%;background:var(--surface);flex:none}
+  .radio.on{border:5px solid var(--accent)}
+  .range{height:4px;background:var(--border);border-radius:2px;position:relative;margin:16px 6px 10px}
+  .range i{position:absolute;left:0;right:35%;height:100%;background:var(--accent)}
+  .range b{position:absolute;top:-6px;width:16px;height:16px;border-radius:50%;background:var(--surface);border:2px solid var(--accent)}
+  .rangevals{display:flex;justify-content:space-between;font-size:13px;color:var(--t2)}
+  .toggle{display:flex;align-items:center;gap:10px;font-size:14px}
+  .sw{width:34px;height:20px;border-radius:10px;background:#C9C4B7;position:relative;flex:none} .sw::after{content:"";position:absolute;left:2px;top:2px;width:16px;height:16px;border-radius:50%;background:#fff}
+
+  .tools{display:flex;align-items:center;gap:10px;margin-bottom:24px;flex-wrap:wrap}
+  .chip{display:inline-flex;align-items:center;gap:8px;height:30px;padding:0 10px;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-size:13px}
+  .chip i{font-style:normal;color:var(--t2)}
+  .clear{font-size:13px;color:var(--accent);font-weight:500;margin-left:4px}
+  .sort{margin-left:auto;display:flex;align-items:center;gap:8px;font-size:13px;color:var(--t2)}
+  .select{height:34px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:0 12px;display:flex;align-items:center;gap:24px;color:var(--text);font-size:14px}
+  .views{display:flex;border:1px solid var(--border);border-radius:6px;overflow:hidden;margin-left:8px}
+  .views span{width:34px;height:34px;display:grid;place-items:center;font-size:14px;background:var(--surface);color:var(--t2)}
+  .views span.on{background:var(--text);color:var(--bg)}
+  .results{display:grid;grid-template-columns:repeat(4,1fr);gap:40px 32px}
+  .card{display:block;color:inherit;text-decoration:none}
+  .bt{font:500 17px/1.25 var(--serif);margin-top:14px}
+  .lg{font:600 10px var(--sans);letter-spacing:.06em;border:1px solid var(--border);border-radius:3px;padding:1px 4px;margin-left:6px;vertical-align:3px;color:var(--t2)}
+  .ba{font-size:13px;color:var(--text);margin-top:4px} .pub{font-size:12px;color:var(--t2);margin-top:2px}
+  .bp{font-size:14px;font-weight:500;margin-top:8px} .bp.own{color:var(--accent);font-size:13px}
+  .pager{display:flex;justify-content:center;align-items:center;gap:6px;margin-top:48px;font-size:14px}
+  .pager span{min-width:36px;height:36px;display:grid;place-items:center;border-radius:6px;color:var(--t2)}
+  .pager span.on{background:var(--text);color:var(--bg)} .pager .w{padding:0 12px;border:1px solid var(--border);background:var(--surface);color:var(--text)}
+
+  /* search dropdown */
+  .sd-wrap{max-width:1280px;margin:0 auto;display:grid;grid-template-columns:1fr 380px;gap:24px;align-items:start}
+  .sd{border:1px solid var(--border);border-radius:8px;background:var(--bg) var(--grain);padding:18px 48px 40px;height:560px;position:relative}
+  .sd .hdr{padding:0 0 18px;border-bottom:1px solid var(--border)}
+  .sd .search.on{border-color:var(--accent);box-shadow:0 0 0 3px rgba(38,61,50,.15);color:var(--text);width:420px}
+  .pop{position:absolute;right:48px;top:66px;width:520px;background:var(--surface);border:1px solid var(--border);border-radius:8px;box-shadow:0 18px 40px -12px rgba(37,37,31,.25);padding:8px 0;font-size:14px}
+  .pop h6{font:600 11px var(--sans);letter-spacing:.12em;text-transform:uppercase;color:var(--t2);padding:12px 18px 6px}
+  .pop .it{display:grid;grid-template-columns:32px 1fr auto;gap:12px;align-items:center;padding:7px 18px}
+  .pop .it.hl{background:#F1EDE2}
+  .pop .it img{width:32px} .pop .it b{font:500 15px var(--serif)} .pop .it em{font-style:normal;background:#EADFC7;border-radius:2px}
+  .pop .it small{color:var(--t2);font-size:12px}
+  .pop .mono{width:32px;height:32px;border-radius:50%;border:1px solid var(--border);display:grid;place-items:center;font:500 12px var(--serif)}
+  .pop .all{border-top:1px solid var(--border);margin-top:8px;padding:12px 18px 6px;color:var(--accent);font-weight:500}
+  .pop .hint{float:right;color:var(--t2);font-weight:400;font-size:12px}
+
+  /* phone */
+  .phone{width:380px;height:760px;border:10px solid #25251F;border-radius:44px;overflow:hidden;background:var(--bg) var(--grain);position:relative;font-size:14px}
+  .ph-top{padding:44px 18px 12px;display:flex;align-items:center;gap:10px}
+  .ph-top .wm{font-size:20px} .ph-top .s{margin-left:auto;width:36px;height:36px;border:1px solid var(--border);border-radius:6px;display:grid;place-items:center;background:var(--surface)}
+  .ph-h{padding:6px 18px 14px;border-bottom:1px solid var(--text);margin:0 18px;padding-left:0}
+  .ph-h h2{font:400 44px/1 var(--serif);letter-spacing:-.02em} .ph-h small{color:var(--t2);font:italic 300 15px var(--serif)}
+  .ph-tools{display:flex;gap:8px;padding:12px 18px}
+  .ph-tools .b{height:36px;padding:0 12px;border:1px solid var(--border);border-radius:6px;background:var(--surface);display:flex;align-items:center;gap:6px;font-size:13px}
+  .ph-tools .b.f{background:var(--text);color:var(--bg);border-color:var(--text)}
+  .ph-list{padding:0 18px}
+  .ph-list .r{display:grid;grid-template-columns:60px 1fr;gap:14px;padding:12px 0;border-bottom:1px solid var(--border)}
+  .ph-list .bt{font-size:16px;margin-top:2px}
+  .sheet{position:absolute;left:0;right:0;bottom:0;height:460px;background:var(--surface);border-radius:14px 14px 0 0;box-shadow:0 -20px 40px rgba(0,0,0,.2);padding:10px 20px}
+  .sheet .grab{width:40px;height:4px;border-radius:2px;background:var(--border);margin:0 auto 14px}
+  .sheet h4{font:500 20px var(--serif);display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px} .sheet h4 a{font:500 13px var(--sans);color:var(--accent)}
+  .sheet h5{font:600 11px var(--sans);letter-spacing:.1em;text-transform:uppercase;margin:14px 0 8px}
+  .pills{display:flex;flex-wrap:wrap;gap:8px}
+  .pills span{height:34px;padding:0 12px;border:1px solid var(--border);border-radius:6px;display:flex;align-items:center;font-size:13px}
+  .pills span.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+  .sheet .go{position:absolute;left:20px;right:20px;bottom:22px;height:48px;border-radius:6px;background:var(--accent);color:#fff;display:grid;place-items:center;font-weight:500}
+  .scrim{position:absolute;inset:0;background:rgba(37,37,31,.35)}
+  .notes{font-size:14px;color:var(--t2);line-height:1.6;padding-top:8px}
+  .notes b{color:var(--text)}
+</style>
+</head>
+<body>
+<div class="intro">
+  <h1>Explore: browsing, search and the phone layout</h1>
+  <p>Same masthead feel as Discover: the cream paper background, big serif headings and colour only from the covers. Below are the browse page for a genre, the global search dropdown, and how filters work on a phone. Tell me in the terminal what to change.</p>
+</div>
+
+<div class="lbl">1 · Browse a genre <span>(the same page also shows search results, publisher catalogues and all books)</span></div>
+<div class="frame">
+  <div class="hdr"><div class="wm">Libraria</div><div class="nav"><span>Zbulo</span><b>Eksploro</b><span>Biblioteka ime</span><span>Listat e leximit</span></div><div class="search">⌕&nbsp; Kërko tituj, autorë, botues</div><div class="acct">Leart</div></div>
+  <div class="crumbs">Eksploro / <b>Prozë</b></div>
+  <div class="pagehead">
+    <div><h2>Prozë</h2><p>Romane dhe tregime nga autorë shqiptarë bashkëkohorë: hane në udhëkryq, qytete të harruara, dimra në kulla.</p></div>
+    <div class="count">18 libra · 4 botues</div>
+  </div>
+  <div class="genrebar"><span>Të gjitha</span><b>Prozë</b><span>Histori</span><span>Poezi</span><span>Ese</span><span>Për fëmijë</span></div>
+  <div class="body">
+    <aside>
+      <div class="grp"><h5>Botuesi</h5>
+        <label><i class="box on"></i>Kodra e Blertë<span>5</span></label>
+        <label><i class="box on"></i>Shtëpia Botuese Ura<span>5</span></label>
+        <label><i class="box"></i>Pema e Kuqe Botime<span>4</span></label>
+        <label><i class="box"></i>Gështenja Botime<span>4</span></label></div>
+      <div class="grp"><h5>Gjuha</h5>
+        <label><i class="radio on"></i>Të gjitha<span>18</span></label>
+        <label><i class="radio"></i>Shqip<span>16</span></label>
+        <label><i class="radio"></i>Anglisht<span>2</span></label></div>
+      <div class="grp"><h5>Çmimi</h5><div class="range"><i></i><b style="left:-4px"></b><b style="left:62%"></b></div><div class="rangevals"><span>0 €</span><span>10 €</span></div></div>
+      <div class="grp"><h5>Botuar</h5>
+        <label><i class="radio"></i>30 ditët e fundit</label>
+        <label><i class="radio on"></i>Këtë vit</label>
+        <label><i class="radio"></i>Çdo kohë</label></div>
+      <div class="toggle"><i class="sw"></i>Fshih librat që i kam</div>
+    </aside>
+    <main>
+      <div class="tools">
+        <span class="chip">Kodra e Blertë <i>✕</i></span><span class="chip">Shtëpia Botuese Ura <i>✕</i></span><span class="chip">Deri në 10 € <i>✕</i></span><span class="chip">Këtë vit <i>✕</i></span><a class="clear">Pastro të gjitha</a>
+        <div class="sort">Rendit <span class="select">Më të rejat ▾</span><div class="views"><span class="on">▦</span><span>☰</span></div></div>
+      </div>
+      <div class="results"><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/15459259-2a29-5a98-87aa-5f467426529a/cover?v=1" alt=""><div class="bt">Zonja e Hanit të Bardhë</div><div class="ba">Leart Osmani</div><div class="pub">Pema e Kuqe Botime</div><div class="bp">5,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/25bb72c9-f7f9-572c-922f-ab2689a93ec6/cover?v=1" alt=""><div class="bt">Peshkatari dhe Hëna</div><div class="ba">Artan Gashi</div><div class="pub">Gështenja Botime</div><div class="bp own">✓ Në bibliotekën tënde</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/73b4350c-dd38-5583-826e-c7cbeee6ba2b/cover?v=1" alt=""><div class="bt">Udhëtari pa Hartë</div><div class="ba">Arben Kryeziu</div><div class="pub">Shtëpia Botuese Ura</div><div class="bp">8,49 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/614ceee5-b703-56b7-8083-80c3bb0578d0/cover?v=1" alt=""><div class="bt">Era e Marsit</div><div class="ba">Nderim Isufi</div><div class="pub">Shtëpia Botuese Ura</div><div class="bp">5,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/7bfa228c-982d-5f1e-a4b2-cf888ebebdeb/cover?v=1" alt=""><div class="bt">Hijet e Rrugës së Gurtë</div><div class="ba">Besa Selimi</div><div class="pub">Kodra e Blertë</div><div class="bp">7,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/2c79bb5f-fa76-5811-abf6-95d9998b6d3e/cover?v=1" alt=""><div class="bt">Letra nga Qyteti i Harruar</div><div class="ba">Nderim Selimi</div><div class="pub">Kodra e Blertë</div><div class="bp">10,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/49987440-f30b-540a-b9d4-c7f820dae323/cover?v=1" alt=""><div class="bt">Dimri në Kullën e Vjetër</div><div class="ba">Besa Sadiku</div><div class="pub">Kodra e Blertë</div><div class="bp">8,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/1e5deca1-9876-5a09-920a-8221cb9c529d/cover?v=1" alt=""><div class="bt">Pasqyra e Dhjetë Vjetëve</div><div class="ba">Zana Kryeziu</div><div class="pub">Gështenja Botime</div><div class="bp">10,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/2bb320c9-ea8c-5a7c-9f18-1d6540650a39/cover?v=1" alt=""><div class="bt">Ura e Kujtimeve të Humbura</div><div class="ba">Taulant Dibra</div><div class="pub">Shtëpia Botuese Ura</div><div class="bp">11,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/bce3f594-a7d1-5a39-8b8f-d5cddbf3326e/cover?v=1" alt=""><div class="bt">The Quiet Harbour<span class="lg">EN</span></div><div class="ba">Vjosa Mehmetaj</div><div class="pub">Kodra e Blertë</div><div class="bp">11,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/b9468e61-2fac-5bcf-8942-1d3c9ee78645/cover?v=1" alt=""><div class="bt">Zogjtë e Mëngjesit të Vonë</div><div class="ba">Pranvera Hoti</div><div class="pub">Gështenja Botime</div><div class="bp">12,99 €</div></a><a class="card"><img class="cover" src="http://localhost:3000/api/v1/books/c2856bea-be7e-5452-ba9a-0c148c4fff2e/cover?v=1" alt=""><div class="bt">Mbrëmje në Hanin e Gurit</div><div class="ba">Arta Dibra</div><div class="pub">Pema e Kuqe Botime</div><div class="bp">6,99 €</div></a></div>
+      <div class="pager"><span class="w">← Para</span><span class="on">1</span><span>2</span><span class="w">Pas →</span></div>
+    </main>
+  </div>
+</div>
+
+<div class="lbl">2 · Global search, from any page <span>(and 3 · filters on a phone)</span></div>
+<div class="sd-wrap">
+  <div class="sd">
+    <div class="hdr"><div class="wm">Libraria</div><div class="nav"><b>Zbulo</b><span>Eksploro</span><span>Biblioteka ime</span><span>Listat e leximit</span></div><div class="search on">⌕&nbsp; han|</div></div>
+    <div class="pop">
+      <h6>Tituj</h6>
+      <div class="it hl"><img class="cover" src="http://localhost:3000/api/v1/books/15459259-2a29-5a98-87aa-5f467426529a/cover?v=1" alt=""><div><b>Zonja e <em>Han</em>it të Bardhë</b><br><small>Leart Osmani · Prozë</small></div><small>5,99 €</small></div>
+      <div class="it"><img class="cover" src="http://localhost:3000/api/v1/books/c2856bea-be7e-5452-ba9a-0c148c4fff2e/cover?v=1" alt=""><div><b>Mbrëmje në <em>Han</em>in e Gurit</b><br><small>Arta Dibra · Prozë</small></div><small>6,99 €</small></div>
+      <h6>Autorë</h6>
+      <div class="it"><span class="mono">HS</span><div><b><em>Han</em>a Shkurti</b><br><small>1 libër · Poezi</small></div><small></small></div>
+      <div class="it"><span class="mono">HR</span><div><b><em>Han</em>a Rrapaj</b><br><small>1 libër · Histori</small></div><small></small></div>
+      <h6>Kërkimet e fundit</h6>
+      <div class="it"><span style="color:var(--t2);text-align:center">↺</span><div>poezi deti</div><small>✕</small></div>
+      <div class="all">Shiko 5 rezultate për "han" <span class="hint">↵ Enter</span></div>
+    </div>
+  </div>
+  <div class="phone">
+    <div class="ph-top"><span class="wm">Libraria</span><span class="s">⌕</span></div>
+    <div class="ph-h"><h2>Prozë</h2><small>18 libra</small></div>
+    <div class="ph-tools"><span class="b f">Filtrat · 4</span><span class="b">Më të rejat ▾</span></div>
+    <div class="ph-list">
+      <div class="r"><img class="cover" src="http://localhost:3000/api/v1/books/15459259-2a29-5a98-87aa-5f467426529a/cover?v=1" alt=""><div><div class="bt">Zonja e Hanit të Bardhë</div><div class="ba">Leart Osmani</div><div class="bp">5,99 €</div></div></div>
+      <div class="r"><img class="cover" src="http://localhost:3000/api/v1/books/25bb72c9-f7f9-572c-922f-ab2689a93ec6/cover?v=1" alt=""><div><div class="bt">Peshkatari dhe Hëna</div><div class="ba">Artan Gashi</div><div class="bp own">✓ Në bibliotekën tënde</div></div></div>
+    </div>
+    <div class="scrim"></div>
+    <div class="sheet">
+      <div class="grab"></div>
+      <h4>Filtrat <a>Pastro</a></h4>
+      <h5>Botuesi</h5><div class="pills"><span class="on">Kodra e Blertë</span><span class="on">Ura</span><span>Pema e Kuqe</span><span>Gështenja</span></div>
+      <h5>Gjuha</h5><div class="pills"><span class="on">Të gjitha</span><span>Shqip</span><span>Anglisht</span></div>
+      <h5>Çmimi</h5><div class="pills"><span>Deri në 5 €</span><span class="on">Deri në 10 €</span><span>Çdo çmim</span></div>
+      <h5>Botuar</h5><div class="pills"><span>30 ditë</span><span class="on">Këtë vit</span><span>Çdo kohë</span></div>
+      <div class="go">Shfaq 7 libra</div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

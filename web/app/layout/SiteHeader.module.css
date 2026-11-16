@@ -1,0 +1,93 @@
+.header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-7);
+  padding: var(--space-4) var(--size-page-padding);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.wordmark {
+  font: 600 24px / 1 var(--font-editorial);
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+.nav {
+  display: flex;
+  gap: var(--space-5);
+  font-size: var(--size-interface-text);
+  font-weight: 500;
+}
+
+.navLink {
+  display: inline-flex;
+  align-items: center;
+  min-height: var(--size-touch-target);
+  color: var(--color-text-secondary);
+  text-decoration: none;
+  border-bottom: 2px solid transparent;
+}
+
+.navLink[aria-current="page"] {
+  color: var(--color-text);
+  border-bottom-color: var(--color-accent);
+}
+
+.search {
+  flex: 1;
+  min-width: 0;
+  max-width: 300px;
+  margin-left: auto;
+}
+
+.searchLink {
+  display: none;
+  margin-left: auto;
+  align-items: center;
+  min-height: var(--size-touch-target);
+  color: var(--color-accent);
+  font-weight: 500;
+  text-decoration: none;
+}
+
+.tools {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  /* Lets the reader's name shrink instead of pushing the header past a phone's width. */
+  min-width: 0;
+}
+
+@media (max-width: 1023px) {
+  .header {
+    gap: var(--space-5);
+  }
+  .nav {
+    gap: var(--space-4);
+  }
+}
+
+@media (max-width: 767px) {
+  .header {
+    padding: var(--space-2) var(--size-page-padding-mobile);
+  }
+  .nav,
+  .search {
+    display: none;
+  }
+  .searchLink {
+    display: inline-flex;
+  }
+  .tools {
+    gap: var(--space-2);
+  }
+}
+
+/* Small phones (360–479px): tighter gaps, so the wordmark, Kërko, the language switch and Dil fit
+   (the reader's name is visually hidden there, see AccountMenu). */
+@media (max-width: 479px) {
+  .header {
+    gap: var(--space-3);
+  }
+}

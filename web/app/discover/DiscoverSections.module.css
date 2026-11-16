@@ -1,0 +1,13 @@
+/* Most read and the genre tiles side by side, as in the mockup. */
+.pair {
+  display: grid;
+  grid-template-columns: 7fr 5fr;
+  gap: 72px;
+}
+
+@media (max-width: 1023px) {
+  .pair {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

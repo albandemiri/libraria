@@ -2,6 +2,7 @@ import type { NextFunction, Request, Response } from 'express';
 import { accountStatus } from '../auth/account-status';
 import { PORTAL_COOKIE, PORTAL_HEADER, readCookie } from '../auth/portal-session';
 import { type AuthContext, type UserRole, verifyAccessToken } from '../auth/tokens';
+import { logger } from '../lib/logger';
 import { AppError } from './errors';
 
 export type { AuthContext } from '../auth/tokens';
@@ -42,6 +43,35 @@ export function requireAuth(req: Request, res: Response, next: NextFunction): vo
  */
 export function requireAuthAllowSuspended(req: Request, res: Response, next: NextFunction): void {
   authenticate(req, res, next, true);
+}
+
+/**
+ * Identifies the caller when a valid Bearer token for an active account is
+ * present, and otherwise lets the request through as a guest. Never fails and
+ * ignores the portal cookie.
+ */
+export function optionalAuth(req: Request, _res: Response, next: NextFunction): void {
+  const token = bearerToken(req);
+  const auth = token ? verifyAccessToken(token) : null;
+  if (!auth) {
+    next();
+    return;
+  }
+
+  accountStatus(auth.userId)
+    .then((status) => {
+      if (status === 'active') {
+        req.auth = auth;
+        req.authSource = 'bearer';
+      }
+      next();
+    })
+    .catch((error: unknown) => {
+      logger.warn('optional auth: account status lookup failed; treating caller as guest', {
+        err: error,
+      });
+      next();
+    });
 }
 
 function authenticate(

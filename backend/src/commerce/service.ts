@@ -64,7 +64,7 @@ export async function createCheckout(
     `SELECT b.id, b.title, b.price_cents, b.currency, b.publisher_id,
             ${rateInForceSql('b.publisher_id')} AS commission_rate_bps
        FROM books b
-      WHERE b.id = ANY($1::uuid[]) AND b.is_available`,
+      WHERE b.id = ANY($1::uuid[]) AND b.is_available AND b.media_type = 'ebook'`,
     [bookIds],
   );
 

@@ -1,0 +1,22 @@
+.choice {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 28px;
+  font-size: var(--size-interface-text);
+  cursor: pointer;
+}
+
+.input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+
+@media (pointer: coarse) {
+  .choice {
+    min-height: var(--size-touch-target);
+  }
+}
