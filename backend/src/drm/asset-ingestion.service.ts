@@ -9,6 +9,7 @@ import type { AssetRow, AssetState } from './asset-repository';
 import { audit } from './drm.audit';
 import { assetAad, encryptAsset } from './encryption.service';
 import { runValidation } from './epub/run-validation';
+import type { ExtractedMetadata } from './epub/validate-epub';
 import { keyManagement } from './key-management.service';
 import { malwareScanner } from './malware-scanner';
 import { objectStorage } from './object-storage';
@@ -529,8 +530,25 @@ interface Completion {
   wrapped: Buffer;
   keyId: string;
   keyVersion: string;
-  metadata: unknown;
+  metadata: ExtractedMetadata;
   hasCover: boolean;
+}
+
+/** Extracted metadata as stored: the language is never empty. */
+export type StoredMetadata = Omit<ExtractedMetadata, 'language'> & {
+  language: string;
+  /** `epub`: the file's dc:language. `book`: the file had none, so the book's language was used. */
+  languageSource: 'epub' | 'book';
+};
+
+/** An EPUB without dc:language takes the language the publisher chose for the book. */
+export function withBookLanguage(
+  metadata: ExtractedMetadata,
+  bookLanguage: string,
+): StoredMetadata {
+  return metadata.language
+    ? { ...metadata, language: metadata.language, languageSource: 'epub' }
+    : { ...metadata, language: bookLanguage, languageSource: 'book' };
 }
 
 /**
@@ -546,7 +564,8 @@ async function completeAsset(ctx: RunContext, asset: AssetRow, done: Completion)
     const { rows: books } = await client.query<{
       current_asset_id: string | null;
       cover_object_key: string | null;
-    }>('SELECT current_asset_id, cover_object_key FROM books WHERE id = $1 FOR UPDATE', [
+      language: string;
+    }>('SELECT current_asset_id, cover_object_key, language FROM books WHERE id = $1 FOR UPDATE', [
       asset.book_id,
     ]);
     await lockLease(client, ctx.job);
@@ -574,7 +593,7 @@ async function completeAsset(ctx: RunContext, asset: AssetRow, done: Completion)
         done.sha256,
         done.nonce,
         done.authTag,
-        JSON.stringify(done.metadata),
+        JSON.stringify(withBookLanguage(done.metadata, books[0].language.trim())),
       ],
     );
 

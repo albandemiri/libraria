@@ -172,8 +172,19 @@ describe('validateEpub: container and package', () => {
     assert.equal(await reason(buildEpub({ rootfilePath: 'OEBPS/nope.opf' })), 'INVALID_CONTAINER'));
   it('INVALID_PACKAGE for a missing dc:title', async () =>
     assert.equal(await reason(buildEpub({ title: null })), 'INVALID_PACKAGE'));
-  it('INVALID_PACKAGE for a missing dc:language', async () =>
-    assert.equal(await reason(buildEpub({ language: null })), 'INVALID_PACKAGE'));
+  it('accepts a missing dc:language and reports it as null', async () => {
+    const result = await validateEpub(buildEpub({ language: null }));
+    assert.equal(result.ok, true);
+    assert.equal(result.ok && result.metadata.language, null);
+  });
+  it('treats a blank dc:language as missing', async () => {
+    const result = await validateEpub(buildEpub({ language: '   ' }));
+    assert.equal(result.ok && result.metadata.language, null);
+  });
+  it('keeps a present dc:language', async () => {
+    const result = await validateEpub(buildEpub({ language: 'sq' }));
+    assert.equal(result.ok && result.metadata.language, 'sq');
+  });
   it('INVALID_PACKAGE for an empty spine', async () =>
     assert.equal(await reason(buildEpub({ spineMissing: true })), 'INVALID_PACKAGE'));
   it('INVALID_PACKAGE for a spine idref without a manifest item', async () =>
